@@ -1,0 +1,127 @@
+using UnityEngine;
+
+namespace FrcSim
+{
+    // 進入場景時:套用設定、建場地/燈光/相機,然後交給選單系統(啟動畫面→語言→主畫面)。
+    public static class SimBootstrap
+    {
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+        static void Init()
+        {
+            SettingsStore.Apply();
+            Time.fixedDeltaTime = 1f / 100f;
+            Physics.defaultSolverIterations = 8;
+            Physics.defaultSolverVelocityIterations = 2;
+
+            FieldBuilder.Build();
+
+            var light = new GameObject("Sun").AddComponent<Light>();
+            light.type = LightType.Directional;
+            light.intensity = 0.95f;
+            light.transform.rotation = Quaternion.Euler(55f, -30f, 0f);
+            light.shadows = LightShadows.Soft;
+            RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat;
+            RenderSettings.ambientLight = new Color(0.36f, 0.38f, 0.42f);
+
+            var camObj = Camera.main != null ? Camera.main.gameObject : new GameObject("Main Camera", typeof(Camera), typeof(AudioListener));
+            camObj.tag = "MainCamera";
+            var cam = camObj.GetComponent<Camera>();
+            cam.backgroundColor = new Color(0.08f, 0.09f, 0.11f);
+            cam.clearFlags = CameraClearFlags.SolidColor;
+            cam.nearClipPlane = 0.1f;
+            cam.farClipPlane = 80f;
+            var rig = camObj.AddComponent<CameraRig>();
+            rig.Orbit = true;
+
+            bool selfTest = System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-selftest") >= 0;
+            if (selfTest)
+            {
+                // 自動測試:略過選單,直接開始並由 SelfTest 控制
+                GameSession.Begin(rig, true);
+                return;
+            }
+
+            {
+                var a = System.Environment.GetCommandLineArgs();
+                int ri = System.Array.IndexOf(a, "-realtest");
+                if (ri >= 0 && ri + 1 < a.Length)
+                {
+                    GameSession.Begin(rig, false, a[ri + 1]);
+                    new GameObject("RealTest").AddComponent<RealTest>();
+                    return;
+                }
+                int hi = System.Array.IndexOf(a, "-halsimtest");
+                if (hi >= 0 && hi + 1 < a.Length)
+                {
+                    new GameObject("HalSimTest").AddComponent<HalSimTest>().Project = a[hi + 1];
+                    return;
+                }
+            }
+
+            if (System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-autostart") >= 0)
+            {
+                GameSession.Begin(rig);
+                var shot = new GameObject("AutoShot").AddComponent<AutoShot>();
+                shot.Rig = rig;
+                return;
+            }
+
+            if (System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-settletest") >= 0)
+            {
+                GameSession.Begin(rig);
+                new GameObject("SettleTest").AddComponent<SettleTest>();
+                return;
+            }
+
+            if (System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-shot") >= 0)
+                new GameObject("AutoShot").AddComponent<AutoShot>().Rig = rig;
+            var menu = new GameObject("Menu").AddComponent<MenuSystem>();
+            menu.Rig = rig;
+        }
+
+        public static GameObject BuildRobot(out Transform turretVis, out Transform armVis, string name = "Robot", Color? bodyColor = null)
+        {
+            var r = new GameObject(name);
+            r.AddComponent<Rigidbody>();
+            var col = r.AddComponent<BoxCollider>();
+            col.size = new Vector3(SimConstants.BumperLength, SimConstants.BumperHeight, SimConstants.BumperWidth);
+            r.AddComponent<SwerveDrive>();
+
+            // 車身
+            var body = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            body.name = "Body";
+            Object.Destroy(body.GetComponent<Collider>());
+            body.transform.SetParent(r.transform, false);
+            body.transform.localScale = new Vector3(SimConstants.BumperLength, SimConstants.BumperHeight, SimConstants.BumperWidth);
+            body.GetComponent<Renderer>().sharedMaterial = FieldBuilder.MakeMat(bodyColor ?? new Color(0.15f, 0.35f, 0.9f));
+
+            // Intake 手臂(+X 前方,會伸縮)
+            var arm = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            arm.name = "IntakeArm";
+            Object.Destroy(arm.GetComponent<Collider>());
+            arm.transform.SetParent(r.transform, false);
+            arm.GetComponent<Renderer>().sharedMaterial = FieldBuilder.MakeMat(new Color(0.95f, 0.5f, 0.1f));
+            armVis = arm.transform;
+
+            // 砲塔(會轉,指向發射方向)
+            var turret = new GameObject("Turret").transform;
+            turret.SetParent(r.transform, false);
+            turret.localPosition = new Vector3(0f, 0.3f, 0f);
+            var tb = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            tb.name = "TurretBody";
+            Object.Destroy(tb.GetComponent<Collider>());
+            tb.transform.SetParent(turret, false);
+            tb.transform.localScale = new Vector3(0.40f, 0.22f, 0.40f);
+            tb.GetComponent<Renderer>().sharedMaterial = FieldBuilder.MakeMat(new Color(0.8f, 0.8f, 0.85f));
+            var barrel = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            barrel.name = "Barrel";
+            Object.Destroy(barrel.GetComponent<Collider>());
+            barrel.transform.SetParent(turret, false);
+            barrel.transform.localScale = new Vector3(0.28f, 0.10f, 0.14f);
+            barrel.transform.localPosition = new Vector3(0.28f, 0.04f, 0f);
+            barrel.GetComponent<Renderer>().sharedMaterial = FieldBuilder.MakeMat(new Color(0.15f, 0.15f, 0.18f));
+            turretVis = turret;
+            return r;
+        }
+    }
+}

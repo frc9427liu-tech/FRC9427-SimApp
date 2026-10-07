@@ -1,0 +1,16 @@
+// Injected by the simulator bridge (gradlew -I). Turns the robot project's simulation into a headless
+// HALSim WebSocket server without editing the project's own build files.
+allprojects {
+    afterEvaluate { p ->
+        def wpi = p.extensions.findByName('wpi')
+        if (wpi != null) {
+            def exts = wpi.sim.halExtensions
+            def ws = exts.findByName('Sim WebSockets Server')
+            if (ws == null) { try { ws = wpi.sim.addWebsocketsServer() } catch (Exception e) { println "ws server: ${e.message}" } }
+            if (ws != null) ws.defaultEnabled.set(true)
+            // our web UI replaces the desktop GUI
+            def gui = exts.findByName('Sim GUI')
+            if (gui != null) gui.defaultEnabled.set(false)
+        }
+    }
+}

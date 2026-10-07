@@ -1,0 +1,11 @@
+﻿Library/
+Temp/
+obj/
+Logs/
+UserSettings/
+Build/
+ImportSamples/
+Tools/step2glb/node_modules/
+*.csproj
+*.sln
+*.log
