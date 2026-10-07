@@ -30,6 +30,7 @@ namespace FrcSim
         readonly Dictionary<string, JObject> loads = new Dictionary<string, JObject>();
         readonly List<Module> modules = new List<Module>();
         double driveRatio = 4.71, wheelRadius = 0.0508;
+        double angleSign = 1, omegaSign = 1, gyroSign = 1;   // 符號除錯開關(mech.json chassis.angleSign / omegaSign / gyroSign,預設 1)
         string gyro;
         bool loaded;
         float acc;
@@ -71,6 +72,7 @@ namespace FrcSim
                     {
                         driveRatio = (double?)ch["driveRatio"] ?? driveRatio;
                         wheelRadius = (double?)ch["wheelRadius"] ?? wheelRadius;
+                        angleSign = (double?)ch["angleSign"] ?? 1; omegaSign = (double?)ch["omegaSign"] ?? 1; gyroSign = (double?)ch["gyroSign"] ?? 1;
                         gyro = (string)ch["gyro"];
                         foreach (var m in (JArray)ch["modules"])
                             modules.Add(new Module { Name = (string)m["name"], Drive = (string)m["drive"], Encoder = (string)m["encoder"], X = (double)m["x"], Y = (double)m["y"], UserSign = (int?)m["userSign"] ?? 1 });
@@ -177,7 +179,7 @@ namespace FrcSim
                 if (!motors.TryGetValue(m.Drive, out var mot)) continue;
                 if (!Hal.Devices.TryGetValue("CANEncoder/" + m.Encoder, out var enc) || enc["<position"] == null) continue;
                 double speed = (m.UserSign * (mot.Vel / (2 * Math.PI)) / driveRatio) * 2 * Math.PI * wheelRadius;
-                double a = (double)enc["<position"] * 2 * Math.PI;
+                double a = angleSign * (double)enc["<position"] * 2 * Math.PI;
                 double vx = speed * Math.Cos(a), vy = speed * Math.Sin(a);
                 n++; svx += vx; svy += vy;
                 srr += m.X * m.X + m.Y * m.Y;
@@ -185,7 +187,7 @@ namespace FrcSim
             }
             ModuleHits = n;
             if (n < 2) return;
-            double cvx = svx / n, cvy = svy / n, omega = srv / (srr == 0 ? 1 : srr);
+            double cvx = svx / n, cvy = svy / n, omega = omegaSign * srv / (srr == 0 ? 1 : srr);
             Debug = $"chassis v=({cvx:0.00},{cvy:0.00}) w={omega:0.00}";
 
             // 機器人座標 → 場地座標
@@ -198,7 +200,7 @@ namespace FrcSim
 
             // 陀螺儀回寫:航向(度)與角速度,讓場向駕駛與里程計閉環
             if (gyro != null)
-                Hal.QueueDevice("CANGyro", gyro, ">rawYawInput", th * Mathf.Rad2Deg, ">angularVelZ", omega * Mathf.Rad2Deg);
+                Hal.QueueDevice("CANGyro", gyro, ">rawYawInput", gyroSign * th * Mathf.Rad2Deg, ">angularVelZ", gyroSign * omega * Mathf.Rad2Deg);
         }
     }
 }
