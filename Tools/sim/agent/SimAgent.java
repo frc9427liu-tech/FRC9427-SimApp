@@ -12,7 +12,7 @@ public class SimAgent {
 
     static class M {
         int id, coder;                // coder<0:沒有 CANcoder
-        double inertia, friction, minRot, maxRot;
+        double inertia, friction, minRot, maxRot, ratio = RATIO;
         boolean invert;
         Object sim, coderSim;
         double pos, vel;              // 轉子 rev(HALSim 原始座標)、rad/s
@@ -23,7 +23,27 @@ public class SimAgent {
         }
     }
 
+    // 馬達表優先從 Sim\agent-motors.txt 讀(由 BuildTool 依 mech.json 產生,每行:id coderId ratio inertia friction invert min max);沒有檔才用內建
     static List<M> table() {
+        String path = System.getProperty("simagent.motors");
+        if (path != null) {
+            try {
+                List<M> l = new ArrayList<>();
+                for (String line : java.nio.file.Files.readAllLines(java.nio.file.Paths.get(path))) {
+                    String[] t = line.trim().split("\\s+");
+                    if (t.length < 8 || t[0].startsWith("#")) continue;
+                    M m = new M(Integer.parseInt(t[0]), Integer.parseInt(t[1]), Double.parseDouble(t[3]), Double.parseDouble(t[4]),
+                            t[5].equals("1"), Double.parseDouble(t[6]), Double.parseDouble(t[7]));
+                    m.ratio = Double.parseDouble(t[2]);
+                    l.add(m);
+                }
+                if (!l.isEmpty()) { log("motor table from file: " + l.size() + " motors"); return l; }
+            } catch (Throwable e) { log("motor table file failed, using built-in: " + e); }
+        }
+        return builtinTable();
+    }
+
+    static List<M> builtinTable() {
         double INF = Double.POSITIVE_INFINITY;
         List<M> l = new ArrayList<>();
         // swerve 轉向 + CANcoder
@@ -135,8 +155,8 @@ public class SimAgent {
                     setPos.invoke(m.sim, m.pos);
                     setVel.invoke(m.sim, m.vel / (2 * Math.PI));
                     if (m.coderSim != null) {
-                        cPos.invoke(m.coderSim, m.pos / RATIO);
-                        cVel.invoke(m.coderSim, m.vel / (2 * Math.PI) / RATIO);
+                        cPos.invoke(m.coderSim, m.pos / m.ratio);
+                        cVel.invoke(m.coderSim, m.vel / (2 * Math.PI) / m.ratio);
                     }
                 }
                 java.io.PrintWriter c = client;

@@ -145,7 +145,11 @@ namespace FrcSim
                 // 同進程物理 agent(Sim\simagent.jar):用 Phoenix SimState 在機器人 JVM 裡驅動轉向馬達,避開網路延遲。Sim\noagent.txt 存在則停用
                 string agentJar = Path.Combine(Path.GetDirectoryName(Application.dataPath), "Sim", "simagent.jar");
                 if (File.Exists(agentJar) && !File.Exists(Path.Combine(Path.GetDirectoryName(agentJar), "noagent.txt")))
+                {
                     psi.EnvironmentVariables["JAVA_TOOL_OPTIONS"] += " -javaagent:" + agentJar.Replace('\\', '/');
+                    string motorsTxt = Path.Combine(Path.GetDirectoryName(agentJar), "agent-motors.txt");
+                    if (File.Exists(motorsTxt)) psi.EnvironmentVariables["JAVA_TOOL_OPTIONS"] += " -Dsimagent.motors=" + motorsTxt.Replace('\\', '/');
+                }
                 // 只讓機器人送我們要用的訊息:預設它每個週期把所有 HAL 裝置狀態都丟過來(~11k 則/秒),會擠掉 Unity→機器人的回授
                 psi.EnvironmentVariables["HALSIMWS_FILTERS"] = "CANMotor,CANEncoder,CANGyro,Gyro,DriverStation";
                 gradle = Process.Start(psi);
