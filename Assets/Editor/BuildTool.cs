@@ -106,6 +106,7 @@ public static class BuildTool
             string simDir = OutDir + "/Sim";
             Directory.CreateDirectory(simDir);
             foreach (var g in Directory.GetFiles("Tools/sim", "*.mech.json")) File.Copy(g, simDir + "/" + Path.GetFileName(g), true);
+            if (File.Exists("Tools/sim/agent/simagent.jar")) File.Copy("Tools/sim/agent/simagent.jar", simDir + "/simagent.jar", true);
         }
         catch (System.Exception e) { Debug.LogWarning("copy mech failed: " + e.Message); }
         Debug.Log("BUILD RESULT: " + report.summary.result + " errors=" + report.summary.totalErrors);

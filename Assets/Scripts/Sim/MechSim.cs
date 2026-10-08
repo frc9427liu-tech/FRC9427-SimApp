@@ -29,6 +29,7 @@ namespace FrcSim
         readonly List<Link> links = new List<Link>();
         readonly Dictionary<string, JObject> loads = new Dictionary<string, JObject>();
         readonly List<Module> modules = new List<Module>();
+        readonly HashSet<string> agentMotors = new HashSet<string>();
         double driveRatio = 4.71, wheelRadius = 0.0508;
         double angleSign = 1, omegaSign = 1, gyroSign = 1;   // 符號除錯開關(mech.json chassis.angleSign / omegaSign / gyroSign,預設 1)
         string gyro;
@@ -56,9 +57,12 @@ namespace FrcSim
 
         [System.Runtime.InteropServices.DllImport("winmm.dll")] static extern uint timeBeginPeriod(uint ms);
 
+        bool agentActive;
         void Start()
         {
             try { timeBeginPeriod(1); } catch { }   // Task.Delay 才能到 ~1ms 精度
+            string simDir = Path.Combine(Path.GetDirectoryName(Application.dataPath), "Sim");
+            agentActive = File.Exists(Path.Combine(simDir, "simagent.jar")) && !File.Exists(Path.Combine(simDir, "noagent.txt"));
             try
             {
                 if (File.Exists(MechPath))
@@ -67,6 +71,7 @@ namespace FrcSim
                     foreach (var l in (JArray)j["links"] ?? new JArray())
                         links.Add(new Link { Sensor = (string)l["sensor"], Motor = (string)l["motor"], Ratio = (double?)l["ratio"] ?? 1, Offset = (double?)l["offset"] ?? 0, Invert = (bool?)l["invert"] ?? false });
                     foreach (var p in (JObject)j["loads"] ?? new JObject()) loads[p.Key] = (JObject)p.Value;
+                    foreach (var a in (JArray)j["agentMotors"] ?? new JArray()) agentMotors.Add((string)a);   // 由 Java agent 同進程模擬的馬達,Unity 端不要碰
                     var ch = j["chassis"] as JObject;
                     if (ch != null)
                     {
@@ -131,6 +136,18 @@ namespace FrcSim
                     m.Lead = (double?)ld["lead"] ?? 0.0;
                     m.MinRot = (double?)ld["minRot"] ?? double.NegativeInfinity;
                     m.MaxRot = (double?)ld["maxRot"] ?? double.PositiveInfinity;
+                    m.Invert = (bool?)ld["invert"] ?? false;
+                    if (m.Invert) { double mn = m.MinRot; m.MinRot = -m.MaxRot; m.MaxRot = -mn; }   // 限位寫在使用者座標,原始座標鏡像
+                }
+                if (agentActive && agentMotors.Contains(name))
+                {
+                    // 這顆馬達由 Java agent 在機器人 JVM 內模擬:Unity 只讀回它寫進 HAL 的轉子位置/速度(原始座標),供底盤與機構邏輯使用
+                    if (Hal.Devices.TryGetValue("CANEncoder/" + name + "/Rotor Sensor", out var ed))
+                    {
+                        if (ed[">rawPositionInput"] != null) m.Pos = (double)ed[">rawPositionInput"];
+                        if (ed[">velocity"] != null) m.Vel = (double)ed[">velocity"] * 2 * Math.PI;
+                    }
+                    continue;
                 }
                 double volts = dev["<motorVoltage"] != null ? (double)dev["<motorVoltage"] : 0.0;
                 const int n = 4; double h = dt / n;
