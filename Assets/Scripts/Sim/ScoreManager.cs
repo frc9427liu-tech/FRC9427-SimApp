@@ -20,6 +20,13 @@ namespace FrcSim
 
         static void UpdateClock()
         {
+            UpdateClockCore();
+            // 真實程式模式:AUTO 階段讓 DriverStation 進入 autonomous(機器人程式跑它的自動模式),其餘階段是 teleop
+            if (GameSession.Hal != null) GameSession.Hal.Autonomous = ClockOn && Phase == "AUTO";
+        }
+
+        static void UpdateClockCore()
+        {
             if (!ClockOn) { Phase = "FREE PLAY"; BlueActive = RedActive = true; Ended = false; return; }
             float t = MatchTime;
             if (t < 20f) { Phase = "AUTO"; BlueActive = RedActive = true; BlueWonAuto = BlueScore >= RedScore; return; }
