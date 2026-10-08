@@ -10,6 +10,8 @@ namespace FrcSim
     {
         public bool FieldCentric = true;
         public bool SimDriven;                 // true:速度由真實機器人程式經馬達物理算出(MechSim)
+        public float TractionAccel = 14f;      // m/s²:輪胎抓地力(μ≈1.4~1.5 × g)上限,真實程式模式用
+        public float TractionAlpha = 45f;      // rad/s²:旋轉抓地力上限
         public Vector2 SimVelField; public float SimOmega;
         public Vector2 StartPos = new Vector2(2.0f, SimConstants.FieldWidth / 2f);
         public float StartHeadingDeg = 0f;
@@ -82,9 +84,19 @@ namespace FrcSim
             if (Mathf.Abs(rb.position.y - gy) > 0.005f) { YFixes++; rb.position = new Vector3(rb.position.x, gy, rb.position.z); }
             if (SimDriven)
             {
-                rb.linearVelocity = new Vector3(SimVelField.x, 0f, SimVelField.y);
-                rb.angularVelocity = new Vector3(0f, -SimOmega, 0f);
-                vel = SimVelField; omega = SimOmega;
+                // 輪胎抓地力上限:從「實際剛體速度」朝馬達算出的目標速度靠近,每步最多改 μ·g 的加速度
+                // (不會瞬間達速;被撞擋住後保留碰撞結果;與馬達端 Kraken 力矩上限一起決定加速曲線)
+                Vector3 lvs = rb.linearVelocity;
+                Vector2 cur = new Vector2(lvs.x, lvs.z);
+                Vector2 dvs = SimVelField - cur;
+                float maxDvs = TractionAccel * dt;
+                if (dvs.magnitude > maxDvs) dvs = dvs.normalized * maxDvs;
+                cur += dvs;
+                float curW = -rb.angularVelocity.y;
+                curW += Mathf.Clamp(SimOmega - curW, -TractionAlpha * dt, TractionAlpha * dt);
+                rb.linearVelocity = new Vector3(cur.x, 0f, cur.y);
+                rb.angularVelocity = new Vector3(0f, -curW, 0f);
+                vel = cur; omega = curW;
                 return;
             }
             // 取實際剛體速度,碰撞後才會真的被擋住

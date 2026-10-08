@@ -136,14 +136,17 @@ public class SimAgent {
             }
             log("started: driving " + ms.size() + " motors in-process");
             long last = System.nanoTime(), nextLog = last, nextSend = last;
+            double batt = 12.6;
             double maxV = 0;
             while (true) {
                 long now = System.nanoTime();
                 double dt = Math.min((now - last) / 1e9, 0.01);
                 last = now;
+                double sumI = 0;
                 for (M m : ms) {
                     double v = (Double) getV.invoke(m.sim);
                     maxV = Math.max(maxV, Math.abs(v));
+                    sumI += Math.abs((v - KE * m.vel) / R);   // 這顆馬達此刻吃的電流(A),用來算電池下垂
                     double drive = KT * v / R;
                     double torque = drive - (KT * KE / R) * m.vel;
                     double fr = (Math.abs(m.vel) < 1e-3 && Math.abs(torque) < m.friction) ? -torque : -Math.signum(m.vel) * m.friction;
@@ -151,7 +154,7 @@ public class SimAgent {
                     m.pos += m.vel / (2 * Math.PI) * dt;
                     if (m.pos < m.minRot) { m.pos = m.minRot; if (m.vel < 0) m.vel = 0; }
                     if (m.pos > m.maxRot) { m.pos = m.maxRot; if (m.vel > 0) m.vel = 0; }
-                    setSupply.invoke(m.sim, 12.0);
+                    setSupply.invoke(m.sim, batt);
                     setPos.invoke(m.sim, m.pos);
                     setVel.invoke(m.sim, m.vel / (2 * Math.PI));
                     if (m.coderSim != null) {
@@ -159,6 +162,9 @@ public class SimAgent {
                         cVel.invoke(m.coderSim, m.vel / (2 * Math.PI) / m.ratio);
                     }
                 }
+                // 電池:開路 12.6V、內阻約 18mΩ(含線材),總電流越大電壓越低;低通避免單步抖動;下限 6.8V(brownout 邊緣)
+                double target = Math.max(6.8, 12.6 - 0.018 * sumI);
+                batt += (target - batt) * 0.2;
                 java.io.PrintWriter c = client;
                 if (c != null && now > nextSend) {
                     nextSend = now + 8_000_000L;   // ~125 Hz
