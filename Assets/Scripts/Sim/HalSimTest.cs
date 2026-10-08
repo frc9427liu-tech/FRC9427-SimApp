@@ -110,7 +110,9 @@ namespace FrcSim
                 sb.AppendLine("   " + d.RbInfo + $" simVel=({d.SimVelField.x:0.00},{d.SimVelField.y:0.00}) simDriven={d.SimDriven}");
                 sb.AppendLine($"t={0.5f * (k + 1):0.0} pose=({d.Pose2d.x:0.00},{d.Pose2d.y:0.00}) head={d.HeadingRad * Mathf.Rad2Deg:0} {msim.Debug} " +
                               $"cc=[{h.Num("CANEncoder/CANcoder (v6)[1]", "<position"):0.00},{h.Num("CANEncoder/CANcoder (v6)[2]", "<position"):0.00},{h.Num("CANEncoder/CANcoder (v6)[3]", "<position"):0.00},{h.Num("CANEncoder/CANcoder (v6)[4]", "<position"):0.00}] " +
-                              $"drvVel=[{msim.Vel("Talon FX (v6)[2]"):0},{msim.Vel("Talon FX (v6)[4]"):0},{msim.Vel("Talon FX (v6)[6]"):0},{msim.Vel("Talon FX (v6)[8]"):0}]");
+                              $"drvVel=[{msim.Vel("Talon FX (v6)[2]"):0},{msim.Vel("Talon FX (v6)[4]"):0},{msim.Vel("Talon FX (v6)[6]"):0},{msim.Vel("Talon FX (v6)[8]"):0}] " +
+                              $"halV=[{h.Num("CANMotor/Talon FX (v6)[2]", "<motorVoltage"):0.0},{h.Num("CANMotor/Talon FX (v6)[4]", "<motorVoltage"):0.0},{h.Num("CANMotor/Talon FX (v6)[6]", "<motorVoltage"):0.0},{h.Num("CANMotor/Talon FX (v6)[8]", "<motorVoltage"):0.0}] " +
+                              $"echoPos=[{h.Num("CANEncoder/Talon FX (v6)[2]/Rotor Sensor", ">rawPositionInput"):0.0},{h.Num("CANEncoder/Talon FX (v6)[4]/Rotor Sensor", ">rawPositionInput"):0.0},{h.Num("CANEncoder/Talon FX (v6)[6]/Rotor Sensor", ">rawPositionInput"):0.0},{h.Num("CANEncoder/Talon FX (v6)[8]/Rotor Sensor", ">rawPositionInput"):0.0}]");
             }
             sb.AppendLine($"after forward 4s: x={d.Pose2d.x:0.00} y={d.Pose2d.y:0.00} speed={d.Speed:0.00} heading={d.HeadingRad * Mathf.Rad2Deg:0}");
             h.Axes[1] = 0f; h.Axes[0] = 1f;

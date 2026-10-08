@@ -60,8 +60,27 @@ public class SimAgent {
 
     static void log(String s) { System.out.println("[simagent] " + s); }
 
+    static volatile java.io.PrintWriter client;
+
+    // 本機 TCP(127.0.0.1:3399):把每顆馬達的轉子位置/速度直接推給 Unity(HALSim 的回聲更新不可靠、會過期)
+    static void startServer() {
+        Thread srv = new Thread(() -> {
+            try (java.net.ServerSocket ss = new java.net.ServerSocket(3399, 1, java.net.InetAddress.getLoopbackAddress())) {
+                while (true) {
+                    java.net.Socket s = ss.accept();
+                    s.setTcpNoDelay(true);
+                    client = new java.io.PrintWriter(new java.io.OutputStreamWriter(s.getOutputStream(), "UTF-8"), false);
+                    log("Unity connected");
+                }
+            } catch (Throwable e) { log("server failed: " + e); }
+        }, "simagent-srv");
+        srv.setDaemon(true);
+        srv.start();
+    }
+
     static void run() {
         try {
+            startServer();
             Thread.sleep(8000);   // 等機器人 code 建好自己的裝置
             ClassLoader cl = ClassLoader.getSystemClassLoader();
             Class<?> talonC = Class.forName("com.ctre.phoenix6.hardware.TalonFX", true, cl);
@@ -71,6 +90,13 @@ public class SimAgent {
             for (M m : ms) {
                 Object talon = talonC.getConstructor(int.class).newInstance(m.id);
                 m.sim = talonC.getMethod("getSimState").invoke(talon);
+                try {   // 診斷:讀這顆 Talon 的反轉設定(只記錄,不套用)
+                    Object cfgr = talonC.getMethod("getConfigurator").invoke(talon);
+                    Class<?> moC = Class.forName("com.ctre.phoenix6.configs.MotorOutputConfigs", true, cl);
+                    Object mo = moC.getConstructor().newInstance();
+                    cfgr.getClass().getMethod("refresh", moC).invoke(cfgr, mo);
+                    log("cfg id=" + m.id + " Inverted=" + moC.getField("Inverted").get(mo));
+                } catch (Throwable e) { log("cfg read failed id=" + m.id + ": " + e); }
                 if (m.coder >= 0) {
                     Object coder = coderC.getConstructor(int.class).newInstance(m.coder);
                     m.coderSim = coderC.getMethod("getSimState").invoke(coder);
@@ -89,7 +115,7 @@ public class SimAgent {
                 }
             }
             log("started: driving " + ms.size() + " motors in-process");
-            long last = System.nanoTime(), nextLog = last;
+            long last = System.nanoTime(), nextLog = last, nextSend = last;
             double maxV = 0;
             while (true) {
                 long now = System.nanoTime();
@@ -113,7 +139,23 @@ public class SimAgent {
                         cVel.invoke(m.coderSim, m.vel / (2 * Math.PI) / RATIO);
                     }
                 }
-                if (now > nextLog) { nextLog = now + 2_000_000_000L; log(String.format("steer46 pos=%.3f rev | fly9 vel=%.1f rad/s | max|V|=%.2f", ms.get(0).pos, ms.get(8).vel, maxV)); }
+                java.io.PrintWriter c = client;
+                if (c != null && now > nextSend) {
+                    nextSend = now + 8_000_000L;   // ~125 Hz
+                    StringBuilder sb = new StringBuilder();
+                    for (M m : ms) sb.append(m.id).append(' ').append(m.pos).append(' ').append(m.vel).append(' ');
+                    c.println(sb);
+                    c.flush();
+                    if (c.checkError()) client = null;
+                }
+                if (now > nextLog) {
+                    nextLog = now + 1_000_000_000L;
+                    StringBuilder sb = new StringBuilder("drive V/vel(rps) ");
+                    for (int k = 4; k < 8; k++) { M d = ms.get(k); sb.append(String.format("[%d]%.1fV/%.0f ", d.id, (Double) getV.invoke(d.sim), d.vel / (2 * Math.PI))); }
+                    sb.append("| steer pos(mech rev) ");
+                    for (int k = 0; k < 4; k++) sb.append(String.format("%.2f ", ms.get(k).pos / RATIO));
+                    log(sb.toString());
+                }
                 Thread.sleep(2);
             }
         } catch (Throwable e) {

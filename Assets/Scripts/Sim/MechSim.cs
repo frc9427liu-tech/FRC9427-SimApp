@@ -58,11 +58,42 @@ namespace FrcSim
         [System.Runtime.InteropServices.DllImport("winmm.dll")] static extern uint timeBeginPeriod(uint ms);
 
         bool agentActive;
+        // Java agent 每 ~8ms 經本機 TCP(3399)推來「id 位置 速度 …」一行;HALSim 的回聲更新不可靠,改用這條直連
+        readonly Dictionary<int, double[]> agentState = new Dictionary<int, double[]>();
+        volatile bool agentStop;
+        void AgentReader()
+        {
+            while (!agentStop)
+            {
+                try
+                {
+                    using (var c = new System.Net.Sockets.TcpClient())
+                    {
+                        c.NoDelay = true;
+                        c.Connect("127.0.0.1", 3399);
+                        using (var rd = new StreamReader(c.GetStream()))
+                        {
+                            string line;
+                            while (!agentStop && (line = rd.ReadLine()) != null)
+                            {
+                                var t = line.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                                lock (agentState)
+                                    for (int i = 0; i + 2 < t.Length; i += 3)
+                                        agentState[int.Parse(t[i])] = new[] { double.Parse(t[i + 1], System.Globalization.CultureInfo.InvariantCulture), double.Parse(t[i + 2], System.Globalization.CultureInfo.InvariantCulture) };
+                            }
+                        }
+                    }
+                }
+                catch { System.Threading.Thread.Sleep(500); }
+            }
+        }
+        void OnDestroy() { agentStop = true; }
         void Start()
         {
             try { timeBeginPeriod(1); } catch { }   // Task.Delay 才能到 ~1ms 精度
             string simDir = Path.Combine(Path.GetDirectoryName(Application.dataPath), "Sim");
             agentActive = File.Exists(Path.Combine(simDir, "simagent.jar")) && !File.Exists(Path.Combine(simDir, "noagent.txt"));
+            if (agentActive) new System.Threading.Thread(AgentReader) { IsBackground = true }.Start();
             try
             {
                 if (File.Exists(MechPath))
@@ -142,11 +173,10 @@ namespace FrcSim
                 if (agentActive && agentMotors.Contains(name))
                 {
                     // 這顆馬達由 Java agent 在機器人 JVM 內模擬:Unity 只讀回它寫進 HAL 的轉子位置/速度(原始座標),供底盤與機構邏輯使用
-                    if (Hal.Devices.TryGetValue("CANEncoder/" + name + "/Rotor Sensor", out var ed))
-                    {
-                        if (ed[">rawPositionInput"] != null) m.Pos = (double)ed[">rawPositionInput"];
-                        if (ed[">velocity"] != null) m.Vel = (double)ed[">velocity"] * 2 * Math.PI;
-                    }
+                    var idm = System.Text.RegularExpressions.Regex.Match(name, @"\[(\d+)\]$");
+                    if (idm.Success)
+                        lock (agentState)
+                            if (agentState.TryGetValue(int.Parse(idm.Groups[1].Value), out var st)) { m.Pos = st[0]; m.Vel = st[1]; }
                     continue;
                 }
                 double volts = dev["<motorVoltage"] != null ? (double)dev["<motorVoltage"] : 0.0;
