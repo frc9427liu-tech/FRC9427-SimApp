@@ -105,8 +105,11 @@ namespace FrcSim
             }
 
             // TOWER:靠聯盟牆
+            // 位置依官方 2026 AprilTag 場地配置(WPILib 2026-rebuilt-welded.json):藍方 TOWER 牆面 tag 31/32 的 y 平均 = 3.965 m,
+            // 紅方 15/16 的 y 平均 = 4.105 m(場地旋轉對稱:y → W - y)
+            float towerY = blue ? 3.965f : W - 3.965f;
             Box(root, (blue ? "BlueTower" : "RedTower"),
-                new Vector3(X(SimConstants.TowerDepth / 2f), SimConstants.TowerHeight / 2f, W / 2f - 2.2f * sgn),
+                new Vector3(X(SimConstants.TowerDepth / 2f), SimConstants.TowerHeight / 2f, towerY),
                 new Vector3(SimConstants.TowerDepth, SimConstants.TowerHeight, SimConstants.TowerWidth), c, true);
 
             // DEPOT:沿聯盟牆(貼地)
