@@ -167,8 +167,14 @@ namespace FrcSim
                 new Vector3(SimConstants.TowerDepth, SimConstants.TowerHeight, SimConstants.TowerWidth), c, true);
 
             // DEPOT:沿聯盟牆(貼地)
-            Box(root, "Depot", new Vector3(X(SimConstants.DepotDepth / 2f), 0.03f, W / 2f + 2.2f * sgn),
+            // 位置依官方圖面 FE-2026 第 3 頁:藍方 DEPOT 中心離計分台側牆 234.85in(5.965m),紅方對稱(W - y)
+            Box(root, "Depot", new Vector3(X(SimConstants.DepotDepth / 2f), 0.03f, blue ? 5.965f : W - 5.965f),
                 new Vector3(SimConstants.DepotDepth, 0.06f, SimConstants.DepotWidth), c, false);
+
+            // OUTPOST:貼聯盟牆,AprilTag 29/30(藍)y=26.22/43.22in → 中心 34.72in(0.882m);圖面寬 49.84in(1.266m)、深 28.13in(0.7145m)。
+            // 高度圖面文字沒標,先用 1.0m 的方塊(有碰撞,機器人不能穿過);紅方對稱
+            Box(root, blue ? "BlueOutpost" : "RedOutpost", new Vector3(X(0.7145f / 2f), 0.5f, blue ? 0.882f : W - 0.882f),
+                new Vector3(0.7145f, 1.0f, 1.266f), c, true);
         }
     }
 }

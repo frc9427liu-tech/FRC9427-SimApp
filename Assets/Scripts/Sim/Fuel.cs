@@ -121,7 +121,7 @@ namespace FrcSim
             // DEPOT:沿聯盟牆,6 顆寬 x 4 顆深 = 24,間距 0.16 不重疊
             foreach (bool blue in new[] { true, false })
             {
-                float dz = W / 2f + (blue ? 2.2f : -2.2f);
+                float dz = blue ? 5.965f : W - 5.965f;   // 官方圖面 FE-2026:DEPOT 中心離計分台側牆 234.85in
                 for (int i = 0; i < 4; i++)
                     for (int j = 0; j < 6; j++)
                     {
