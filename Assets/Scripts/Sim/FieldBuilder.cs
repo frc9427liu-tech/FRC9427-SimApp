@@ -97,11 +97,18 @@ namespace FrcSim
                     new Vector3(SimConstants.BumpDepth, SimConstants.BumpHeight, SimConstants.BumpWidth), Gray, false);
             }
 
-            // TRENCH:貼場邊,x 同 HUB 區,y 在場邊 1.194m 內(用細柱代表)
-            foreach (float yEdge in new[] { 0.6f, W - 0.6f })
+            // TRENCH(依官方圖面 FE-2026 / GE-26200,單位 in→m):沿場邊的隧道,機器人沿場長方向(x)穿過。
+            //   x 長 65.65in(1.668m,以 HUB 中心對齊,與機器人程式 FieldTagMap 的 HALF_WIDTH 0.834 一致);
+            //   y:場牆起 50.35in(1.279m)是開口,其內側是 12.00in(0.305m)厚立柱,合計 62.35in(1.584m)(接著就是 73in 的 BUMP);
+            //   開口淨高 22.25in(0.565m),整體高 40.25in(1.022m)=頂板厚 0.457m。
             {
-                Box(root, "Trench", new Vector3(hubCx, 0.5f, yEdge),
-                    new Vector3(0.15f, 1.0f, 1.19f), c, true);
+                const float tl = 1.6676f, open = 1.279f, post = 0.3048f, clear = 0.5652f, top = 1.0224f;
+                foreach (bool south in new[] { true, false })
+                {
+                    System.Func<float, float> Y = y => south ? y : W - y;
+                    Box(root, "TrenchPost", new Vector3(hubCx, top / 2f, Y(open + post / 2f)), new Vector3(tl, top, post), c, true);
+                    Box(root, "TrenchTop", new Vector3(hubCx, clear + (top - clear) / 2f, Y((open + post) / 2f)), new Vector3(tl, top - clear, open + post), c, true);
+                }
             }
 
             // TOWER:靠聯盟牆
