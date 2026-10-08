@@ -87,7 +87,11 @@ namespace FrcSim
                 {
                     var ys = new GUIStyle(GUI.skin.label) { fontSize = 18, fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter, font = UiTheme.Font };
                     ys.normal.textColor = new Color(1f, 0.92f, 0.2f);
-                    GUI.Label(new Rect(sp.x - 40, Screen.height - sp.y - 14, 80, 28), L("▼ 你", "▼ YOU"), ys);
+                    // 放在機器人上方一點,加黑色陰影,俯視也看得清楚
+                    var shadow = new GUIStyle(ys); shadow.normal.textColor = Color.black;
+                    var rc = new Rect(sp.x - 40, Screen.height - sp.y - 14 - 46, 80, 28);
+                    GUI.Label(new Rect(rc.x + 1.5f, rc.y + 1.5f, rc.width, rc.height), L("▼ 你", "▼ YOU"), shadow);
+                    GUI.Label(rc, L("▼ 你", "▼ YOU"), ys);
                 }
             }
 
