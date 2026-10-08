@@ -8,6 +8,7 @@ namespace FrcSim
     {
         public SwerveDrive Drive;
         public RobotMechanisms Mech;
+        bool intakeLatch;   // 真實程式模式:I/A 切換「放下吸球」(等同按住 LT)
 
         // 手把右搖桿/扳機軸(由打包時補進 InputManager);沒定義就當 0,不會丟例外
         static float PadAxis(string name) { try { return Input.GetAxisRaw(name); } catch (System.Exception) { return 0f; } }
@@ -45,7 +46,9 @@ namespace FrcSim
                 h.Axes[0] = strafeRight * scale; h.Axes[1] = -fwd * scale; h.Axes[4] = Mathf.Clamp(-rot * scale + Deadband(PadAxis("PadRX")), -1f, 1f);
                 for (int i = 0; i < h.Buttons.Length && i < 10; i++) h.Buttons[i] = Input.GetKey(KeyCode.JoystickButton0 + i);
                 // 這份程式:LT(axis2)按住=放下 intake 吸球,RT(axis3)按住=射擊(RobotContainer.java 的綁定)
-                h.Axes[2] = Mathf.Max(Input.GetKey(KeyCode.I) ? 1f : 0f, Mathf.Clamp01(PadAxis("PadLT")));
+                // I / 手把 A 與內建模式一致:按一下放下、再按一下收起(用鎖存模擬「按住 LT」)
+                if (Input.GetKeyDown(KeyCode.I) || Input.GetKeyDown(KeyCode.JoystickButton0)) intakeLatch = !intakeLatch;
+                h.Axes[2] = Mathf.Max(intakeLatch ? 1f : 0f, Mathf.Clamp01(PadAxis("PadLT")));
                 h.Axes[3] = Mathf.Max((Input.GetKey(KeyCode.Space) || Input.GetMouseButton(0)) ? 1f : 0f, Mathf.Clamp01(PadAxis("PadRT")));
             }
             else Drive.Drive(fwd * scale, -strafeRight * scale, rot * scale);

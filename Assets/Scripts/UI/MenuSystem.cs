@@ -212,8 +212,7 @@ namespace FrcSim
             var s = Build(() => Loc.T("mode.title"), null, new[]
             {
                 new Item(() => Loc.T("mode.free"),  ShowRobotSetup),
-                new Item(() => Loc.T("mode.match"), () => { }, false),
-                new Item(() => Loc.T("mode.auto"),  () => { }, false),
+                // 「比賽模式/自動階段練習」還沒做,先不顯示避免新手點不動(比賽計時在機器人設定頁開關)
                 new Item(() => Loc.T("menu.back"),  ShowMain),
             }, ShowMain);
             Show(s, false);
