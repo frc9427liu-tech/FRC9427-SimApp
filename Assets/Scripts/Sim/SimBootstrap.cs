@@ -66,6 +66,13 @@ namespace FrcSim
                 return;
             }
 
+            if (System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-fieldtest") >= 0)
+            {
+                GameSession.Begin(rig);
+                new GameObject("FieldTest").AddComponent<FieldTest>();
+                return;
+            }
+
             if (System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-settletest") >= 0)
             {
                 GameSession.Begin(rig);
