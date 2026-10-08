@@ -8,6 +8,7 @@ namespace FrcSim
         public CameraRig Rig;
         public RobotMechanisms Mech;
         float fps;
+        Camera hudCam;
         static bool Zh => Loc.Lang == "zh";
         static string L(string zh, string en) => Zh ? zh : en;
         static string PhaseName(string p)
@@ -76,8 +77,23 @@ namespace FrcSim
                 GUI.Label(new Rect(Screen.width / 2f - 260, 60, 520, 26), $"{tl / 60}:{tl % 60:00}   {PhaseName(ScoreManager.Phase)}{hubs}", ts);
             }
 
+            // 在自己的機器人上方標「你」,俯視/遠景時才分得出哪台是自己
+            if (hudCam == null) hudCam = Camera.main != null ? Camera.main : FindFirstObjectByType<Camera>();
+            var cam = hudCam;
+            if (cam != null)
+            {
+                Vector3 sp = cam.WorldToScreenPoint(Drive.transform.position + Vector3.up * 1.3f);
+                if (sp.z > 0f)
+                {
+                    var ys = new GUIStyle(GUI.skin.label) { fontSize = 18, fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter, font = UiTheme.Font };
+                    ys.normal.textColor = new Color(1f, 0.92f, 0.2f);
+                    GUI.Label(new Rect(sp.x - 40, Screen.height - sp.y - 14, 80, 28), L("▼ 你", "▼ YOU"), ys);
+                }
+            }
+
             var h = new GUIStyle(GUI.skin.label) { fontSize = 14, font = UiTheme.Font };
             h.normal.textColor = new Color(0.8f, 0.85f, 0.9f);
+            GUI.Box(new Rect(6, Screen.height - 60, Mathf.Min(Screen.width - 12, 1240), 56), "");   // 半透明底框,避免提示被 3D 場景蓋住看不到
             GUI.Label(new Rect(10, Screen.height - 54, 1300, 50),
                 L("WASD 移動   Q/E 旋轉   Shift 慢速   I 吸球   空白/滑鼠 射擊(自動瞄準)   F 場地/車體座標   C 視角   R 重置   Esc 暫停\n2P(紅): 方向鍵移動   , . 旋轉   / 吸球   右Ctrl 射擊","WASD move   Q/E rotate   Shift slow   I intake   Space/Mouse shoot (auto-aim)   F field/robot   C camera   R reset   Esc pause\nP2 (red): arrows move   , . rotate   / intake   RCtrl shoot"), h);
         }

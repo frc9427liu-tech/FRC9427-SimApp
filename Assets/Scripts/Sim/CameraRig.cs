@@ -44,7 +44,10 @@ namespace FrcSim
             }
             else
             {
-                pos = Target.position + new Vector3(0f, 9f, 0f);
+                // 俯視跟隨機器人,但把鏡頭限制在場地內,靠近邊界時不會露出空白(場地 L×W)
+                pos = new Vector3(Mathf.Clamp(Target.position.x, Mathf.Min(5f, L / 2f), Mathf.Max(L - 5f, L / 2f)),
+                                  9f,
+                                  Mathf.Clamp(Target.position.z, Mathf.Min(3.2f, W / 2f), Mathf.Max(W - 3.2f, W / 2f)));
                 rot = Quaternion.LookRotation(Vector3.down, Vector3.forward);
             }
             transform.position = Vector3.SmoothDamp(transform.position, pos, ref velPos, 0.12f, Mathf.Infinity, Time.unscaledDeltaTime);
