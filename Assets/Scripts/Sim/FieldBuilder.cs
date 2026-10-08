@@ -34,8 +34,54 @@ namespace FrcSim
             return g;
         }
 
+        public const float BumpLength = 1.2429f;   // 48.93in:含兩側 15° 斜坡的總長
+        // BUMP 區域 (中心 x, 中心 y, 半長 x, 半寬 y)
+        public static readonly System.Collections.Generic.List<Vector4> BumpRegions = new System.Collections.Generic.List<Vector4>();
+
+        // 場地座標 (x,y) 處的 BUMP 高度(m);不在 BUMP 上為 0。雙斜坡:中心最高 BumpHeight,線性降到邊緣 0(約 15°)
+        public static float BumpHeightAt(float x, float y)
+        {
+            foreach (var r in BumpRegions)
+            {
+                float dx = Mathf.Abs(x - r.x), dy = Mathf.Abs(y - r.y);
+                if (dx <= r.z && dy <= r.w) return SimConstants.BumpHeight * (1f - dx / r.z);
+            }
+            return 0f;
+        }
+
+        // 山形稜柱(沿 x 兩側斜坡、中央稜線),底面中心在 center、底面高度 y=center.y
+        static GameObject Prism(Transform parent, string name, Vector3 center, float lenX, float h, float widZ, Color c)
+        {
+            var g = new GameObject(name);
+            g.transform.SetParent(parent, false);
+            g.transform.position = center;
+            float hx = lenX / 2f, hz = widZ / 2f;
+            var v = new System.Collections.Generic.List<Vector3>();
+            var t = new System.Collections.Generic.List<int>();
+            Vector3 inside = new Vector3(0, h / 3f, 0);
+            void Tri(Vector3 a, Vector3 b, Vector3 cc)
+            {
+                // 每個面獨立頂點(平面著色),繞向自動調整成「法線朝外」(Unity 左手座標:Cross(b-a, c-a) 朝外 = 順時針從外面看)
+                Vector3 outward = (a + b + cc) / 3f - inside;
+                if (Vector3.Dot(Vector3.Cross(b - a, cc - a), outward) < 0f) { var tmp = b; b = cc; cc = tmp; }
+                int i = v.Count; v.Add(a); v.Add(b); v.Add(cc);
+                t.AddRange(new[] { i, i + 1, i + 2 });
+            }
+            Vector3 A = new Vector3(-hx, 0, -hz), B = new Vector3(hx, 0, -hz), C = new Vector3(hx, 0, hz), D = new Vector3(-hx, 0, hz);
+            Vector3 R1 = new Vector3(0, h, -hz), R2 = new Vector3(0, h, hz);
+            Tri(A, D, R2); Tri(A, R2, R1);      // -x 側斜坡
+            Tri(B, R1, R2); Tri(B, R2, C);      // +x 側斜坡
+            Tri(A, B, R1); Tri(D, R2, C);       // 兩個端面
+            var mesh = new Mesh { name = name };
+            mesh.SetVertices(v); mesh.SetTriangles(t, 0); mesh.RecalculateNormals(); mesh.RecalculateBounds();
+            g.AddComponent<MeshFilter>().sharedMesh = mesh;
+            g.AddComponent<MeshRenderer>().sharedMaterial = MakeMat(c);
+            return g;
+        }
+
         public static void Build()
         {
+            BumpRegions.Clear();
             var root = new GameObject("Field").transform;
             float L = SimConstants.FieldLength, W = SimConstants.FieldWidth;
 
@@ -89,12 +135,13 @@ namespace FrcSim
                 Box(root, nm + "_Base", new Vector3(hubCx, 0.15f, W / 2f), new Vector3(hs - 2 * t, 0.3f, hs - 2 * t), c, true);
             }
 
-            // BUMP x2:HUB 兩側(場寬 y = W/2 ± (hub/2 + bump/2))
+            // BUMP x2:HUB 兩側(場寬 y = W/2 ± (hub/2 + bump/2))。官方 GE-26100:雙斜坡(15°)山形剖面,
+            // 沿場長總長 48.93in(1.243m)、峰高 6.51in(0.1654m)、寬 73in(1.854m);車高會隨斜坡抬升(SwerveDrive 用 BumpHeightAt)
             float bumpY = SimConstants.HubSize / 2f + SimConstants.BumpWidth / 2f;
             foreach (float s in new[] { -1f, 1f })
             {
-                Box(root, "Bump", new Vector3(hubCx, SimConstants.BumpHeight / 2f, W / 2f + s * bumpY),
-                    new Vector3(SimConstants.BumpDepth, SimConstants.BumpHeight, SimConstants.BumpWidth), Gray, false);
+                Prism(root, "Bump", new Vector3(hubCx, 0f, W / 2f + s * bumpY), BumpLength, SimConstants.BumpHeight, SimConstants.BumpWidth, new Color(0.09f, 0.10f, 0.12f));   // 官方 BUMP 是深色塑膠,和灰地毯才分得出來
+                BumpRegions.Add(new Vector4(hubCx, W / 2f + s * bumpY, BumpLength / 2f, SimConstants.BumpWidth / 2f));
             }
 
             // TRENCH(依官方圖面 FE-2026 / GE-26200,單位 in→m):沿場邊的隧道,機器人沿場長方向(x)穿過。

@@ -80,7 +80,7 @@ namespace FrcSim
         {
             float dt = Time.fixedDeltaTime;
             // 車身高度固定:被擠進地板會產生巨大摩擦把車煞住,所以每步檢查並拉回
-            float gy = SimConstants.BumperHeight / 2f + 0.03f;
+            float gy = SimConstants.BumperHeight / 2f + 0.03f + FieldBuilder.BumpHeightAt(rb.position.x, rb.position.z);   // 過 BUMP 時車身隨 15° 斜坡抬升
             if (Mathf.Abs(rb.position.y - gy) > 0.005f) { YFixes++; rb.position = new Vector3(rb.position.x, gy, rb.position.z); }
             if (SimDriven)
             {
