@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Runtime.InteropServices;
 
 namespace FrcSim
@@ -40,6 +40,42 @@ namespace FrcSim
         [DllImport("user32.dll")]
         static extern IntPtr GetActiveWindow();
 
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
+        struct BrowseInfo
+        {
+            public IntPtr hwndOwner, pidlRoot;
+            public IntPtr pszDisplayName;
+            public string lpszTitle;
+            public uint ulFlags;
+            public IntPtr lpfn, lParam;
+            public int iImage;
+        }
+        [DllImport("shell32.dll", CharSet = CharSet.Auto)] static extern IntPtr SHBrowseForFolder(ref BrowseInfo bi);
+        [DllImport("shell32.dll", CharSet = CharSet.Auto)] static extern bool SHGetPathFromIDList(IntPtr pidl, System.Text.StringBuilder path);
+
+        // 選資料夾(機器人程式專案資料夾)
+        public static string PickFolder(string title)
+        {
+#if UNITY_STANDALONE_WIN && !UNITY_EDITOR
+            try
+            {
+                var bi = new BrowseInfo
+                {
+                    hwndOwner = GetActiveWindow(),
+                    pszDisplayName = Marshal.AllocHGlobal(1024),
+                    lpszTitle = title,
+                    ulFlags = 0x0040 | 0x0010 | 0x0001   // NEWDIALOGSTYLE | EDITBOX | RETURNONLYFSDIRS
+                };
+                IntPtr pidl = SHBrowseForFolder(ref bi);
+                Marshal.FreeHGlobal(bi.pszDisplayName);
+                if (pidl == IntPtr.Zero) return null;
+                var sb = new System.Text.StringBuilder(1024);
+                return SHGetPathFromIDList(pidl, sb) ? sb.ToString() : null;
+            }
+            catch (Exception e) { UnityEngine.Debug.LogError("PickFolder: " + e.Message); }
+#endif
+            return null;
+        }
         // filter 例: "GLB 模型 (*.glb)\0*.glb\0所有檔案 (*.*)\0*.*\0"(結尾要有兩個 \0)
         public static string OpenFile(string title, string filter)
         {

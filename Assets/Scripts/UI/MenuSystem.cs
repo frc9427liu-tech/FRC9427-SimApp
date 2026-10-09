@@ -255,9 +255,9 @@ namespace FrcSim
                     return Loc.T("setup.code") + ":  " + (c == "" ? Loc.T("setup.none") : System.IO.Path.GetFileName(c.TrimEnd('\\', '/')));
                 }, () =>
                 {
-                    string p = NativeDialogs.OpenFile(Loc.T("setup.code"), "build.gradle\0build.gradle\0*.*\0*.*\0");
+                    string p = NativeDialogs.PickFolder(Loc.T("setup.code"));
                     if (string.IsNullOrEmpty(p)) return;
-                    PlayerPrefs.SetString("robotProject", System.IO.Path.GetDirectoryName(p));
+                    PlayerPrefs.SetString("robotProject", FindGradleRoot(p));
                     PlayerPrefs.Save();
                 }),
                 new Item(() => Loc.T("setup.real") + ":  " + Loc.T(PlayerPrefs.GetInt("useRealCode", 0) == 1 ? "on" : "off"), () =>
@@ -278,6 +278,21 @@ namespace FrcSim
             Show(s, false);
         }
 
+        // 使用者可能選到外層資料夾:往下找 3 層內有 build.gradle 的那個
+        static string FindGradleRoot(string dir)
+        {
+            try
+            {
+                if (System.IO.File.Exists(System.IO.Path.Combine(dir, "build.gradle"))) return dir;
+                foreach (var f in System.IO.Directory.GetFiles(dir, "build.gradle", System.IO.SearchOption.AllDirectories))
+                {
+                    string d = System.IO.Path.GetDirectoryName(f);
+                    if (d.Substring(dir.Length).Split(System.IO.Path.DirectorySeparatorChar).Length <= 4) return d;
+                }
+            }
+            catch (Exception) { }
+            return dir;
+        }
         void ShowSettings(bool game)
         {
             MenuScreen s = null;
