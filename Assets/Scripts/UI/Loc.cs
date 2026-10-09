@@ -46,6 +46,7 @@ namespace FrcSim
             { "setup.ctl",     new[]{ "操控方式", "Drive style" } },
             { "ctl.swerve",    new[]{ "全向(左搖桿移動)", "Swerve (left stick)" } },
             { "ctl.tank",      new[]{ "LEO 坦克(左右搖桿)", "LEO tank (two sticks)" } },
+            { "set.rscale",   new[]{ "畫質(渲染比例)", "Quality (render scale)" } },
             { "setup.start",   new[]{ "開始", "Start" } },
             { "set.unlimited", new[]{ "不限", "Unlimited" } },
             { "on",            new[]{ "開", "On" } },

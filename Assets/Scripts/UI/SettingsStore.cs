@@ -11,6 +11,14 @@ namespace FrcSim
             get => Mathf.Clamp(PlayerPrefs.GetInt("fpsIdx", 0), 0, FpsOptions.Length - 1);
             set { PlayerPrefs.SetInt("fpsIdx", value); PlayerPrefs.Save(); }
         }
+        public static readonly float[] RenderScales = { 1.0f, 1.5f, 2.0f };   // 超取樣比例(畫質)
+        public static int RenderScaleIndex
+        {
+            get => Mathf.Clamp(PlayerPrefs.GetInt("rscale", 1), 0, RenderScales.Length - 1);
+            set { PlayerPrefs.SetInt("rscale", value); PlayerPrefs.Save(); }
+        }
+        public static float RenderScale => RenderScales[RenderScaleIndex];
+
         public static bool VSync
         {
             get => PlayerPrefs.GetInt("vsync", 0) == 1;

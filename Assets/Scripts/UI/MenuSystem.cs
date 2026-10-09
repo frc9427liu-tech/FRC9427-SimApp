@@ -318,6 +318,11 @@ namespace FrcSim
                     SettingsStore.FpsIndex = (SettingsStore.FpsIndex + 1) % SettingsStore.FpsOptions.Length;
                     SettingsStore.Apply(); RefreshScreen();
                 }),
+                new Item(() => Loc.T("set.rscale") + ":  " + Mathf.RoundToInt(SettingsStore.RenderScale * 100f) + "%", () =>
+                {
+                    SettingsStore.RenderScaleIndex = (SettingsStore.RenderScaleIndex + 1) % SettingsStore.RenderScales.Length;
+                    RefreshScreen();
+                }),
                 new Item(() => Loc.T("set.vsync") + ":  " + Loc.T(SettingsStore.VSync ? "on" : "off"), () =>
                 {
                     SettingsStore.VSync = !SettingsStore.VSync; SettingsStore.Apply(); RefreshScreen();
@@ -409,7 +414,7 @@ namespace FrcSim
             // 遊戲中按 Esc / 手把 Back 開暫停選單
             if (!menuVisible && GameSession.Active)
             {
-                if (Input.GetKeyDown(KeyCode.Escape) || Input.GetKeyDown(KeyCode.JoystickButton6) || Pad.Down(Pad.Start) || Pad.Down(Pad.Back)) ShowPause();
+                if (Input.GetKeyDown(KeyCode.Escape) || Input.GetKeyDown(KeyCode.JoystickButton6) || Pad.AnyDown(Pad.Start) || Pad.AnyDown(Pad.Back)) ShowPause();
                 return;
             }
             if (!menuVisible || cur == null) return;

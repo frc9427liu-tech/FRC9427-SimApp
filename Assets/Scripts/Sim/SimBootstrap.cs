@@ -38,6 +38,7 @@ namespace FrcSim
             cam.clearFlags = CameraClearFlags.SolidColor;
             cam.nearClipPlane = 0.1f;
             cam.farClipPlane = 80f;
+            camObj.AddComponent<SuperSample>();
             var rig = camObj.AddComponent<CameraRig>();
             rig.Orbit = true;
 

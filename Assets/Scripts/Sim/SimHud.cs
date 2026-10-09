@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace FrcSim
 {
@@ -60,6 +60,7 @@ namespace FrcSim
         void OnGUI()
         {
             if (Drive == null) return;
+            GUI.depth = -100;   // HUD 畫在最上層(超取樣貼圖在 depth 1000,畫在最底)
             // 依螢幕高度縮放(高解析度螢幕上字不會太小/面板不會太擠)
             float sc = Mathf.Clamp(Screen.height / 900f, 0.8f, 1.8f);
             GUI.matrix = Matrix4x4.Scale(new Vector3(sc, sc, 1f));
@@ -116,6 +117,7 @@ namespace FrcSim
             if (cam != null)
             {
                 Vector3 sp = cam.WorldToScreenPoint(Drive.transform.position + Vector3.up * 1.3f);
+                if (SuperSample.Scale > 1.01f) { sp.x /= SuperSample.Scale; sp.y /= SuperSample.Scale; }   // 超取樣時相機像素是螢幕的 Scale 倍
                 if (sp.z > 0f)
                 {
                     var ys = Style(16, new Color(1f, 0.92f, 0.2f), TextAnchor.MiddleCenter, FontStyle.Bold);

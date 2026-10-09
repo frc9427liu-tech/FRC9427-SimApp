@@ -70,13 +70,13 @@ namespace FrcSim
                 h.Axes[1] = -rawL; h.Axes[5] = -rawR;
                 h.Buttons[0] = Pad.Held(Pad.A) || kA;
                 h.Buttons[1] = Pad.Held(Pad.B) || kB;
-                float turret = (Pad.Held(Pad.DRight) || Input.GetKey(KeyCode.X) ? 1f : 0f) - (Pad.Held(Pad.DLeft) || Input.GetKey(KeyCode.Z) ? 1f : 0f);
+                float turret = (Pad2.Held(Pad.DRight) || Input.GetKey(KeyCode.X) ? 1f : 0f) - (Pad2.Held(Pad.DLeft) || Input.GetKey(KeyCode.Z) ? 1f : 0f);
                 h.Axes2[0] = turret;
-                h.Axes2[3] = Mathf.Max((Input.GetKey(KeyCode.Space) || Input.GetMouseButton(0)) ? 1f : 0f, Pad.RT);
-                h.Axes2[2] = Pad.LT;
-                h.Buttons2[5] = Pad.Held(Pad.RB) || Input.GetKey(KeyCode.V);
-                h.Buttons2[2] = Pad.Held(Pad.X);
-                h.Pov2 = (Pad.Held(Pad.DUp) || kUp) ? 0 : -1;
+                h.Axes2[3] = Mathf.Max((Input.GetKey(KeyCode.Space) || Input.GetMouseButton(0)) ? 1f : 0f, Pad2.RT);
+                h.Axes2[2] = Pad2.LT;
+                h.Buttons2[5] = Pad2.Held(Pad.RB) || Input.GetKey(KeyCode.V);
+                h.Buttons2[2] = Pad2.Held(Pad.X);
+                h.Pov2 = (Pad2.Held(Pad.DUp) || kUp) ? 0 : -1;
             }
             else if (halLive)
             {
@@ -97,7 +97,7 @@ namespace FrcSim
             {
                 if (tank) { if (Input.GetKeyDown(KeyCode.I)) intakeLatch = !intakeLatch; Mech.IntakeDown = intakeLatch || Pad.Held(Pad.A); }
                 else if (Input.GetKeyDown(KeyCode.I) || Input.GetKeyDown(KeyCode.JoystickButton0) || Pad.Down(Pad.A)) Mech.IntakeDown = !Mech.IntakeDown;
-                Mech.Shooting = Input.GetKey(KeyCode.Space) || Input.GetMouseButton(0) || Pad.RT > 0.5f || (!tank && (Input.GetKey(KeyCode.JoystickButton1) || Pad.Held(Pad.B)));
+                Mech.Shooting = Input.GetKey(KeyCode.Space) || Input.GetMouseButton(0) || Pad2.RT > 0.5f || (!tank && (Input.GetKey(KeyCode.JoystickButton1) || Pad.Held(Pad.B)));
             }
 
             if (Input.GetKeyDown(KeyCode.F)) Drive.FieldCentric = !Drive.FieldCentric;
