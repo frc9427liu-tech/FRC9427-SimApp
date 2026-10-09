@@ -155,7 +155,7 @@ namespace FrcSim
             s.Refreshers.Add(() => hint.text = Loc.T("hint.nav"));
 
             // 右下角浮水印
-            var wm = UiKit.Label("Watermark", rt, "FRC 9427  ·  MADE IN UNITY", 22, new Color(1, 1, 1, 0.25f), TextAnchor.LowerRight);
+            var wm = UiKit.Label("Watermark", rt, "FRC 9427  ·  MADE IN UNITY  ·  v" + UpdateCheck.Current, 22, new Color(1, 1, 1, 0.25f), TextAnchor.LowerRight);
             UiKit.PlaceTL(wm.rectTransform, 1300, 1020, 580, 30);
 
             extra?.Invoke(go.GetComponent<RectTransform>());
