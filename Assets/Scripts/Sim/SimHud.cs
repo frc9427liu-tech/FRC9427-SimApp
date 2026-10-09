@@ -103,6 +103,15 @@ namespace FrcSim
                 GUI.Label(new Rect(cx - 220, 56, 440, 24), $"{tl / 60}:{tl % 60:00}   {PhaseName(ScoreManager.Phase)}{hubs}", Style(15, dim, TextAnchor.UpperCenter, FontStyle.Bold));
             }
 
+            // ---- 開局提醒(例如專案沒有模擬設定檔、改用內建行為)
+            if (GameSession.Notice != "" && Time.time < GameSession.NoticeUntil)
+            {
+                float nw = Mathf.Min(W - 20, 820);
+                Panel(new Rect(cx - nw / 2f, 124, nw, 48), 0.85f);
+                var ns = Style(15, new Color(1f, 0.85f, 0.4f), TextAnchor.UpperLeft, FontStyle.Bold); ns.wordWrap = true;
+                GUI.Label(new Rect(cx - nw / 2f + 12, 128, nw - 24, 44), GameSession.Notice, ns);
+            }
+
             // ---- 真實程式模式的 AUTO 階段:機器人程式自己跑,手把無效(符合真實比賽),提示並可按 N 跳過
             if (GameSession.Hal != null && GameSession.Hal.Connected && ScoreManager.ClockOn && ScoreManager.MatchTime < 20f)
             {

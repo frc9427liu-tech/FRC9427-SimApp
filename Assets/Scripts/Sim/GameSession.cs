@@ -7,6 +7,8 @@ namespace FrcSim
     {
         public static bool Active;
         public static float StartTime;
+        public static string Notice = "";        // 開局時要提醒使用者的訊息(例如專案沒有模擬設定檔)
+        public static float NoticeUntil;
         public static SwerveDrive Drive;
         public static RobotMechanisms Mech;
         public static HalSim Hal;
@@ -73,6 +75,21 @@ namespace FrcSim
                 catch { }
             }
             if (System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-norealcode") >= 0) proj = "";
+            // 使用者要跑真實程式,但選的專案沒有對應的模擬設定檔(或操控方式和專案型式不合)→ 改用內建行為,並明講原因(不要靜靜地不動)
+            Notice = "";
+            if (projectOverride == null && PlayerPrefs.GetInt("useRealCode", 0) == 1)
+            {
+                string chosen = PlayerPrefs.GetString("robotProject", "");
+                if (string.IsNullOrEmpty(proj) && !string.IsNullOrEmpty(chosen))
+                {
+                    bool hasProfile = System.IO.File.Exists(System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Application.dataPath), "Sim", SimProject.Profile(chosen) + ".mech.json"));
+                    Notice = hasProfile
+                        ? "這個專案是 swerve 型式,請在『機器人設定』把操控方式改成『全向』再開始,目前改用內建行為"
+                        : "這個專案還沒有模擬設定檔(Sim\\" + SimProject.Profile(chosen) + ".mech.json),目前只能用內建行為;見 docs/ARCHITECTURE.md";
+                }
+                else if (string.IsNullOrEmpty(proj) && string.IsNullOrEmpty(chosen)) Notice = "還沒選機器人程式專案,使用內建行為(機器人設定 → 機器人程式)";
+                if (Notice != "") { NoticeUntil = Time.time + 12f; Debug.LogWarning("[GameSession] " + Notice); }
+            }
             if (!string.IsNullOrEmpty(proj) && System.IO.File.Exists(System.IO.Path.Combine(proj, "gradlew.bat")))
             {
                 Hal = robot.AddComponent<HalSim>();
