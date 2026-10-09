@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using Newtonsoft.Json.Linq;
@@ -35,6 +35,10 @@ namespace FrcSim
         string gyro;
         bool loaded;
         float acc;
+        // 坦克底盤(LEO):左右各幾顆馬達,車速 = 兩側輪速平均,角速度 = 兩側差 / 輪距
+        bool tank; List<string> tankL = new List<string>(), tankR = new List<string>();
+        double tankTrack = 0.62, fwdSign = 1;
+        public JObject MechCfg;   // mech.json 的 mechanisms 區塊(RobotMechanisms 用來找滾輪/手臂/飛輪等馬達)
 
         readonly Dictionary<string, List<KeyValuePair<double, double>>> sentLogs = new Dictionary<string, List<KeyValuePair<double, double>>>();
         public float EchoLagMs, MaxEchoLagMs;
@@ -103,8 +107,19 @@ namespace FrcSim
                         links.Add(new Link { Sensor = (string)l["sensor"], Motor = (string)l["motor"], Ratio = (double?)l["ratio"] ?? 1, Offset = (double?)l["offset"] ?? 0, Invert = (bool?)l["invert"] ?? false });
                     foreach (var p in (JObject)j["loads"] ?? new JObject()) loads[p.Key] = (JObject)p.Value;
                     foreach (var a in (JArray)j["agentMotors"] ?? new JArray()) agentMotors.Add((string)a);   // 由 Java agent 同進程模擬的馬達,Unity 端不要碰
+                    MechCfg = j["mechanisms"] as JObject;
                     var ch = j["chassis"] as JObject;
-                    if (ch != null)
+                    if (ch != null && (string)ch["type"] == "tank")
+                    {
+                        tank = true;
+                        foreach (var n in (JArray)ch["left"]) tankL.Add((string)n);
+                        foreach (var n in (JArray)ch["right"]) tankR.Add((string)n);
+                        wheelRadius = (double?)ch["wheelRadius"] ?? wheelRadius;
+                        driveRatio = (double?)ch["driveRatio"] ?? driveRatio;
+                        tankTrack = (double?)ch["track"] ?? tankTrack;
+                        fwdSign = (double?)ch["forwardSign"] ?? 1;
+                    }
+                    else if (ch != null)
                     {
                         driveRatio = (double?)ch["driveRatio"] ?? driveRatio;
                         wheelRadius = (double?)ch["wheelRadius"] ?? wheelRadius;
@@ -218,6 +233,20 @@ namespace FrcSim
 
         void StepChassis(float dt)
         {
+            if (tank && Drive != null)
+            {
+                double Side(List<string> l) { double s = 0; foreach (var n in l) s += Vel(n); return l.Count == 0 ? 0 : s / l.Count; }
+                double vl = fwdSign * Side(tankL) / driveRatio * 2 * Math.PI * wheelRadius;
+                double vr = fwdSign * Side(tankR) / driveRatio * 2 * Math.PI * wheelRadius;
+                double v = (vl + vr) / 2, w = (vr - vl) / tankTrack;
+                float th0 = Drive.HeadingRad;
+                Drive.SimDriven = true;
+                Drive.SimVelField = new Vector2((float)(v * Mathf.Cos(th0)), (float)(v * Mathf.Sin(th0)));
+                Drive.SimOmega = (float)w;
+                Debug = $"tank vl={vl:0.00} vr={vr:0.00}";
+                ModuleHits = 4;
+                return;
+            }
             if (!loaded || modules.Count == 0 || Drive == null) return;
             // 最小平方法求 (vx, vy, omega):每個模組速度 v_i = (vx - w*y_i, vy + w*x_i)
             int n = 0; double svx = 0, svy = 0, srr = 0, srv = 0;

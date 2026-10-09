@@ -1,0 +1,35 @@
+{
+  "note": "LEO(坦克 + Talon 機構)。底盤原本是 SparkMax,模擬用 Talon 替身(Tools/sim/overlay/DriveIOSparkMax.java)。",
+  "agentMotors": ["Talon FX (v6)[1]", "Talon FX (v6)[2]", "Talon FX (v6)[3]", "Talon FX (v6)[4]", "Talon FX (v6)[5]", "Talon FX (v6)[6]", "Talon FX (v6)[7]", "Talon FX (v6)[8]", "Talon FX (v6)[9]", "Talon FX (v6)[10]"],
+  "links": [],
+  "loads": {
+    "[1]": { "inertia": 0.001, "friction": 0.01, "note": "drive left follower" },
+    "[2]": { "inertia": 0.001, "friction": 0.01, "note": "drive right follower" },
+    "[3]": { "inertia": 0.001, "friction": 0.01, "note": "drive left leader" },
+    "[4]": { "inertia": 0.001, "friction": 0.01, "note": "drive right leader" },
+    "[5]": { "inertia": 0.0002, "friction": 0.01, "minRot": -0.3, "maxRot": 10.0, "note": "intake arm: down = positive, 0..10 rev" },
+    "[6]": { "inertia": 0.00045, "friction": 0.005, "note": "intake roller leader" },
+    "[7]": { "inertia": 0.00045, "friction": 0.005, "note": "intake roller follower" },
+    "[8]": { "inertia": 0.00365, "friction": 0.005, "note": "orbit" },
+    "[9]": { "inertia": 0.00155, "friction": 0.005, "note": "flywheel" },
+    "[10]": { "inertia": 0.003, "friction": 0.01, "minRot": -5.0, "maxRot": 5.0, "note": "turret" }
+  },
+  "chassis": {
+    "type": "tank",
+    "left": ["Talon FX (v6)[3]", "Talon FX (v6)[1]"],
+    "right": ["Talon FX (v6)[4]", "Talon FX (v6)[2]"],
+    "wheelRadius": 0.0762,
+    "driveRatio": 9.0,
+    "track": 0.62,
+    "forwardSign": -1
+  },
+  "mechanisms": {
+    "roller": "Talon FX (v6)[6]",
+    "arm": "Talon FX (v6)[5]",
+    "armDownRev": 2.0,
+    "feeder": "Talon FX (v6)[8]",
+    "flywheel": "Talon FX (v6)[9]",
+    "turret": "Talon FX (v6)[10]",
+    "turretRatio": 20.0
+  }
+}

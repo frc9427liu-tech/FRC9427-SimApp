@@ -47,8 +47,38 @@ namespace FrcSim
         public MechSim Sim;              // 有的話:機構狀態全部來自真實機器人程式的馬達輸出
         const double ArmMPerRev = 0.019949;
 
+        // 依 mech.json 的 mechanisms 區塊找馬達(LEO 這類沒有 Hood、手動瞄準的機器人)
+        void RealStepCfg(Newtonsoft.Json.Linq.JObject cfg)
+        {
+            string Name(string k) => (string)cfg[k];
+            float rollerRps = Mathf.Abs((float)Sim.Vel(Name("roller")));
+            double armDown = (double?)cfg["armDownRev"] ?? 2.0;
+            IntakeDown = Sim.Pos(Name("arm")) > armDown;
+            ArmExt = Mathf.MoveTowards(ArmExt, IntakeDown ? ArmMax : 0f, ArmSpeed * Time.fixedDeltaTime);
+            FlywheelRps = Mathf.Abs((float)Sim.Vel(Name("flywheel")));
+            HoodDeg = 15f;   // LEO 沒有 Hood 馬達:固定仰角
+            float feedRps = Mathf.Abs((float)Sim.Vel(Name("feeder")));
+            double ratio = (double?)cfg["turretRatio"] ?? 20.0;
+            TurretRad = Wrap((float)(-Sim.Pos(Name("turret")) / ratio * 2.0 * System.Math.PI));   // 往右(正)= 順時針 = 場地角度減少
+            if (TurretVisual != null) TurretVisual.localRotation = Quaternion.Euler(0f, -TurretRad * Mathf.Rad2Deg, 0f);
+            if (ArmVisual != null)
+            {
+                ArmVisual.localPosition = new Vector3(SimConstants.BumperLength / 2f + ArmExt * 0.5f - 0.02f, 0.02f, 0f);
+                ArmVisual.localScale = new Vector3(0.05f + ArmExt, 0.10f, 0.62f);
+            }
+            if (ArmExt >= 0.2f && rollerRps > 10f && Held < Capacity) Collect();
+            Shooting = feedRps > 15f && FlywheelRps > 15f;
+            Ready = Shooting;
+            if (Shooting && Held > 0 && Time.time >= nextFire)
+            {
+                Fire(Drive.Pose2d, Drive.HeadingRad);
+                nextFire = Time.time + ShootInterval;
+            }
+        }
+
         void RealStep()
         {
+            if (Sim.MechCfg != null) { RealStepCfg(Sim.MechCfg); return; }
             // Intake 手臂(齒條,馬達 id 30)、滾輪(41)、飛輪(9)、Hood(15)、扳機(13)、輸送帶(31)
             float rollerRps = Mathf.Abs((float)Sim.Vel("Talon FX (v6)[41]"));
             // 手臂位置馬達的硬限位在原始座標不好還原(反轉馬達+軟限位),所以用「滾輪在轉」當作 intake 放下(程式的 intakerun = 手臂放下 + 滾輪 40 RPS)

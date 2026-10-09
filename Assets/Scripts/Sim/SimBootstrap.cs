@@ -50,6 +50,14 @@ namespace FrcSim
                     new GameObject("RealTest").AddComponent<RealTest>();
                     return;
                 }
+                int li = System.Array.IndexOf(a, "-leotest");
+                if (li >= 0 && li + 1 < a.Length)
+                {
+                    PlayerPrefs.SetInt("tankMode", 1);
+                    GameSession.Begin(rig, false, a[li + 1]);
+                    new GameObject("LeoTest").AddComponent<LeoTest>();
+                    return;
+                }
                 int hi = System.Array.IndexOf(a, "-halsimtest");
                 if (hi >= 0 && hi + 1 < a.Length)
                 {

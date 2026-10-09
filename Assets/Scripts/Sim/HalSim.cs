@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -13,6 +13,53 @@ using Debug = UnityEngine.Debug;
 
 namespace FrcSim
 {
+
+    // 把機器人專案準備成模擬器能 build 的「工作副本」:
+    //  - GradleRIO 不能在 OneDrive 或含中文的路徑 build → 複製到 C:\FRC9427SimWork\<名稱>
+    //  - 這台電腦的 Windows 應用程式控制原則會擋 REVLibDriver.dll(SparkMax 載不起來)→ 用 Sim\overlay 的替身檔覆蓋(只改副本)
+    public static class SimProject
+    {
+        static string SimDir => Path.Combine(Path.GetDirectoryName(Application.dataPath), "Sim");
+
+        // 專案資料夾名 → 模擬設定名(Sim\<名>.mech.json 的 <名> 是資料夾名的開頭即可,例如 LEO-新版 → LEO)
+        public static string Profile(string dir)
+        {
+            string name = Path.GetFileName(dir.TrimEnd('\\', '/'));
+            try
+            {
+                foreach (var f in Directory.GetFiles(SimDir, "*.mech.json"))
+                {
+                    string b = Path.GetFileName(f); b = b.Substring(0, b.Length - ".mech.json".Length);
+                    if (name.StartsWith(b, StringComparison.OrdinalIgnoreCase)) return b;
+                }
+            }
+            catch { }
+            return name;
+        }
+
+        public static string Prepare(string dir, out string profile)
+        {
+            profile = Profile(dir);
+            string name = Path.GetFileName(dir.TrimEnd('\\', '/'));
+            bool hasSpark = File.Exists(Path.Combine(dir, "src", "main", "java", "frc", "robot", "subsystems", "drive", "DriveIOSparkMax.java"));
+            bool needCopy = dir.IndexOf("OneDrive", StringComparison.OrdinalIgnoreCase) >= 0 || System.Linq.Enumerable.Any(name, c => c > 127) || hasSpark;
+            if (!needCopy) return dir;
+            string dst = @"C:\FRC9427SimWork\" + System.Text.RegularExpressions.Regex.Replace(profile, "[^A-Za-z0-9_]", "_");
+            try
+            {
+                var psi = new ProcessStartInfo("robocopy", "\"" + dir.TrimEnd('\\') + "\" \"" + dst + "\" /MIR /XD .gradle build .git bin /NFL /NDL /NJH /NJS /NP")
+                { UseShellExecute = false, CreateNoWindow = true };
+                using (var p = Process.Start(psi)) p.WaitForExit(120000);
+                string ov = Path.Combine(SimDir, "overlay");
+                if (Directory.Exists(ov))
+                    foreach (var o in Directory.GetFiles(ov, "*.java"))
+                        foreach (var target in Directory.GetFiles(Path.Combine(dst, "src"), Path.GetFileName(o), SearchOption.AllDirectories))
+                            File.Copy(o, target, true);
+            }
+            catch (Exception e) { UnityEngine.Debug.LogError("SimProject.Prepare: " + e.Message); return dir; }
+            return dst;
+        }
+    }
     // 連到使用者「真實、沒改過」的機器人 Java 程式(WPILib simulateJava + HALSim WebSocket),
     // 把手把輸入/Enable 送進去,讀回馬達輸出。不在機器人專案裡加任何模擬專用程式。
     public class HalSim : MonoBehaviour
@@ -24,6 +71,10 @@ namespace FrcSim
         public bool Autonomous;
         public float[] Axes = new float[6];             // 0 LX,1 LY,2 LT,3 RT,4 RX,5 RY
         public bool[] Buttons = new bool[12];
+        // 第二支手把(操作手,device 1):LEO 這類兩支手把的程式用
+        public float[] Axes2 = new float[6];
+        public bool[] Buttons2 = new bool[12];
+        public int Pov2 = -1;
 
         public string Status = "idle";
         public int MessagesIn;
@@ -129,6 +180,8 @@ namespace FrcSim
                 string init = Path.Combine(Path.GetTempPath(), "frc9427-enable-ws.init.gradle");
                 File.WriteAllText(init, InitScript);
 
+                string workDir = SimProject.Prepare(ProjectDir, out string profile);
+                ProjectDir = workDir;
                 string gradlew = Path.Combine(ProjectDir, "gradlew.bat");
                 if (!File.Exists(gradlew)) { Status = "gradlew.bat not found in project"; return; }
 
@@ -147,7 +200,8 @@ namespace FrcSim
                 if (File.Exists(agentJar) && !File.Exists(Path.Combine(Path.GetDirectoryName(agentJar), "noagent.txt")))
                 {
                     psi.EnvironmentVariables["JAVA_TOOL_OPTIONS"] += " -javaagent:" + agentJar.Replace('\\', '/');
-                    string motorsTxt = Path.Combine(Path.GetDirectoryName(agentJar), "agent-motors.txt");
+                    string motorsTxt = Path.Combine(Path.GetDirectoryName(agentJar), profile + ".agent-motors.txt");
+                    if (!File.Exists(motorsTxt)) motorsTxt = Path.Combine(Path.GetDirectoryName(agentJar), "agent-motors.txt");
                     if (File.Exists(motorsTxt)) psi.EnvironmentVariables["JAVA_TOOL_OPTIONS"] += " -Dsimagent.motors=" + motorsTxt.Replace('\\', '/');
                 }
                 // 只讓機器人送我們要用的訊息:預設它每個週期把所有 HAL 裝置狀態都丟過來(~11k 則/秒),會擠掉 Unity→機器人的回授
@@ -220,6 +274,7 @@ namespace FrcSim
                             + ",\">autonomous\":" + (Autonomous ? "true" : "false") + ",\">new_data\":true}}";
                         await Send(ds, ct);
                         await Send(JoystickJson(), ct);
+                        await Send(JoystickJson2(), ct);
                     }
                     if (outbox.Count > MaxOutbox) MaxOutbox = outbox.Count;
                     int guard = 0;
@@ -228,6 +283,17 @@ namespace FrcSim
                 catch { break; }
                 await Task.Delay(20, ct);   // 試過 4ms(回授更快)反而讓閉環更不穩,先維持 20ms
             }
+        }
+
+        string JoystickJson2()
+        {
+            var sb = new StringBuilder();
+            sb.Append("{\"type\":\"Joystick\",\"device\":\"1\",\"data\":{\">axes\":[");
+            for (int i = 0; i < Axes2.Length; i++) { if (i > 0) sb.Append(','); sb.Append(Axes2[i].ToString("0.####", System.Globalization.CultureInfo.InvariantCulture)); }
+            sb.Append("],\">povs\":[" + Pov2 + "],\">buttons\":[");
+            for (int i = 0; i < Buttons2.Length; i++) { if (i > 0) sb.Append(','); sb.Append(Buttons2[i] ? "true" : "false"); }
+            sb.Append("]}}");
+            return sb.ToString();
         }
 
         string JoystickJson()

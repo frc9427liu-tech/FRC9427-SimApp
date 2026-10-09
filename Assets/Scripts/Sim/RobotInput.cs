@@ -41,13 +41,15 @@ namespace FrcSim
 
             // LEO 坦克模式:左/右搖桿各控一側輪(死區 0.08 + 平方,照 LEO DriveSubsystem.tankDrive)
             bool tank = PlayerPrefs.GetInt("tankMode", 1) == 1;
-            float tankL = 0f, tankR = 0f;
+            float tankL = 0f, tankR = 0f, rawL = 0f, rawR = 0f;
             if (tank)
             {
                 float kbF = (Input.GetKey(KeyCode.W) ? 1f : 0f) - (Input.GetKey(KeyCode.S) ? 1f : 0f);
                 float kbR = (Input.GetKey(KeyCode.D) ? 1f : 0f) - (Input.GetKey(KeyCode.A) ? 1f : 0f);
-                tankL = TankShape(Mathf.Clamp(Pad.LY + kbF + kbR, -1f, 1f));
-                tankR = TankShape(Mathf.Clamp(Pad.RY + kbF - kbR, -1f, 1f));
+                rawL = Mathf.Clamp(Pad.LY + kbF + kbR, -1f, 1f);
+                rawR = Mathf.Clamp(Pad.RY + kbF - kbR, -1f, 1f);
+                tankL = TankShape(rawL);
+                tankR = TankShape(rawR);
                 Drive.FieldCentric = false;   // 坦克:往前 = 車頭(intake)方向,不是場地方向
                 fwd = (tankL + tankR) * 0.5f; strafeRight = 0f; rot = (tankR - tankL) * 0.5f;
                 if (Input.GetKey(KeyCode.Q)) rot += 1f; if (Input.GetKey(KeyCode.E)) rot -= 1f;
@@ -55,7 +57,27 @@ namespace FrcSim
             }
 
             float scale = Input.GetKey(KeyCode.LeftShift) ? 0.35f : 1f;
-            if (GameSession.Hal != null)
+            if (GameSession.Hal != null && tank)
+            {
+                // LEO 真實程式:一支實體手把同時當「駕駛(device 0)」與「操作手(device 1)」,照 LEO RobotContainer 的綁定
+                //  駕駛:左/右搖桿(原始值,上 = 負)= 左/右側輪,A 按住 = 放下 intake,B 按住 = 滾輪收球
+                //  操作手:十字鍵左右 = 砲塔(axis0),RT = 發射,RB = 送球(Orbit),X = 吐球,十字鍵上 = 收起手臂
+                var h = GameSession.Hal;
+                bool kA = Input.GetKey(KeyCode.I), kB = Input.GetKey(KeyCode.O), kUp = Input.GetKey(KeyCode.U);
+                for (int i = 0; i < 6; i++) { h.Axes[i] = 0f; h.Axes2[i] = 0f; }
+                for (int i = 0; i < h.Buttons.Length; i++) { h.Buttons[i] = false; h.Buttons2[i] = false; }
+                h.Axes[1] = -rawL; h.Axes[5] = -rawR;
+                h.Buttons[0] = Pad.Held(Pad.A) || kA;
+                h.Buttons[1] = Pad.Held(Pad.B) || kB;
+                float turret = (Pad.Held(Pad.DRight) || Input.GetKey(KeyCode.X) ? 1f : 0f) - (Pad.Held(Pad.DLeft) || Input.GetKey(KeyCode.Z) ? 1f : 0f);
+                h.Axes2[0] = turret;
+                h.Axes2[3] = Mathf.Max((Input.GetKey(KeyCode.Space) || Input.GetMouseButton(0)) ? 1f : 0f, Pad.RT);
+                h.Axes2[2] = Pad.LT;
+                h.Buttons2[5] = Pad.Held(Pad.RB) || Input.GetKey(KeyCode.V);
+                h.Buttons2[2] = Pad.Held(Pad.X);
+                h.Pov2 = (Pad.Held(Pad.DUp) || kUp) ? 0 : -1;
+            }
+            else if (GameSession.Hal != null)
             {
                 // 真實機器人程式:鍵盤/手把變成虛擬 Xbox 搖桿送進 HALSim(axis0=LX 右為正,axis1=LY 上為負,axis4=RX 右為正)
                 var h = GameSession.Hal;
@@ -70,7 +92,7 @@ namespace FrcSim
             }
             else Drive.Drive(fwd * scale, -strafeRight * scale, rot * scale);
 
-            if (Mech != null)
+            if (Mech != null && !(GameSession.Hal != null && tank))
             {
                 if (tank) { if (Input.GetKeyDown(KeyCode.I)) intakeLatch = !intakeLatch; Mech.IntakeDown = intakeLatch || Pad.Held(Pad.A); }
                 else if (Input.GetKeyDown(KeyCode.I) || Input.GetKeyDown(KeyCode.JoystickButton0) || Pad.Down(Pad.A)) Mech.IntakeDown = !Mech.IntakeDown;

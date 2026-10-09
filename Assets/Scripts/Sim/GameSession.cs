@@ -47,14 +47,25 @@ namespace FrcSim
             // 真實機器人程式(設定畫面選的專案;沒選就用內建行為)
             // 預設關閉:真實程式模式還在實驗(閉環時序不穩),內建行為才是穩定版
             string proj = projectOverride ?? (PlayerPrefs.GetInt("useRealCode", 0) == 1 ? PlayerPrefs.GetString("robotProject", "") : "");
-            if (string.IsNullOrEmpty(proj) && PlayerPrefs.GetInt("useRealCode", 0) == 1)
+            bool tankMode = PlayerPrefs.GetInt("tankMode", 1) == 1;
+            if (projectOverride == null && tankMode && !string.IsNullOrEmpty(proj) && !IsTankProfile(proj)) proj = "";   // 坦克模式只跑有坦克設定檔的專案(如 LEO)
+            if (string.IsNullOrEmpty(proj) && PlayerPrefs.GetInt("useRealCode", 0) == 1 && !tankMode)
             {
                 foreach (var c in new[] { @"C:\Users\frc94\2026_FRC9427_offseasonBot\FRC9427_offseasonBot" })
                     if (System.IO.File.Exists(System.IO.Path.Combine(c, "gradlew.bat"))) { proj = c; break; }
             }
+            if (string.IsNullOrEmpty(proj) && PlayerPrefs.GetInt("useRealCode", 0) == 1 && tankMode)
+            {
+                // 沒選專案時自動找桌面上的 LEO(資料夾名開頭 LEO、內有 gradlew.bat)
+                try
+                {
+                    string desk = System.Environment.GetFolderPath(System.Environment.SpecialFolder.DesktopDirectory);
+                    foreach (var dd in System.IO.Directory.GetDirectories(desk, "LEO*"))
+                        if (System.IO.File.Exists(System.IO.Path.Combine(dd, "gradlew.bat")) && IsTankProfile(dd)) { proj = dd; break; }
+                }
+                catch { }
+            }
             if (System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-norealcode") >= 0) proj = "";
-            // LEO 坦克模式:真實程式模式目前只支援 swerve+Talon 的機器人,LEO(坦克+SparkMax)還不行,所以坦克模式一律用內建行為
-            if (projectOverride == null && PlayerPrefs.GetInt("tankMode", 1) == 1) proj = "";   // 測試用:不啟動真實程式
             if (!string.IsNullOrEmpty(proj) && System.IO.File.Exists(System.IO.Path.Combine(proj, "gradlew.bat")))
             {
                 Hal = robot.AddComponent<HalSim>();
@@ -63,7 +74,7 @@ namespace FrcSim
                 ms.Hal = Hal; ms.Drive = Drive; Mech.Sim = ms;
                 var nt = robot.AddComponent<NtSim>();     // 模擬 Limelight(NetworkTables)讓程式能定位
                 nt.Drive = Drive; nt.Begin();
-                ms.MechPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Application.dataPath), "Sim", System.IO.Path.GetFileName(proj.TrimEnd('\\', '/')) + ".mech.json");
+                ms.MechPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Application.dataPath), "Sim", SimProject.Profile(proj) + ".mech.json");
             }
 
             // 匯入的機器人模型(沒有就用內建方塊)
@@ -92,6 +103,16 @@ namespace FrcSim
                 var st = new GameObject("SelfTest").AddComponent<SelfTest>();
                 st.Drive = Drive; st.Mech = Mech;
             }
+        }
+
+        static bool IsTankProfile(string dir)
+        {
+            try
+            {
+                string f = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Application.dataPath), "Sim", SimProject.Profile(dir) + ".mech.json");
+                return System.IO.File.Exists(f) && System.IO.File.ReadAllText(f).Contains("\"tank\"");
+            }
+            catch { return false; }
         }
 
         public static void End(CameraRig rig)

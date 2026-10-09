@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -106,6 +106,7 @@ public static class BuildTool
             string simDir = OutDir + "/Sim";
             Directory.CreateDirectory(simDir);
             foreach (var g in Directory.GetFiles("Tools/sim", "*.mech.json")) File.Copy(g, simDir + "/" + Path.GetFileName(g), true);
+            if (Directory.Exists("Tools/sim/overlay")) { Directory.CreateDirectory(simDir + "/overlay"); foreach (var g in Directory.GetFiles("Tools/sim/overlay", "*.java")) File.Copy(g, simDir + "/overlay/" + Path.GetFileName(g), true); }
             if (File.Exists("Tools/sim/agent/simagent.jar")) File.Copy("Tools/sim/agent/simagent.jar", simDir + "/simagent.jar", true);
             // 依 mech.json 產生 agent 的馬達表:每行 id coderId ratio inertia friction invert min max
             foreach (var mj in Directory.GetFiles("Tools/sim", "*.mech.json"))
@@ -135,7 +136,9 @@ public static class BuildTool
                     double mn = (double?)ld?["minRot"] ?? double.NegativeInfinity, mx = (double?)ld?["maxRot"] ?? double.PositiveInfinity;
                     sb.Append(mm.Groups[1].Value).Append(' ').Append(coder).Append(' ').Append(F(ratio)).Append(' ').Append(F(J)).Append(' ').Append(F(fr)).Append(' ').Append(iv ? 1 : 0).Append(' ').Append(F(mn)).Append(' ').Append(F(mx)).Append('\n');
                 }
-                File.WriteAllText(simDir + "/agent-motors.txt", sb.ToString());
+                string pj = Path.GetFileName(mj); pj = pj.Substring(0, pj.Length - ".mech.json".Length);
+                File.WriteAllText(simDir + "/" + pj + ".agent-motors.txt", sb.ToString());
+                if (pj == "FRC9427_offseasonBot") File.WriteAllText(simDir + "/agent-motors.txt", sb.ToString());
             }
         }
         catch (System.Exception e) { Debug.LogWarning("copy mech failed: " + e.Message); }
