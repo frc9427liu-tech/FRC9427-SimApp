@@ -25,7 +25,9 @@ namespace FrcSim
 
             FuelManager.Init();
             FuelManager.SpawnStart();
+            HumanPlayer.ResetMatch();
             score = new GameObject("Score");
+            score.AddComponent<HumanPlayer>();
             score.AddComponent<ScoreManager>();
 
             robot = SimBootstrap.BuildRobot(out var turretVis, out var armVis);

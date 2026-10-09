@@ -72,7 +72,7 @@ namespace FrcSim
             lines.Add($"{Drive.Speed:0.0} m/s   {L("朝向", "hdg")} {Drive.HeadingRad * Mathf.Rad2Deg:0}°   FPS {fps:0}");
             if (Mech != null)
             {
-                lines.Add($"{L("持球", "Fuel")} {Mech.Held}/{RobotMechanisms.Capacity}   {L("吸球器", "intake")} {(Mech.IntakeDown ? L("放下", "DOWN") : L("收起", "up"))}");
+                lines.Add($"{L("持球", "Fuel")} {Mech.Held}/{RobotMechanisms.Capacity}   {L("吸球器", "intake")} {(Mech.IntakeDown ? L("放下", "DOWN") : L("收起", "up"))}   {L("球道", "chute")} {HumanPlayer.BlueChute}(H)");
                 lines.Add($"{L("飛輪", "flywheel")} {Mech.FlywheelRps:0} rps   {(Mech.Shooting ? (Mech.Ready ? L("發射中", "firing") : L("加速中…", "spinning up…")) : L("待機", "idle"))}   {L("已射", "shots")} {Mech.ShotsFired}");
             }
             if (showDebug)
@@ -137,7 +137,7 @@ namespace FrcSim
                     ? L("手把:左/右搖桿 = 左/右側輪   A 放手臂   B 滾輪   RT 發射   RB 送球   十字鍵左右 砲塔   Start 暫停",
                         "Pad: L/R stick = left/right side   A arm   B roller   RT shoot   RB feed   D-pad L/R turret   Start pause")
                     : L("WASD 移動   Q/E 旋轉   Shift 慢速   I 吸球   空白/滑鼠 射擊   F 場地/車體座標", "WASD move   Q/E rotate   Shift slow   I intake   Space/Mouse shoot   F field/robot");
-                string t2 = L("C 視角   R 重置   Esc 暫停   2P(紅):方向鍵移動  ,. 旋轉  / 吸球  右Ctrl 射擊", "C camera   R reset   Esc pause   P2 (red): arrows move  ,. rotate  / intake  RCtrl shoot");
+                string t2 = L("H 人類球員放球   C 視角   R 重置   Esc 暫停   2P(紅):方向鍵移動  ,. 旋轉  / 吸球  右Ctrl 射擊", "H human-player chute   C camera   R reset   Esc pause   P2 (red): arrows move  ,. rotate  / intake  RCtrl shoot");
                 float hw = Mathf.Min(W - 20, 1100);
                 Panel(new Rect(cx - hw / 2f, H - 62, hw, 52), 0.6f);
                 var hs = Style(14, dim);
