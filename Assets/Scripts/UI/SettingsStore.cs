@@ -8,7 +8,7 @@ namespace FrcSim
 
         public static int FpsIndex
         {
-            get => Mathf.Clamp(PlayerPrefs.GetInt("fpsIdx", 4), 0, FpsOptions.Length - 1);
+            get => Mathf.Clamp(PlayerPrefs.GetInt("fpsIdx", 0), 0, FpsOptions.Length - 1);
             set { PlayerPrefs.SetInt("fpsIdx", value); PlayerPrefs.Save(); }
         }
         public static bool VSync
