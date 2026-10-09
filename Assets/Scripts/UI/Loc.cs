@@ -60,8 +60,8 @@ namespace FrcSim
             { "ctl.kb",        new[]{ "鍵盤", "Keyboard" } },
             { "ctl.pad",       new[]{ "Xbox 手把", "Xbox Controller" } },
             { "ctl.kb.body",   new[]{
-                "W A S D    移動\nQ / E    逆時針 / 順時針旋轉\nShift(按住)/ T(切換)    慢速\nI    放下 / 收起 Intake\n空白鍵 / 滑鼠左鍵    發射(按住,自動瞄準 HUB)\nF    場地座標 / 車頭座標\nH    人類球員放球(OUTPOST 球道,24 顆)\nC    切換視角\nR    重置位置\nEsc    暫停選單",
-                "W A S D    Move\nQ / E    Rotate CCW / CW\nShift (hold) / T (toggle)    Slow\nI    Intake down / up\nSpace / Left Click    Shoot (hold, auto-aim HUB)\nF    Field / Robot centric\nH    Human-player chute (24 FUEL)\nC    Change camera\nR    Reset pose\nEsc    Pause menu" } },
+                "W A S D    移動\nQ / E    逆時針 / 順時針旋轉\nShift(按住)/ T(切換)    慢速\nI    放下 / 收起 Intake\n空白鍵 / 滑鼠左鍵    發射(按住,自動瞄準 HUB)\nF    場地座標 / 車頭座標\nH    人類球員放球(OUTPOST 球道,24 顆)\nN    跳過自動階段(真實程式模式)\nC    切換視角\nR    重置位置\nEsc    暫停選單",
+                "W A S D    Move\nQ / E    Rotate CCW / CW\nShift (hold) / T (toggle)    Slow\nI    Intake down / up\nSpace / Left Click    Shoot (hold, auto-aim HUB)\nF    Field / Robot centric\nH    Human-player chute (24 FUEL)\nN    Skip AUTO (real-code mode)\nC    Change camera\nR    Reset pose\nEsc    Pause menu" } },
             { "ctl.pad.body",  new[]{
                 "【LEO 坦克】駕駛(第一支手把)\n左/右搖桿    左/右側輪\nA(按住)    放下 Intake    B(按住)    滾輪\n操作手(第二支;只接一支時共用)\nRT    發射    RB    送球    X    吐球\n十字鍵左右    砲塔    十字鍵上    收手臂\nStart / Back    暫停(重置在暫停選單)\n【全向模式】左搖桿移動  LB/RB 旋轉  A Intake  B 發射",
                 "[LEO tank] Driver (1st pad)\nL/R stick    left/right side\nA (hold)    Intake down    B (hold)    Roller\nOperator (2nd pad; shared if only one)\nRT    Shoot    RB    Feed    X    Eject\nD-pad L/R    Turret    D-pad Up    Raise arm\nStart / Back    Pause (reset in pause menu)\n[Swerve] L stick move  LB/RB rotate  A Intake  B Shoot" } },

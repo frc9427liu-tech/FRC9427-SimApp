@@ -103,6 +103,13 @@ namespace FrcSim
                 GUI.Label(new Rect(cx - 220, 56, 440, 24), $"{tl / 60}:{tl % 60:00}   {PhaseName(ScoreManager.Phase)}{hubs}", Style(15, dim, TextAnchor.UpperCenter, FontStyle.Bold));
             }
 
+            // ---- 真實程式模式的 AUTO 階段:機器人程式自己跑,手把無效(符合真實比賽),提示並可按 N 跳過
+            if (GameSession.Hal != null && GameSession.Hal.Connected && ScoreManager.ClockOn && ScoreManager.MatchTime < 20f)
+            {
+                Panel(new Rect(cx - 280, 90, 560, 30), 0.75f);
+                GUI.Label(new Rect(cx - 280, 93, 560, 26), L("自動階段:你的機器人程式自己跑,手把暫時無效 — 按 N 跳過", "AUTO: your robot code is driving, sticks disabled — press N to skip"), Style(15, new Color(1f, 0.9f, 0.4f), TextAnchor.UpperCenter, FontStyle.Bold));
+            }
+
             // ---- 真實程式啟動中提示
             if (GameSession.Hal != null && !GameSession.Hal.Connected)
             {

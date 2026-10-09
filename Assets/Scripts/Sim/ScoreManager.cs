@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace FrcSim
 {
@@ -58,6 +58,12 @@ namespace FrcSim
             float d = SimConstants.AllianceZoneDepth + SimConstants.HubSize / 2f;
             blueHub = new Vector2(d, W / 2f);
             redHub = new Vector2(L - d, W / 2f);
+        }
+
+        // N:跳過 AUTO / TRANSITION,直接進 TELEOP(真實程式模式下 AUTO 手把無效,想直接開車就按 N)
+        void Update()
+        {
+            if (!MenuSystem.Blocking && ClockOn && MatchTime < 30f && Input.GetKeyDown(KeyCode.N)) MatchTime = 30f;
         }
 
         void FixedUpdate()

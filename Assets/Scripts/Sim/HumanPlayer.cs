@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace FrcSim
 {
@@ -15,9 +15,26 @@ namespace FrcSim
 
         void Awake() { ResetMatch(); }
 
+        // CORRAL:機器人把球推進 OUTPOST 底部開口(離地 4.8cm、寬 81cm)= 交給人類球員,可再從 CHUTE 放出
+        void Corral()
+        {
+            float L = SimConstants.FieldLength, W = SimConstants.FieldWidth;
+            for (int i = FuelManager.All.Count - 1; i >= 0; i--)
+            {
+                var f = FuelManager.All[i];
+                if (f == null) continue;
+                var p = f.transform.position;
+                if (p.y > 0.35f) continue;
+                if (p.x < 0.22f && Mathf.Abs(p.z - 0.882f) < 0.40f && BlueChute < MaxStock) { BlueChute++; FuelManager.Remove(f); }
+                else if (p.x > L - 0.22f && Mathf.Abs(p.z - (W - 0.882f)) < 0.40f && RedChute < MaxStock) { RedChute++; FuelManager.Remove(f); }
+            }
+        }
+        const int MaxStock = 60;
+
         void Update()
         {
             if (MenuSystem.Blocking) return;
+            Corral();
             bool blue = Input.GetKey(KeyCode.H) || Pad2.Held(Pad.Y);
             bool red = Input.GetKey(KeyCode.RightShift);
             float L = SimConstants.FieldLength, W = SimConstants.FieldWidth;

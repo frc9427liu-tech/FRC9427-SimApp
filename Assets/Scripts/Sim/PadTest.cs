@@ -35,6 +35,9 @@ namespace FrcSim
             Pad.SetFake(true, buttons: Pad.Y); yield return new WaitForSeconds(1.2f);
             Pad.SetFake(true); yield return new WaitForSeconds(0.3f);
             sb.AppendLine($"human-player chute (Y held 1.2s): chute {chute0} -> {HumanPlayer.BlueChute}, field fuel {fuel0} -> {FuelManager.All.Count} (expect ~5 released)");
+            int chuteB = HumanPlayer.BlueChute;
+            FuelManager.Spawn(new Vector3(0.12f, 0.08f, 0.88f), Vector3.zero); yield return new WaitForSeconds(0.4f);
+            sb.AppendLine($"corral: ball pushed into OUTPOST bottom opening → chute {chuteB} -> {HumanPlayer.BlueChute} (expect +1)");
             sb.AppendLine($"body lean peak: {BodyLean.PeakAbs:0.00} deg (signed {BodyLean.PeakSigned:0.00}); expect > 0.3 if inertia visual works");
             Pad.SetFake(false);
             File.WriteAllText(Path.Combine(Path.GetDirectoryName(Application.dataPath), "padtest.txt"), sb.ToString());
