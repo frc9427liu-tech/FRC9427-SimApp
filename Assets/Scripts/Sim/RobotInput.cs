@@ -13,6 +13,7 @@ namespace FrcSim
         // 手把右搖桿/扳機軸(由打包時補進 InputManager);沒定義就當 0,不會丟例外
         static float PadAxis(string name) { try { return Input.GetAxisRaw(name); } catch (System.Exception) { return 0f; } }
 
+        static float TankShape(float v) { v = Mathf.Abs(v) < 0.08f ? 0f : v; return Mathf.Sign(v) * v * v; }
         static float Deadband(float v, float d = 0.08f) => Mathf.Abs(v) < d ? 0f : v;
 
         void Update()
@@ -38,11 +39,26 @@ namespace FrcSim
             if (Input.GetKey(KeyCode.Q) || Input.GetKey(KeyCode.JoystickButton4) || Pad.Held(Pad.LB)) rot += 1f; // 逆時針
             if (Input.GetKey(KeyCode.E) || Input.GetKey(KeyCode.JoystickButton5) || Pad.Held(Pad.RB)) rot -= 1f; // 順時針
 
+            // LEO 坦克模式:左/右搖桿各控一側輪(死區 0.08 + 平方,照 LEO DriveSubsystem.tankDrive)
+            bool tank = PlayerPrefs.GetInt("tankMode", 1) == 1;
+            float tankL = 0f, tankR = 0f;
+            if (tank)
+            {
+                float kbF = (Input.GetKey(KeyCode.W) ? 1f : 0f) - (Input.GetKey(KeyCode.S) ? 1f : 0f);
+                float kbR = (Input.GetKey(KeyCode.D) ? 1f : 0f) - (Input.GetKey(KeyCode.A) ? 1f : 0f);
+                tankL = TankShape(Mathf.Clamp(Pad.LY + kbF + kbR, -1f, 1f));
+                tankR = TankShape(Mathf.Clamp(Pad.RY + kbF - kbR, -1f, 1f));
+                fwd = (tankL + tankR) * 0.5f; strafeRight = 0f; rot = (tankR - tankL) * 0.5f;
+                if (Input.GetKey(KeyCode.Q)) rot += 1f; if (Input.GetKey(KeyCode.E)) rot -= 1f;
+                rot = Mathf.Clamp(rot, -1f, 1f);
+            }
+
             float scale = Input.GetKey(KeyCode.LeftShift) ? 0.35f : 1f;
             if (GameSession.Hal != null)
             {
                 // 真實機器人程式:鍵盤/手把變成虛擬 Xbox 搖桿送進 HALSim(axis0=LX 右為正,axis1=LY 上為負,axis4=RX 右為正)
                 var h = GameSession.Hal;
+                if (tank) { h.Axes[1] = -Mathf.Clamp(Pad.LY, -1f, 1f); h.Axes[5] = -Mathf.Clamp(Pad.RY, -1f, 1f); }
                 h.Axes[0] = strafeRight * scale; h.Axes[1] = -fwd * scale; h.Axes[4] = Mathf.Clamp(-rot * scale + Deadband(PadAxis("PadRX") + Pad.RX), -1f, 1f);
                 for (int i = 0; i < h.Buttons.Length && i < 10; i++) h.Buttons[i] = Input.GetKey(KeyCode.JoystickButton0 + i) || (i == 0 && Pad.Held(Pad.A)) || (i == 1 && Pad.Held(Pad.B)) || (i == 2 && Pad.Held(Pad.X)) || (i == 3 && Pad.Held(Pad.Y)) || (i == 4 && Pad.Held(Pad.LB)) || (i == 5 && Pad.Held(Pad.RB)) || (i == 6 && Pad.Held(Pad.Back)) || (i == 7 && Pad.Held(Pad.Start));
                 // 這份程式:LT(axis2)按住=放下 intake 吸球,RT(axis3)按住=射擊(RobotContainer.java 的綁定)
@@ -55,8 +71,9 @@ namespace FrcSim
 
             if (Mech != null)
             {
-                if (Input.GetKeyDown(KeyCode.I) || Input.GetKeyDown(KeyCode.JoystickButton0) || Pad.Down(Pad.A)) Mech.IntakeDown = !Mech.IntakeDown;
-                Mech.Shooting = Input.GetKey(KeyCode.Space) || Input.GetMouseButton(0) || Input.GetKey(KeyCode.JoystickButton1) || Pad.Held(Pad.B) || Pad.RT > 0.3f;
+                if (tank) { if (Input.GetKeyDown(KeyCode.I)) intakeLatch = !intakeLatch; Mech.IntakeDown = intakeLatch || Pad.Held(Pad.A); }
+                else if (Input.GetKeyDown(KeyCode.I) || Input.GetKeyDown(KeyCode.JoystickButton0) || Pad.Down(Pad.A)) Mech.IntakeDown = !Mech.IntakeDown;
+                Mech.Shooting = Input.GetKey(KeyCode.Space) || Input.GetMouseButton(0) || Pad.RT > 0.5f || (!tank && (Input.GetKey(KeyCode.JoystickButton1) || Pad.Held(Pad.B)));
             }
 
             if (Input.GetKeyDown(KeyCode.F)) Drive.FieldCentric = !Drive.FieldCentric;

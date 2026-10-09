@@ -268,6 +268,10 @@ namespace FrcSim
                 {
                     PlayerPrefs.SetInt("matchClock", PlayerPrefs.GetInt("matchClock", 1) == 1 ? 0 : 1); PlayerPrefs.Save();
                 }),
+                new Item(() => Loc.T("setup.ctl") + ":  " + Loc.T(PlayerPrefs.GetInt("tankMode", 1) == 1 ? "ctl.tank" : "ctl.swerve"), () =>
+                {
+                    PlayerPrefs.SetInt("tankMode", PlayerPrefs.GetInt("tankMode", 1) == 1 ? 0 : 1); PlayerPrefs.Save();
+                }),
                 new Item(() => Loc.T("setup.second") + ":  " + Loc.T(PlayerPrefs.GetInt("secondRobot", 1) == 1 ? "on" : "off"), () =>
                 {
                     PlayerPrefs.SetInt("secondRobot", PlayerPrefs.GetInt("secondRobot", 1) == 1 ? 0 : 1); PlayerPrefs.Save();
