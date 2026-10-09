@@ -19,7 +19,13 @@ namespace FrcSim
 
         // 自動降級:載入完成後(前 12 秒不算)連續 6 秒平均 FPS < 28 就把畫質降一級並存起來,避免慢電腦被超取樣拖垮
         float warm = 12f, acc, accT;
-        static readonly bool testRun = System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-autostart") >= 0 || System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-shot") >= 0;   // 自動測試不要去改使用者存的畫質設定
+        static readonly bool testRun = IsTestRun();
+        public static bool IsTestRun()
+        {
+            foreach (var a in System.Environment.GetCommandLineArgs())
+                switch (a) { case "-batchmode": case "-autostart": case "-shot": case "-menu": case "-padtest": case "-fieldtest": case "-walltest": case "-balltest": case "-soaktest": case "-leotest": case "-leoauto": case "-realtest": case "-halsimtest": case "-selftest": case "-settletest": return true; }
+            return false;
+        }   // 自動測試不要去改使用者存的畫質設定
         void AutoQuality()
         {
             if (testRun || Time.unscaledTime < warm || Time.timeScale == 0f) return;

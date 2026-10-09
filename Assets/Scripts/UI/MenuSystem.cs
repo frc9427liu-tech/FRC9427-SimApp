@@ -94,6 +94,10 @@ namespace FrcSim
             splashing = false;
             if (startMenu == "setup") { ShowRobotSetup(); yield break; }
             if (startMenu == "controls") { ShowControls(); yield break; }
+            if (startMenu == "settings") { settingsBack = ShowMain; ShowSettings(false); yield break; }
+            if (startMenu == "modes") { ShowModes(); yield break; }
+            if (startMenu == "main") { ShowMain(); yield break; }
+            if (startMenu == "language") { ShowLanguage(); yield break; }
             if (!Loc.HasChosen) ShowLanguage(); else ShowMain();
         }
 

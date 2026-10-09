@@ -63,6 +63,7 @@ namespace FrcSim
         static void FirstRunDefaults()
         {
             if (firstRunChecked) return; firstRunChecked = true;
+            if (FrcSim.SuperSample.IsTestRun()) return;   // 自動測試/截圖不要寫入使用者的畫質設定
             if (PlayerPrefs.HasKey("rscale") || PlayerPrefs.HasKey("shadows") || PlayerPrefs.HasKey("msaa")) return;
             string gpu = SystemInfo.graphicsDeviceName ?? "";
             bool weak = gpu.IndexOf("Intel", System.StringComparison.OrdinalIgnoreCase) >= 0 || gpu.IndexOf("UHD", System.StringComparison.OrdinalIgnoreCase) >= 0
