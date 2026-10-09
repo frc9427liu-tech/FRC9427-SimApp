@@ -40,7 +40,8 @@ namespace FrcSim
 
         public static float YawDeg
         {
-            get => PlayerPrefs.GetFloat("modelYaw", 0f);
+            // kepler.glb 的 intake 在模型 +z 側,車頭(+x)要轉 90° 才對;使用者沒調過時預設用這個
+            get => PlayerPrefs.GetFloat("modelYaw", Selected == "kepler.glb" ? 90f : 0f);
             set { PlayerPrefs.SetFloat("modelYaw", value); PlayerPrefs.Save(); }
         }
 

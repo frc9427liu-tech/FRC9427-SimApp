@@ -42,6 +42,18 @@ namespace FrcSim
                 pos = Target.position + new Vector3(-3.2f, 3.2f, 0f);
                 rot = Quaternion.LookRotation(Target.position + new Vector3(1.0f, 0f, 0f) - pos, Vector3.up);
             }
+            else if (Mode == 5)
+            {
+                pos = Target.position + new Vector3(0f, 2.4f, 0f);
+                rot = Quaternion.LookRotation(Vector3.down, Vector3.forward);
+            }
+            else if (Mode == 3 || Mode == 4)
+            {
+                // 除錯用近距離側視(-camera 3)/斜前視(-camera 4),檢查模型貼地與車頭方向
+                Vector3 off = Mode == 3 ? new Vector3(0f, 0.5f, -2.6f) : new Vector3(2.0f, 1.2f, -2.0f);
+                pos = Target.position + off;
+                rot = Quaternion.LookRotation(Target.position + new Vector3(0f, 0.35f, 0f) - pos, Vector3.up);
+            }
             else
             {
                 // 俯視跟隨機器人,但把鏡頭限制在場地內,靠近邊界時不會露出空白(場地 L×W)
