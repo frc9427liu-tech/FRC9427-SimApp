@@ -137,6 +137,8 @@ namespace FrcSim
                 b.Bar = UiKit.Img("Bar", b.Rt, UiTheme.Accent);
                 UiKit.PlaceTL(b.Bar.rectTransform, 0, 0, 6, bh);
                 b.Label = UiKit.Label("Text", b.Rt, it.Text(), 34, UiTheme.TextDim, TextAnchor.MiddleLeft);
+                b.Label.resizeTextForBestFit = true;   // 長標籤(例如比賽計時)自動縮小,不超出按鈕
+                b.Label.resizeTextMinSize = 18; b.Label.resizeTextMaxSize = 34;
                 UiKit.PlaceTL(b.Label.rectTransform, 34, 0, 540, bh);
                 s.Buttons.Add(b);
                 y += step;

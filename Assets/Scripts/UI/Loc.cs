@@ -41,7 +41,7 @@ namespace FrcSim
             { "setup.code",    new[]{ "機器人程式", "Robot code" } },
             { "setup.none",    new[]{ "自動偵測(點選可改)", "auto (click to change)" } },
             { "setup.second",  new[]{ "第二台機器人(紅方)", "Second robot (red)" } },
-            { "setup.clock",   new[]{ "比賽計時與 HUB 輪替(官方 160 秒)", "Match clock & HUB shifts (official 160 s)" } },
+            { "setup.clock",   new[]{ "比賽計時與 HUB 輪替", "Match clock & HUB shifts" } },
             { "setup.real",   new[]{ "執行真實機器人程式(實驗中)", "Run real robot code (experimental)" } },
             { "setup.ctl",     new[]{ "操控方式", "Drive style" } },
             { "ctl.swerve",    new[]{ "全向(左搖桿移動)", "Swerve (left stick)" } },
