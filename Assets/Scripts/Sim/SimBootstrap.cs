@@ -76,6 +76,13 @@ namespace FrcSim
                 }
             }
 
+            if (System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-soaktest") >= 0)
+            {
+                GameSession.Begin(rig);
+                new GameObject("SoakTest").AddComponent<SoakTest>();
+                return;
+            }
+
             if (System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-walltest") >= 0)
             {
                 GameSession.Begin(rig);
