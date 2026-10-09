@@ -100,7 +100,7 @@ namespace FrcSim
             }
 
             if (Input.GetKeyDown(KeyCode.F)) Drive.FieldCentric = !Drive.FieldCentric;
-            if (Input.GetKeyDown(KeyCode.R) || Input.GetKeyDown(KeyCode.JoystickButton7) || Pad.Down(Pad.Start)) Drive.ResetPose();
+            if (Input.GetKeyDown(KeyCode.R)) Drive.ResetPose();   // 手把 Start/Back 是暫停,重置位置請用 R 或暫停選單
         }
     }
 }

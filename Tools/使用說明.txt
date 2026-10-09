@@ -1,0 +1,32 @@
+FRC 9427 模擬器 使用說明
+==========================
+
+開啟:雙擊 FRC9427-Sim.exe → 自由練習 → 機器人設定 → 開始。
+
+【機器人設定頁】
+- 機器人模型 / 模型方向:Kepler 預設 90°(intake 朝前)。車往 intake 反方向走就按「模型方向」轉。
+- 機器人程式:點選後選「資料夾」(例如桌面的 LEO-新版)。沒選的話,「執行真實機器人程式」開著 + 坦克模式,會自動找桌面上 LEO 開頭的資料夾。
+- 執行真實機器人程式:開 = 你的 Java 程式真的在跑(第一次要編譯,約 20~60 秒;HUD 左上會顯示狀態)。關 = 模擬器內建行為。
+- 操控方式:LEO 坦克 = 左右搖桿各控一側輪;全向 = 舊的 swerve 操作。
+- 比賽計時與 HUB 輪替:官方 160 秒、HUB 輪流啟動。
+
+【LEO 坦克 + 真實程式 手把(Xbox)】
+- 左 / 右搖桿:左 / 右側輪(推前 = 往 intake 方向)
+- A 按住:放下 intake 手臂    B 按住:滾輪收球
+- RT:發射    RB:送球(Orbit)    X:吐球
+- 十字鍵左右:砲塔    十字鍵上:收起手臂
+- Start / Back:暫停    (重置位置用鍵盤 R 或暫停選單)
+
+【鍵盤】
+- W/S 前後,A/D 轉向,Q/E 旋轉,Shift 慢速
+- I = A(手臂)、O = B(滾輪)、空白鍵/滑鼠左鍵 = RT(發射)、V = RB(送球)、Z/X = 砲塔左/右、U = 收手臂
+- C 切換視角,Esc 暫停
+
+【注意】
+- 這台電腦的 Windows 應用程式控制原則會擋 REVLibDriver.dll,所以 SparkMax 底盤在模擬裡用 Talon 替身(只改 C:\FRC9427SimWork\LEO 這份副本,你的原始專案不會被改)。
+- 專案在 OneDrive 或路徑含中文也能跑:程式會自動複製到 C:\FRC9427SimWork。
+- 砲塔齒比(20)、Hood(固定 15°)、底盤齒比(9)是猜的,有實測值請改 Tools\sim\LEO.mech.json。
+
+【自動測試(給開發用)】
+- FRC9427-Sim.exe -padtest -norealcode -batchmode -nographics → padtest.txt(假手把測內建坦克模式)
+- FRC9427-Sim.exe -leotest "<LEO 資料夾>" -batchmode -nographics → leotest.txt(LEO 真實程式)

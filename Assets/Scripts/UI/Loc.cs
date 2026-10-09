@@ -59,8 +59,8 @@ namespace FrcSim
                 "W A S D    移動\nQ / E    逆時針 / 順時針旋轉\nShift    慢速\nI    放下 / 收起 Intake\n空白鍵 / 滑鼠左鍵    發射(按住,自動瞄準 HUB)\nF    場地座標 / 車頭座標\nC    切換視角\nR    重置位置\nEsc    暫停選單",
                 "W A S D    Move\nQ / E    Rotate CCW / CW\nShift    Slow\nI    Intake down / up\nSpace / Left Click    Shoot (hold, auto-aim HUB)\nF    Field / Robot centric\nC    Change camera\nR    Reset pose\nEsc    Pause menu" } },
             { "ctl.pad.body",  new[]{
-                "左搖桿    移動\nLB / RB    逆時針 / 順時針旋轉\nA    放下 / 收起 Intake\nB    發射(按住)\nStart    重置位置\n【LEO 坦克模式】左/右搖桿    左/右側輪\nA(按住)    放下 Intake\nRT    發射",
-                "Left stick    Move\nLB / RB    Rotate CCW / CW\nA    Intake down / up\nB    Shoot (hold)\nStart    Reset pose\n[LEO tank] Left/Right stick    left/right side\nA (hold)    Intake down\nRT    Shoot" } },
+                "左搖桿    移動\nLB / RB    逆時針 / 順時針旋轉\nA    放下 / 收起 Intake\nB    發射(按住)\nStart / Back    暫停(重置在暫停選單)\n【LEO 坦克模式】左/右搖桿    左/右側輪\nA(按住)    放下 Intake    B(按住)    滾輪\nRT    發射    RB    送球    X    吐球\n十字鍵左右    砲塔    十字鍵上    收手臂",
+                "Left stick    Move\nLB / RB    Rotate CCW / CW\nA    Intake down / up\nB    Shoot (hold)\nStart / Back    Pause (reset in pause menu)\n[LEO tank] Left/Right stick    left/right side\nA (hold)    Intake down\nRT    Shoot" } },
             { "pause.title",   new[]{ "暫停", "Paused" } },
             { "pause.resume",  new[]{ "繼續", "Resume" } },
             { "pause.reset",   new[]{ "重置位置", "Reset Pose" } },
