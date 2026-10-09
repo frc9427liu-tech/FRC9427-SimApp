@@ -14,6 +14,7 @@ namespace FrcSim
             Physics.defaultSolverVelocityIterations = 2;
 
             FieldBuilder.Build();
+            if (System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-boxfield") < 0) FieldModel.Load();   // 官方場地模型(-boxfield 可退回方塊外觀)
 
             var light = new GameObject("Sun").AddComponent<Light>();
             light.type = LightType.Directional;
