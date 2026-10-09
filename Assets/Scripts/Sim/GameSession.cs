@@ -72,8 +72,11 @@ namespace FrcSim
                 Hal.StartRobot(proj);
                 var ms = robot.AddComponent<MechSim>();
                 ms.Hal = Hal; ms.Drive = Drive; Mech.Sim = ms;
-                var nt = robot.AddComponent<NtSim>();     // 模擬 Limelight(NetworkTables)讓程式能定位
-                nt.Drive = Drive; nt.Begin();
+                if (!IsTankProfile(proj))   // 坦克(LEO)沒有視覺,不需要模擬 Limelight,省下 NetworkTables 的 CPU
+                {
+                    var nt = robot.AddComponent<NtSim>();     // 模擬 Limelight(NetworkTables)讓程式能定位
+                    nt.Drive = Drive; nt.Begin();
+                }
                 ms.MechPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Application.dataPath), "Sim", SimProject.Profile(proj) + ".mech.json");
             }
 
