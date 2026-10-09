@@ -43,6 +43,14 @@ namespace FrcSim
             h.Axes2[0] = 1f; yield return new WaitForSeconds(1.5f);
             sb.AppendLine($"turret right 1.5s: TurretRad={m.TurretRad:0.00}");
             h.Axes2[0] = 0f;
+            // BUMP:從 x=3.0 往前(+x)衝過藍方下側 BUMP(y 約 2.5),看會不會卡住
+            h.Buttons[0] = false; h.Axes2[3] = 0f;
+            d.SetPose(new Vector2(3.0f, 2.5f), 0f); yield return new WaitForSeconds(0.5f);
+            h.Axes[1] = -1f; h.Axes[5] = -1f;
+            float maxPitch = 0f, maxY = 0f;
+            for (int k = 0; k < 40; k++) { yield return new WaitForSeconds(0.1f); maxPitch = Mathf.Max(maxPitch, Mathf.Abs(d.BumpPitchDeg)); maxY = Mathf.Max(maxY, d.transform.position.y); }
+            sb.AppendLine($"BUMP run 4s from x=3.0,y=2.5: end x={d.Pose2d.x:0.00} y={d.Pose2d.y:0.00} maxPitch={maxPitch:0.0} maxY={maxY:0.00} speed={d.Speed:0.00}");
+            h.Axes[1] = 0f; h.Axes[5] = 0f;
             File.WriteAllText(Path.Combine(Path.GetDirectoryName(Application.dataPath), "leotest.txt"), sb.ToString());
             h.Stop();
             Application.Quit();

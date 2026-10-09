@@ -102,9 +102,35 @@ namespace FrcSim
             Object.Destroy(f.gameObject);
         }
 
-        // 起始擺法:中立區約 360 顆 + 每個 DEPOT 24 顆
+        // 用官方模型裡的預擺球位置(場地 CAD 的起始擺法)取代格狀擺法
+        public static void ReplaceStartLayout()
+        {
+            foreach (var f in new List<Fuel>(All)) if (f != null) Object.Destroy(f.gameObject);
+            All.Clear();
+            SpawnStart();
+        }
+
+        // 起始擺法:優先用官方模型的預擺球位置;沒有模型才用格狀(中立區約 360 顆 + 每個 DEPOT 24 顆)
         public static void SpawnStart()
         {
+            if (FieldModel.FuelPositions != null && FieldModel.FuelPositions.Count > 100)
+            {
+                // 模型裡 HUB / OUTPOST 內部也有裝飾用的球(高處或在 HUB 腳印內),不是場上起始球,跳過,否則一開場就被算進 HUB 得分
+                float Lf = SimConstants.FieldLength, Wf = SimConstants.FieldWidth;
+                var hubs = new[] { new Vector2(4.62f, Wf / 2f), new Vector2(Lf - 4.62f, Wf / 2f) };
+                int kept = 0;
+                foreach (var p in FieldModel.FuelPositions)
+                {
+                    if (p.y > 0.45f) continue;
+                    bool inHub = false;
+                    foreach (var h in hubs) if (Mathf.Abs(p.x - h.x) < 0.95f && Mathf.Abs(p.z - h.y) < 0.95f) inHub = true;
+                    if (inHub) continue;
+                    Spawn(new Vector3(p.x, Mathf.Max(p.y, Fuel.Radius) + 0.001f, p.z), Vector3.zero);
+                    kept++;
+                }
+                Debug.Log($"[Fuel] official layout: {kept} of {FieldModel.FuelPositions.Count} staged pieces kept");
+                return;
+            }
             float L = SimConstants.FieldLength, W = SimConstants.FieldWidth;
             // 中立區堆(約 206in x 72in)
             // 球與球之間至少留 0.16m(直徑 0.15),不重疊就不會被物理引擎彈開亂滾

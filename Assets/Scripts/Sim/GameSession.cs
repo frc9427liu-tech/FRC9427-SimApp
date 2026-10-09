@@ -6,6 +6,7 @@ namespace FrcSim
     public static class GameSession
     {
         public static bool Active;
+        public static float StartTime;
         public static SwerveDrive Drive;
         public static RobotMechanisms Mech;
         public static HalSim Hal;
@@ -16,6 +17,7 @@ namespace FrcSim
         {
             if (Active) return;
             Active = true;
+            StartTime = Time.time;
             Time.timeScale = 1f;
 
             FuelManager.Init();

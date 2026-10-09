@@ -116,6 +116,10 @@ namespace FrcSim
             var col = r.AddComponent<BoxCollider>();
             col.size = new Vector3(SimConstants.BumperLength, SimConstants.BumperHeight, SimConstants.BumperWidth);
             r.AddComponent<SwerveDrive>();
+            // 車身高度由 SwerveDrive 依 BUMP 高度強制設定(過 BUMP 時車身會傾斜 15°),傾斜的車身前緣/後緣會戳進地板碰撞體而被卡住。
+            // 機器人不和地板碰撞(高度本來就由程式控制);球、牆、HUB 等其他碰撞不受影響。
+            var floorGo = GameObject.Find("Field/Floor");
+            if (floorGo != null) { var fc = floorGo.GetComponent<Collider>(); if (fc != null) Physics.IgnoreCollision(col, fc, true); }
 
             // 車身
             var body = GameObject.CreatePrimitive(PrimitiveType.Cube);

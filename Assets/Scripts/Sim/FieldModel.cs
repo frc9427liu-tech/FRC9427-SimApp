@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using GLTFast;
 using UnityEngine;
@@ -10,6 +10,7 @@ namespace FrcSim
     public static class FieldModel
     {
         public static string LastLog = "";
+        public static System.Collections.Generic.List<Vector3> FuelPositions;   // 官方起始擺法(場地座標系的 Unity 世界位置);沒載入模型為 null
 
         public static async void Load()
         {
@@ -26,7 +27,26 @@ namespace FrcSim
                 root.transform.rotation = Quaternion.identity;
                 root.transform.position = new Vector3(SimConstants.FieldLength / 2f, 0f, SimConstants.FieldWidth / 2f);
 
+                // 官方預擺球位置:模型裡 GE-26900_Fuel* 的節點(官方 CAD 的起始擺法),取各節點的中心
+                var fuelPos = new System.Collections.Generic.List<Vector3>();
+                {
+                    // 名稱含 Fuel 的 renderer 取中心;同一顆球可能由多個 mesh 組成,0.04m 內視為同一顆
+                    var seen = new System.Collections.Generic.HashSet<long>();
+                    int namesLogged = 0;
+                    foreach (var r in root.GetComponentsInChildren<Renderer>(true))
+                    {
+                        string nm = r.name + "/" + (r.transform.parent != null ? r.transform.parent.name : "");
+                        if (!nm.Contains("Fuel")) continue;
+                        if (namesLogged++ < 3) Debug.Log("[FieldModel] fuel renderer name=" + nm + " size=" + r.bounds.size.ToString("0.000"));
+                        Vector3 c0 = r.bounds.center;
+                        long key = ((long)Mathf.RoundToInt(c0.x / 0.04f) * 73856093L) ^ ((long)Mathf.RoundToInt(c0.y / 0.04f) * 19349663L) ^ ((long)Mathf.RoundToInt(c0.z / 0.04f) * 83492791L);
+                        if (!seen.Add(key)) continue;
+                        fuelPos.Add(c0);
+                    }
+                }                FuelPositions = fuelPos;
+                Debug.Log($"[FieldModel] staged fuel nodes={fuelPos.Count}");
                 int hidden = 0, shown = 0, texCount = 0, dbg = 0;
+                var matCache = new System.Collections.Generic.Dictionary<int, Material>();
                 var colorHist = new System.Collections.Generic.Dictionary<string, int>();
                 foreach (var r in root.GetComponentsInChildren<Renderer>(true))
                 {
@@ -54,7 +74,10 @@ namespace FrcSim
                         if (dbg++ < 3 && m != null) Debug.Log("[FieldModel] mat " + m.name + " shader=" + m.shader.name + " color=" + ck + " tex=" + (tex != null));
                         // 模型幾乎全是接近純白的顏色,直接打光會過曝成一片白:偏白/灰的顏色壓暗,紅藍保持鮮明
                         if (Mathf.Max(c.r, c.g, c.b) - Mathf.Min(c.r, c.g, c.b) < 0.25f) c = new Color(c.r * 0.62f, c.g * 0.64f, c.b * 0.68f, 1f);
-                        var nm = FieldBuilder.MakeMat(c);
+                        // 同色共用一個材質(否則 2000 多個物件各一個材質,無法合批,FPS 掉很多)
+                        Color32 c32 = c;
+                        int mkey = (c32.r << 16) | (c32.g << 8) | c32.b;
+                        if (!matCache.TryGetValue(mkey, out var nm)) { nm = FieldBuilder.MakeMat(c); matCache[mkey] = nm; }
                         if (tex != null) nm.mainTexture = tex;
                         mats[i] = nm;
                     }
@@ -62,6 +85,9 @@ namespace FrcSim
                     r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
                     r.receiveShadows = true;
                 }
+
+                // 靜態合批:把同材質的 mesh 合併,大幅減少 draw call
+                try { StaticBatchingUtility.Combine(root); } catch (Exception e) { Debug.LogWarning("[FieldModel] static batching failed: " + e.Message); }
 
                 // 隱藏程式自己蓋的方塊外觀(碰撞體保留)
                 var field = GameObject.Find("Field");
@@ -75,6 +101,8 @@ namespace FrcSim
                 Debug.Log("[FieldModel] textures=" + texCount + " colors: " + top);
                 LastLog = $"field model loaded: shown={shown} hiddenFuel={hidden} bounds center={b.center} size={b.size}";
                 Debug.Log("[FieldModel] " + LastLog);
+                // 遊戲在模型載入完成前就開始了:用官方擺法換掉暫用的格狀擺法
+                if (GameSession.Active && Time.time - GameSession.StartTime < 20f) FuelManager.ReplaceStartLayout();
             }
             catch (Exception e) { LastLog = "field error: " + e.Message; Debug.LogError("[FieldModel] " + e); }
         }
