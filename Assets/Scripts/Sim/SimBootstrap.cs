@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace FrcSim
 {
@@ -70,6 +70,13 @@ namespace FrcSim
             {
                 GameSession.Begin(rig);
                 new GameObject("FieldTest").AddComponent<FieldTest>();
+                return;
+            }
+
+            if (System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-padtest") >= 0)
+            {
+                GameSession.Begin(rig);
+                new GameObject("PadTest").AddComponent<PadTest>();
                 return;
             }
 

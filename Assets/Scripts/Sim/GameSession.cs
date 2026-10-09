@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace FrcSim
 {
@@ -52,7 +52,9 @@ namespace FrcSim
                 foreach (var c in new[] { @"C:\Users\frc94\2026_FRC9427_offseasonBot\FRC9427_offseasonBot" })
                     if (System.IO.File.Exists(System.IO.Path.Combine(c, "gradlew.bat"))) { proj = c; break; }
             }
-            if (System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-norealcode") >= 0) proj = "";   // 測試用:不啟動真實程式
+            if (System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-norealcode") >= 0) proj = "";
+            // LEO 坦克模式:真實程式模式目前只支援 swerve+Talon 的機器人,LEO(坦克+SparkMax)還不行,所以坦克模式一律用內建行為
+            if (projectOverride == null && PlayerPrefs.GetInt("tankMode", 1) == 1) proj = "";   // 測試用:不啟動真實程式
             if (!string.IsNullOrEmpty(proj) && System.IO.File.Exists(System.IO.Path.Combine(proj, "gradlew.bat")))
             {
                 Hal = robot.AddComponent<HalSim>();
