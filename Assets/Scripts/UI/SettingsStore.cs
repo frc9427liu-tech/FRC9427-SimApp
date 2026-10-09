@@ -25,6 +25,14 @@ namespace FrcSim
         public static void Apply()
         {
             QualitySettings.vSyncCount = VSync ? 1 : 0;
+            // 畫質:4x 抗鋸齒、高解析柔和陰影、各向異性過濾
+            QualitySettings.antiAliasing = 4;
+            QualitySettings.shadows = ShadowQuality.All;
+            QualitySettings.shadowResolution = ShadowResolution.VeryHigh;
+            QualitySettings.shadowDistance = 45f;
+            QualitySettings.shadowCascades = 4;
+            QualitySettings.anisotropicFiltering = AnisotropicFiltering.ForceEnable;
+            QualitySettings.pixelLightCount = 4;
             int f = FpsOptions[FpsIndex];
             Application.targetFrameRate = f == 0 ? -1 : f;
             Screen.fullScreenMode = Fullscreen ? FullScreenMode.FullScreenWindow : FullScreenMode.Windowed;

@@ -17,16 +17,23 @@ namespace FrcSim
 
             var light = new GameObject("Sun").AddComponent<Light>();
             light.type = LightType.Directional;
-            light.intensity = 0.95f;
-            light.transform.rotation = Quaternion.Euler(55f, -30f, 0f);
+            light.intensity = 1.15f;
+            light.color = new Color(1f, 0.97f, 0.92f);
+            light.transform.rotation = Quaternion.Euler(52f, -35f, 0f);
             light.shadows = LightShadows.Soft;
-            RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat;
-            RenderSettings.ambientLight = new Color(0.36f, 0.38f, 0.42f);
+            light.shadowStrength = 0.7f;
+            light.shadowNormalBias = 0.5f;
+            // 三色環境光(天空/地平/地面)讓方塊側面有層次,不會一片平
+            RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Trilight;
+            RenderSettings.ambientSkyColor = new Color(0.55f, 0.62f, 0.75f);
+            RenderSettings.ambientEquatorColor = new Color(0.42f, 0.44f, 0.50f);
+            RenderSettings.ambientGroundColor = new Color(0.18f, 0.19f, 0.22f);
 
             var camObj = Camera.main != null ? Camera.main.gameObject : new GameObject("Main Camera", typeof(Camera), typeof(AudioListener));
             camObj.tag = "MainCamera";
             var cam = camObj.GetComponent<Camera>();
-            cam.backgroundColor = new Color(0.08f, 0.09f, 0.11f);
+            cam.backgroundColor = new Color(0.10f, 0.12f, 0.16f);
+            cam.allowMSAA = true;
             cam.clearFlags = CameraClearFlags.SolidColor;
             cam.nearClipPlane = 0.1f;
             cam.farClipPlane = 80f;

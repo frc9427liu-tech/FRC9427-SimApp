@@ -56,8 +56,9 @@ namespace FrcSim
                 rot = Mathf.Clamp(rot, -1f, 1f);
             }
 
+            bool halLive = GameSession.Hal != null && GameSession.Hal.Connected;   // 真實程式還沒連上時,先用內建操控,連上後才交給程式
             float scale = Input.GetKey(KeyCode.LeftShift) ? 0.35f : 1f;
-            if (GameSession.Hal != null && tank)
+            if (halLive && tank)
             {
                 // LEO 真實程式:一支實體手把同時當「駕駛(device 0)」與「操作手(device 1)」,照 LEO RobotContainer 的綁定
                 //  駕駛:左/右搖桿(原始值,上 = 負)= 左/右側輪,A 按住 = 放下 intake,B 按住 = 滾輪收球
@@ -77,7 +78,7 @@ namespace FrcSim
                 h.Buttons2[2] = Pad.Held(Pad.X);
                 h.Pov2 = (Pad.Held(Pad.DUp) || kUp) ? 0 : -1;
             }
-            else if (GameSession.Hal != null)
+            else if (halLive)
             {
                 // 真實機器人程式:鍵盤/手把變成虛擬 Xbox 搖桿送進 HALSim(axis0=LX 右為正,axis1=LY 上為負,axis4=RX 右為正)
                 var h = GameSession.Hal;
@@ -92,7 +93,7 @@ namespace FrcSim
             }
             else Drive.Drive(fwd * scale, -strafeRight * scale, rot * scale);
 
-            if (Mech != null && !(GameSession.Hal != null && tank))
+            if (Mech != null && !(halLive && tank))
             {
                 if (tank) { if (Input.GetKeyDown(KeyCode.I)) intakeLatch = !intakeLatch; Mech.IntakeDown = intakeLatch || Pad.Held(Pad.A); }
                 else if (Input.GetKeyDown(KeyCode.I) || Input.GetKeyDown(KeyCode.JoystickButton0) || Pad.Down(Pad.A)) Mech.IntakeDown = !Mech.IntakeDown;
