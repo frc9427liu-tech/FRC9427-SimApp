@@ -18,6 +18,7 @@ namespace FrcSim
             if (Active) return;
             Active = true;
             StartTime = Time.time;
+            SimConstants.MaxSpeed = SettingsStore.MaxSpeedChoice;   // 開始前選的最高車速
             Time.timeScale = 1f;
 
             FuelManager.Init();

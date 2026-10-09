@@ -19,6 +19,15 @@ namespace FrcSim
         }
         public static float RenderScale => RenderScales[RenderScaleIndex];
 
+        // 開始前選的「最高車速」(內建模式直接限速;LEO 真實程式模式換算成底盤齒比)
+        public static readonly float[] SpeedOptions = { 2.5f, 3.5f, 4.0f, 5.0f };
+        public static int SpeedIndex
+        {
+            get => Mathf.Clamp(PlayerPrefs.GetInt("speedIdx", 2), 0, SpeedOptions.Length - 1);
+            set { PlayerPrefs.SetInt("speedIdx", value); PlayerPrefs.Save(); }
+        }
+        public static float MaxSpeedChoice => SpeedOptions[SpeedIndex];
+
         public static bool VSync
         {
             get => PlayerPrefs.GetInt("vsync", 0) == 1;

@@ -8,6 +8,7 @@ namespace FrcSim
     {
         public SwerveDrive Drive;
         public RobotMechanisms Mech;
+        bool slowToggle;
         bool intakeLatch;   // 真實程式模式:I/A 切換「放下吸球」(等同按住 LT)
 
         // 手把右搖桿/扳機軸(由打包時補進 InputManager);沒定義就當 0,不會丟例外
@@ -57,7 +58,8 @@ namespace FrcSim
             }
 
             bool halLive = GameSession.Hal != null && GameSession.Hal.Connected;   // 真實程式還沒連上時,先用內建操控,連上後才交給程式
-            float scale = Input.GetKey(KeyCode.LeftShift) ? 0.35f : 1f;
+            if (Input.GetKeyDown(KeyCode.T)) slowToggle = !slowToggle;   // 同時按太多鍵不方便:T 可切換慢速(Shift 仍然是按住慢速)
+            float scale = (Input.GetKey(KeyCode.LeftShift) || slowToggle) ? 0.35f : 1f;
             if (halLive && tank)
             {
                 // LEO 真實程式:一支實體手把同時當「駕駛(device 0)」與「操作手(device 1)」,照 LEO RobotContainer 的綁定

@@ -93,11 +93,12 @@ namespace FrcSim
             Destroy(bg.gameObject);
             splashing = false;
             if (startMenu == "setup") { ShowRobotSetup(); yield break; }
+            if (startMenu == "controls") { ShowControls(); yield break; }
             if (!Loc.HasChosen) ShowLanguage(); else ShowMain();
         }
 
         // ---------------------------------------------------------------- 畫面建構
-        MenuScreen Build(Func<string> titleFn, Func<string> subFn, Item[] items, Action onBack, Action<RectTransform> extra = null)
+        MenuScreen Build(Func<string> titleFn, Func<string> subFn, Item[] items, Action onBack, Action<RectTransform> extra = null, float firstY = 330f)
         {
             var s = new MenuScreen { TitleFn = titleFn, OnBack = onBack };
             var go = new GameObject("Screen", typeof(RectTransform));
@@ -125,9 +126,9 @@ namespace FrcSim
             UiKit.PlaceTL(hr.rectTransform, 90, 290, 580, 2);
 
             // 按鈕
-            float y = 330f;
-            float step = Mathf.Min(92f, (990f - 330f) / Mathf.Max(1, items.Length));
-            float bh = Mathf.Min(78f, step - 10f);
+            float y = firstY;
+            float step = firstY > 330f ? 70f : Mathf.Min(92f, (990f - 330f) / Mathf.Max(1, items.Length));
+            float bh = firstY > 330f ? 60f : Mathf.Min(78f, step - 10f);
             foreach (var it in items)
             {
                 var b = new UiButton { TextFn = it.Text, OnClick = it.Click, Enabled = it.Enabled };
@@ -146,7 +147,7 @@ namespace FrcSim
 
             // 提示列
             var hint = UiKit.Label("Hint", rt, Loc.T("hint.nav"), 22, UiTheme.TextDim, TextAnchor.UpperLeft);
-            UiKit.PlaceTL(hint.rectTransform, 90, 1010, 640, 30);
+            UiKit.PlaceTL(hint.rectTransform, 90, firstY > 330f ? 1046 : 1010, 640, 30);
             s.Refreshers.Add(() => hint.text = Loc.T("hint.nav"));
 
             // 右下角浮水印
@@ -270,6 +271,10 @@ namespace FrcSim
                 {
                     PlayerPrefs.SetInt("matchClock", PlayerPrefs.GetInt("matchClock", 1) == 1 ? 0 : 1); PlayerPrefs.Save();
                 }),
+                new Item(() => Loc.T("setup.speed") + ":  " + SettingsStore.MaxSpeedChoice.ToString("0.0") + " m/s", () =>
+                {
+                    SettingsStore.SpeedIndex = (SettingsStore.SpeedIndex + 1) % SettingsStore.SpeedOptions.Length;
+                }),
                 new Item(() => Loc.T("setup.ctl") + ":  " + Loc.T(PlayerPrefs.GetInt("tankMode", 1) == 1 ? "ctl.tank" : "ctl.swerve"), () =>
                 {
                     PlayerPrefs.SetInt("tankMode", PlayerPrefs.GetInt("tankMode", 1) == 1 ? 0 : 1); PlayerPrefs.Save();
@@ -351,23 +356,24 @@ namespace FrcSim
                 new Item(() => Loc.T("menu.back"), ShowMain),
             }, ShowMain, content =>
             {
-                var kbT = UiKit.Label("KbT", content, Loc.T("ctl.kb"), 30, UiTheme.Accent, TextAnchor.UpperLeft);
-                UiKit.PlaceTL(kbT.rectTransform, 880, 120, 900, 40);
-                var kb = UiKit.Label("Kb", content, Loc.T("ctl.kb.body"), 28, UiTheme.Text, TextAnchor.UpperLeft);
-                kb.lineSpacing = 1.35f;
-                UiKit.PlaceTL(kb.rectTransform, 880, 170, 980, 420);
-                var pdT = UiKit.Label("PadT", content, Loc.T("ctl.pad"), 30, UiTheme.Accent, TextAnchor.UpperLeft);
-                UiKit.PlaceTL(pdT.rectTransform, 880, 640, 900, 40);
-                var pd = UiKit.Label("Pad", content, Loc.T("ctl.pad.body"), 28, UiTheme.Text, TextAnchor.UpperLeft);
-                pd.lineSpacing = 1.35f;
-                UiKit.PlaceTL(pd.rectTransform, 880, 690, 980, 260);
+                // 內容放在左側面板內(窄視窗也看得到),不再放到右邊 3D 畫面上
+                var kbT = UiKit.Label("KbT", content, Loc.T("ctl.kb"), 24, UiTheme.Accent, TextAnchor.UpperLeft);
+                UiKit.PlaceTL(kbT.rectTransform, 90, 300, 600, 32);
+                var kb = UiKit.Label("Kb", content, Loc.T("ctl.kb.body"), 19, UiTheme.Text, TextAnchor.UpperLeft);
+                kb.lineSpacing = 1.1f;
+                UiKit.PlaceTL(kb.rectTransform, 90, 334, 650, 270);
+                var pdT = UiKit.Label("PadT", content, Loc.T("ctl.pad"), 24, UiTheme.Accent, TextAnchor.UpperLeft);
+                UiKit.PlaceTL(pdT.rectTransform, 90, 612, 600, 32);
+                var pd = UiKit.Label("Pad", content, Loc.T("ctl.pad.body"), 19, UiTheme.Text, TextAnchor.UpperLeft);
+                pd.lineSpacing = 1.1f;
+                UiKit.PlaceTL(pd.rectTransform, 90, 646, 650, 290);
                 // 語言切換時更新內文
                 lastControls = () =>
                 {
                     kbT.text = Loc.T("ctl.kb"); kb.text = Loc.T("ctl.kb.body");
                     pdT.text = Loc.T("ctl.pad"); pd.text = Loc.T("ctl.pad.body");
                 };
-            });
+            }, 940f);
             s.Refreshers.Add(() => lastControls?.Invoke());
             Show(s, false);
         }

@@ -20,6 +20,7 @@
     "right": ["Talon FX (v6)[4]", "Talon FX (v6)[2]"],
     "wheelRadius": 0.0762,
     "driveRatio": 9.0,
+    "refSpeed": 3.54,
     "track": 0.62,
     "forwardSign": -1
   },

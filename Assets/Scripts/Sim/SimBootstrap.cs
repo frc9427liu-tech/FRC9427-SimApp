@@ -75,6 +75,13 @@ namespace FrcSim
                 }
             }
 
+            if (System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-balltest") >= 0)
+            {
+                GameSession.Begin(rig);
+                new GameObject("BallTest").AddComponent<BallTest>();
+                return;
+            }
+
             if (System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-autostart") >= 0)
             {
                 GameSession.Begin(rig);

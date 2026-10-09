@@ -116,6 +116,9 @@ namespace FrcSim
                         foreach (var n in (JArray)ch["right"]) tankR.Add((string)n);
                         wheelRadius = (double?)ch["wheelRadius"] ?? wheelRadius;
                         driveRatio = (double?)ch["driveRatio"] ?? driveRatio;
+                        // refSpeed = 此齒比在 8V 下的車速(m/s);依開始前選的最高車速換算齒比
+                        double refSpeed = (double?)ch["refSpeed"] ?? 0.0;
+                        if (refSpeed > 0.0 && SimConstants.MaxSpeed > 0.1f) driveRatio = driveRatio * refSpeed / SimConstants.MaxSpeed;
                         tankTrack = (double?)ch["track"] ?? tankTrack;
                         fwdSign = (double?)ch["forwardSign"] ?? 1;
                     }
