@@ -28,6 +28,22 @@ namespace FrcSim
         }
         public static float MaxSpeedChoice => SpeedOptions[SpeedIndex];
 
+        // 加速度(慣性):數字越小,起步/煞車越「肉」,看得出底盤慣性
+        public static readonly float[] AccelOptions = { 5f, 8f, 12f, 22f };
+        public static int AccelIndex
+        {
+            get => Mathf.Clamp(PlayerPrefs.GetInt("accel2", 2), 0, AccelOptions.Length - 1);
+            set { PlayerPrefs.SetInt("accel2", value); PlayerPrefs.Save(); }
+        }
+        public static float AccelChoice => AccelOptions[AccelIndex];
+
+        // 陰影開關(關掉最省效能)
+        public static bool Shadows
+        {
+            get => PlayerPrefs.GetInt("shadows", 1) == 1;
+            set { PlayerPrefs.SetInt("shadows", value ? 1 : 0); PlayerPrefs.Save(); }
+        }
+
         public static bool VSync
         {
             get => PlayerPrefs.GetInt("vsync", 0) == 1;
@@ -47,7 +63,7 @@ namespace FrcSim
             QualitySettings.vSyncCount = VSync ? 1 : 0;
             // 畫質:4x 抗鋸齒、高解析柔和陰影、各向異性過濾
             QualitySettings.antiAliasing = 4;
-            QualitySettings.shadows = ShadowQuality.All;
+            QualitySettings.shadows = Shadows ? ShadowQuality.All : ShadowQuality.Disable;
             QualitySettings.shadowResolution = ShadowResolution.High;
             QualitySettings.shadowDistance = 35f;
             QualitySettings.shadowCascades = 2;

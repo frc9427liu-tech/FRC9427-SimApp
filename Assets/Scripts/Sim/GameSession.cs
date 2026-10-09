@@ -19,6 +19,8 @@ namespace FrcSim
             Active = true;
             StartTime = Time.time;
             SimConstants.MaxSpeed = SettingsStore.MaxSpeedChoice;   // 開始前選的最高車速
+            SimConstants.MaxAccel = SettingsStore.AccelChoice;      // 開始前選的加速度(慣性)
+            SimConstants.MaxAngularAccel = 60f * SettingsStore.AccelChoice / 22f * 1.5f;
             Time.timeScale = 1f;
 
             FuelManager.Init();

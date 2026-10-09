@@ -36,7 +36,7 @@ namespace FrcSim
         Image dim;
         MenuScreen cur;
         bool menuVisible, splashing, inGameMenu;
-        bool justOpened, shownNewer;
+        bool justOpened, shownNewer; string shownProgress = "";
         float prevAxis;
         Action settingsBack;
 
@@ -202,7 +202,7 @@ namespace FrcSim
 
         void ShowMain()
         {
-            var s = Build(() => Loc.T("app.title"), () => Loc.T("app.sub") + (UpdateCheck.Newer ? (Loc.Lang == "zh" ? "   ●有新版 v" + UpdateCheck.Latest + "(按 U 下載)" : "   ●New v" + UpdateCheck.Latest + " (press U)") : ""), new[]
+            var s = Build(() => Loc.T("app.title"), () => Loc.T("app.sub") + (UpdateCheck.Progress != "" ? "   ●" + UpdateCheck.Progress : UpdateCheck.Newer ? (Loc.Lang == "zh" ? "   ●有新版 v" + UpdateCheck.Latest + "(按 U 自動更新)" : "   ●New v" + UpdateCheck.Latest + " (press U to update)") : ""), new[]
             {
                 new Item(() => Loc.T("menu.start"),    ShowModes),
                 new Item(() => Loc.T("menu.settings"), () => { settingsBack = ShowMain; ShowSettings(false); }),
@@ -275,6 +275,10 @@ namespace FrcSim
                 {
                     SettingsStore.SpeedIndex = (SettingsStore.SpeedIndex + 1) % SettingsStore.SpeedOptions.Length;
                 }),
+                new Item(() => Loc.T("setup.accel") + ":  " + SettingsStore.AccelChoice.ToString("0") + " m/s²", () =>
+                {
+                    SettingsStore.AccelIndex = (SettingsStore.AccelIndex + 1) % SettingsStore.AccelOptions.Length;
+                }),
                 new Item(() => Loc.T("setup.ctl") + ":  " + Loc.T(PlayerPrefs.GetInt("tankMode", 1) == 1 ? "ctl.tank" : "ctl.swerve"), () =>
                 {
                     PlayerPrefs.SetInt("tankMode", PlayerPrefs.GetInt("tankMode", 1) == 1 ? 0 : 1); PlayerPrefs.Save();
@@ -327,6 +331,10 @@ namespace FrcSim
                 {
                     SettingsStore.RenderScaleIndex = (SettingsStore.RenderScaleIndex + 1) % SettingsStore.RenderScales.Length;
                     RefreshScreen();
+                }),
+                new Item(() => Loc.T("set.shadow") + ":  " + Loc.T(SettingsStore.Shadows ? "on" : "off"), () =>
+                {
+                    SettingsStore.Shadows = !SettingsStore.Shadows; SettingsStore.Apply(); RefreshScreen();
                 }),
                 new Item(() => Loc.T("set.vsync") + ":  " + Loc.T(SettingsStore.VSync ? "on" : "off"), () =>
                 {
@@ -428,8 +436,8 @@ namespace FrcSim
             if (justOpened) { justOpened = false; return; }
 
             // 有新版:主畫面按 U 開啟下載頁;更新結果晚到時重畫副標題
-            if (!inGameMenu && UpdateCheck.Newer && Input.GetKeyDown(KeyCode.U)) Application.OpenURL(UpdateCheck.Page);
-            if (UpdateCheck.Newer != shownNewer) { shownNewer = UpdateCheck.Newer; RefreshScreen(); }
+            if (!inGameMenu && UpdateCheck.Newer && Input.GetKeyDown(KeyCode.U)) UpdateCheck.StartUpdate();
+            if (UpdateCheck.Newer != shownNewer || UpdateCheck.Progress != shownProgress) { shownNewer = UpdateCheck.Newer; shownProgress = UpdateCheck.Progress; RefreshScreen(); }
 
             // 滑鼠 hover / 點擊
             Vector2 mp = Input.mousePosition;

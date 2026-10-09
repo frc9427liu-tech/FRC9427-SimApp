@@ -26,7 +26,13 @@ namespace FrcSim
             acc += 1f; accT += Time.unscaledDeltaTime;
             if (accT < 6f) return;
             float avg = acc / accT; acc = 0f; accT = 0f;
-            if (avg < 28f && SettingsStore.RenderScaleIndex > 0)
+            if (avg < 28f && SettingsStore.RenderScaleIndex == 0 && SettingsStore.Shadows)
+            {
+                SettingsStore.Shadows = false; SettingsStore.Apply();   // 畫質已降到最低還是卡:關陰影
+                Debug.Log($"[SuperSample] avg FPS {avg:0} < 28 at min scale → shadows off");
+                warm = Time.unscaledTime + 8f;
+            }
+            else if (avg < 28f && SettingsStore.RenderScaleIndex > 0)
             {
                 SettingsStore.RenderScaleIndex = SettingsStore.RenderScaleIndex - 1;
                 Debug.Log($"[SuperSample] avg FPS {avg:0} < 28 → render scale lowered to {SettingsStore.RenderScale}");

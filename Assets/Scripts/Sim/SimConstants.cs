@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace FrcSim
 {
@@ -33,8 +33,8 @@ namespace FrcSim
         // 速度/加速度上限 (Constants.java:SwerveConstants 4 m/s、DriveConstants 6 m/s、22 m/s^2)
         // 兩套數字矛盾,先用 4 m/s,待確認實際生效值
         public static float MaxSpeed = 4.0f;
-        public const float MaxAccel = 22f;
+        public static float MaxAccel = 12f;          // m/s²,開始前在設定選「加速度(慣性)」
         public const float MaxAngularSpeed = 10.0f;        // rad/s ≈ vmax / 外接圓半徑
-        public const float MaxAngularAccel = 60f;
+        public static float MaxAngularAccel = 60f;   // rad/s²(隨加速度設定縮放)
     }
 }

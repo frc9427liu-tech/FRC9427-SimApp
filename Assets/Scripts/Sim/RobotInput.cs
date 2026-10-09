@@ -9,6 +9,7 @@ namespace FrcSim
         public SwerveDrive Drive;
         public RobotMechanisms Mech;
         bool slowToggle;
+        float slewL, slewR;
         bool intakeLatch;   // 真實程式模式:I/A 切換「放下吸球」(等同按住 LT)
 
         // 手把右搖桿/扳機軸(由打包時補進 InputManager);沒定義就當 0,不會丟例外
@@ -51,6 +52,10 @@ namespace FrcSim
                 rawR = Mathf.Clamp(Pad.RY + kbF - kbR, -1f, 1f);
                 tankL = TankShape(rawL);
                 tankR = TankShape(rawR);
+                // 內建模式也套 LEO 的加速度限制(kSlewRatePerSec = 4/秒),才看得出起步/煞車的慣性
+                float slewStep = 4f * Time.deltaTime;
+                slewL = Mathf.MoveTowards(slewL, tankL, slewStep); slewR = Mathf.MoveTowards(slewR, tankR, slewStep);
+                tankL = slewL; tankR = slewR;
                 Drive.FieldCentric = false;   // 坦克:往前 = 車頭(intake)方向,不是場地方向
                 fwd = (tankL + tankR) * 0.5f; strafeRight = 0f; rot = (tankR - tankL) * 0.5f;
                 if (Input.GetKey(KeyCode.Q)) rot += 1f; if (Input.GetKey(KeyCode.E)) rot -= 1f;
