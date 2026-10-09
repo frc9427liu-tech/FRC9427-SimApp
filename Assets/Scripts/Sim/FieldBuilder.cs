@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace FrcSim
 {
@@ -34,7 +34,7 @@ namespace FrcSim
             return g;
         }
 
-        public const float BumpLength = 1.2429f;   // 48.93in:含兩側 15° 斜坡的總長
+        public const float BumpLength = 1.128f;   // 44.4in:官方模型 Bump Plastic 沿 x 的實際長度(x 4.06~5.19),峰高 0.165
         // BUMP 區域 (中心 x, 中心 y, 半長 x, 半寬 y)
         public static readonly System.Collections.Generic.List<Vector4> BumpRegions = new System.Collections.Generic.List<Vector4>();
 
@@ -149,7 +149,7 @@ namespace FrcSim
             //   y:場牆起 50.35in(1.279m)是開口,其內側是 12.00in(0.305m)厚立柱,合計 62.35in(1.584m)(接著就是 73in 的 BUMP);
             //   開口淨高 22.25in(0.565m),整體高 40.25in(1.022m)=頂板厚 0.457m。
             {
-                const float tl = 1.6676f, open = 1.279f, post = 0.3048f, clear = 0.5652f, top = 1.0224f;
+                const float tl = 1.194f, open = 1.279f, post = 0.3048f, clear = 0.5652f, top = 1.0224f;
                 foreach (bool south in new[] { true, false })
                 {
                     System.Func<float, float> Y = y => south ? y : W - y;

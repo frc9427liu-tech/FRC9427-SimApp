@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.IO;
 using System.Text;
 using UnityEngine;
@@ -29,7 +29,7 @@ namespace FrcSim
             yield return new WaitForSeconds(0.3f);
             for (int i = 0; i < 60; i++) { d.Drive(1f, 0f, 0f); yield return new WaitForSeconds(0.05f); }
             d.Drive(0f, 0f, 0f);
-            sb.AppendLine($"POST y=1.43: end x={d.Pose2d.x:0.00} (期望 < 3.5 = 被立柱擋住)");
+            sb.AppendLine($"POST y=1.43: end x={d.Pose2d.x:0.00} (期望 < 3.7 = 被立柱擋住;立柱 x 起點 4.03,車半長 0.4)");
 
             // ③ BUMP:y=2.5(藍方下側 BUMP y 1.58~3.44),從 x=3.2 往 +x
             d.SetPose(new Vector2(3.2f, 2.5f), 0f);

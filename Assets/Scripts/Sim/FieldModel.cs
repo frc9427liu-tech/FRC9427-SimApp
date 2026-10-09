@@ -105,6 +105,58 @@ namespace FrcSim
                     }
                     File.WriteAllText(Path.Combine(Path.GetDirectoryName(Application.dataPath), "outpostdump.txt"), sbd.ToString());
                 }
+                if (System.Array.IndexOf(Environment.GetCommandLineArgs(), "-dumpfield") >= 0)
+                {
+                    // 依名稱關鍵字彙總模型零件的外框(藍方 x<8.27 / 紅方),拿來對照 FieldBuilder 的碰撞體尺寸與位置
+                    var sbf = new System.Text.StringBuilder();
+                    string[] keys = { "hub", "trench", "bump", "depot", "tower", "outpost", "guardrail", "polycarbonate", "alliance wall", "driver" };
+                    foreach (var key in keys)
+                        foreach (bool blueSide in new[] { true, false })
+                        {
+                            Bounds gb = default; bool gf = true; int cnt = 0;
+                            foreach (var r in root.GetComponentsInChildren<Renderer>(false))
+                            {
+                                if (r.name.IndexOf(key, StringComparison.OrdinalIgnoreCase) < 0) continue;
+                                if ((r.bounds.center.x < SimConstants.FieldLength / 2f) != blueSide) continue;
+                                if (gf) { gb = r.bounds; gf = false; } else gb.Encapsulate(r.bounds);
+                                cnt++;
+                            }
+                            if (key == "hub" || key == "trench" || key == "bump")
+                                foreach (int zh in new[] { 0, 1 })
+                                    foreach (bool low in new[] { false, true })
+                                    {
+                                        Bounds zb = default; bool zf = true; int zc = 0;
+                                        foreach (var r in root.GetComponentsInChildren<Renderer>(false))
+                                        {
+                                            if (r.name.IndexOf(key, StringComparison.OrdinalIgnoreCase) < 0) continue;
+                                            if ((r.bounds.center.x < SimConstants.FieldLength / 2f) != blueSide) continue;
+                                            if ((r.bounds.center.z > SimConstants.FieldWidth / 2f ? 1 : 0) != zh) continue;
+                                            if (low && r.bounds.max.y > 1.2f) continue;
+                                            if (zf) { zb = r.bounds; zf = false; } else zb.Encapsulate(r.bounds);
+                                            zc++;
+                                        }
+                                        if (!zf) sbf.AppendLine($"  {key} [{(blueSide ? "blue" : "red")}] zhalf={zh} low={low} n={zc} min=({zb.min.x:0.000},{zb.min.y:0.000},{zb.min.z:0.000}) max=({zb.max.x:0.000},{zb.max.y:0.000},{zb.max.z:0.000})");
+                                    }
+                            if (!gf) sbf.AppendLine($"{key} [{(blueSide ? "blue" : "red")}] n={cnt} min=({gb.min.x:0.000},{gb.min.y:0.000},{gb.min.z:0.000}) max=({gb.max.x:0.000},{gb.max.y:0.000},{gb.max.z:0.000})");
+                        }
+                    foreach (var r in root.GetComponentsInChildren<Renderer>(false))
+                    {
+                        var bb = r.bounds;
+                        if (bb.center.x < 8.27f && bb.center.x > 3.9f && bb.center.x < 5.4f && bb.center.z < 4.035f && (r.name.IndexOf("bump", StringComparison.OrdinalIgnoreCase) >= 0 || r.name.IndexOf("trench", StringComparison.OrdinalIgnoreCase) >= 0))
+                            sbf.AppendLine($"PART {r.name.Substring(0, Math.Min(48, r.name.Length))} min=({bb.min.x:0.00},{bb.min.y:0.00},{bb.min.z:0.00}) max=({bb.max.x:0.00},{bb.max.y:0.00},{bb.max.z:0.00})");
+                    }
+                    // HUB 外框:名稱不含 hub 的話,用 GE-261xx / 4x4 之類的零件名取樣
+                    var names = new System.Collections.Generic.SortedDictionary<string, int>();
+                    foreach (var r in root.GetComponentsInChildren<Renderer>(false))
+                    {
+                        string nm = r.name; int colon = nm.IndexOf(':'); string pre = colon > 0 ? nm.Substring(0, colon) : nm;
+                        if (pre.Length > 14) pre = pre.Substring(0, 14);
+                        names.TryGetValue(pre, out int c0); names[pre] = c0 + 1;
+                    }
+                    sbf.AppendLine("--- part-name prefixes (count) ---");
+                    foreach (var kv in names) if (kv.Key.StartsWith("GE-") || kv.Key.StartsWith("FE-000")) sbf.AppendLine(kv.Key + " " + kv.Value);
+                    File.WriteAllText(Path.Combine(Path.GetDirectoryName(Application.dataPath), "fielddump.txt"), sbf.ToString());
+                }
                 Bounds b = default; bool first = true;
                 foreach (var r in root.GetComponentsInChildren<Renderer>(false)) { if (first) { b = r.bounds; first = false; } else b.Encapsulate(r.bounds); }
                 var top = new System.Text.StringBuilder();
