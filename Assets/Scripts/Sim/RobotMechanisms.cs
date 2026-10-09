@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace FrcSim
 {
@@ -44,6 +44,7 @@ namespace FrcSim
 
         static float Wrap(float a) { while (a > Mathf.PI) a -= 2f * Mathf.PI; while (a < -Mathf.PI) a += 2f * Mathf.PI; return a; }
 
+        public float ShotElevDeg = -1f, ShotSpeedPerRps = 0.14f, ShotSpeedBase = 2.0f;   // 出球仰角(<=0 用 Hood 公式)與球速模型
         public MechSim Sim;              // 有的話:機構狀態全部來自真實機器人程式的馬達輸出
         const double ArmMPerRev = 0.019949;
 
@@ -57,6 +58,14 @@ namespace FrcSim
             ArmExt = Mathf.MoveTowards(ArmExt, IntakeDown ? ArmMax : 0f, ArmSpeed * Time.fixedDeltaTime);
             FlywheelRps = Mathf.Abs((float)Sim.Vel(Name("flywheel")));
             HoodDeg = 15f;   // LEO 沒有 Hood 馬達:固定仰角
+            // 出球參數可在 mech.json 的 "shot" 調(實車量測後填):elevDeg = 仰角、speedPerRps/speedBase = 球速(m/s)= 係數×飛輪 rps + 基準
+            var shot = cfg["shot"] as Newtonsoft.Json.Linq.JObject;
+            if (shot != null)
+            {
+                ShotElevDeg = (float?)shot["elevDeg"] ?? -1f;
+                ShotSpeedPerRps = (float?)shot["speedPerRps"] ?? 0.14f;
+                ShotSpeedBase = (float?)shot["speedBase"] ?? 2.0f;
+            }
             float feedRps = Mathf.Abs((float)Sim.Vel(Name("feeder")));
             double ratio = (double?)cfg["turretRatio"] ?? 20.0;
             TurretRad = Wrap((float)(-Sim.Pos(Name("turret")) / ratio * 2.0 * System.Math.PI));   // 往右(正)= 順時針 = 場地角度減少
@@ -172,8 +181,8 @@ namespace FrcSim
             float yaw = heading + TurretRad;
             // 出球模型:用機器人查表(飛輪轉速/Hood 角/飛行時間)擬合到「落在 HUB 開口」,球有空氣阻力 0.375/s(與程式的 linearDragTimeConstant 一致)
             // 擬合結果(2~4m 誤差 ≤0.26m,HUB 半寬 0.5m):速度 = 0.14*rps + 2.0 m/s,仰角 = 71° - 0.75*hood
-            float elev = (71f - 0.75f * HoodDeg) * Mathf.Deg2Rad;
-            float speed = 0.14f * FlywheelRps + 2.0f;
+            float elev = (ShotElevDeg > 0f ? ShotElevDeg : 71f - 0.75f * HoodDeg) * Mathf.Deg2Rad;
+            float speed = ShotSpeedPerRps * FlywheelRps + ShotSpeedBase;
 
             float c = Mathf.Cos(heading), s = Mathf.Sin(heading);
             Vector2 off = new Vector2(ShooterCalc.TurretOffset.x * c, ShooterCalc.TurretOffset.x * s);

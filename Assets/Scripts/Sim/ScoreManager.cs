@@ -22,8 +22,17 @@ namespace FrcSim
         {
             UpdateClockCore();
             // 真實程式模式:AUTO 階段讓 DriverStation 進入 autonomous(機器人程式跑它的自動模式),其餘階段是 teleop
-            if (GameSession.Hal != null) GameSession.Hal.Autonomous = ClockOn && Phase == "AUTO";
+            if (GameSession.Hal != null)
+            {
+                GameSession.Hal.Autonomous = ClockOn && Phase == "AUTO";
+                // 開了比賽時鐘:機器人要等「程式完全跑起來」才 Enable(否則 AUTO 在物理 agent 接管前就空轉掉了),比賽結束後再 Disable
+                GameSession.Hal.Enabled = !ClockOn || (!RobotWaiting() && !Ended);
+            }
         }
+
+        // 真實程式模式:機器人程式還沒完全跑起來(沒連上 HALSim,或物理 agent 還沒接管馬達)
+        static bool RobotWaiting() =>
+            GameSession.Hal != null && (!GameSession.Hal.Connected || (GameSession.Mech != null && GameSession.Mech.Sim != null && !GameSession.Mech.Sim.Ready));
 
         static void UpdateClockCore()
         {
@@ -68,7 +77,8 @@ namespace FrcSim
 
         void FixedUpdate()
         {
-            if (ClockOn) MatchTime += Time.fixedDeltaTime;
+            // 真實程式模式:機器人程式連上 HALSim 之後才開始計時(連線要 20~60 秒,不然 AUTO 的 20 秒早就過了,程式的自動模式根本沒跑到)
+            if (ClockOn && !RobotWaiting()) MatchTime += Time.fixedDeltaTime;
             UpdateClock();
             for (int i = FuelManager.All.Count - 1; i >= 0; i--)
             {

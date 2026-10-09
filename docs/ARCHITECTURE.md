@@ -1,4 +1,4 @@
-# 架構說明(給想看懂或接手的人)
+﻿# 架構說明(給想看懂或接手的人)
 
 ## 兩種執行模式
 1. **內建行為**:Unity 內自己算底盤、機構、射擊(`SwerveDrive` / `RobotMechanisms` / `ShooterCalc`)。啟動快、穩定。
@@ -34,7 +34,8 @@ Unity (HalSim.cs / MechSim.cs / NtSim.cs)
 | `-walltest` | 貼牆、進入 TOWER |
 | `-balltest` | 衝進球堆不被卡住 |
 | `-soaktest 秒數` | 長時間隨機操作,記錄記憶體/球數/幀時間 |
-| `-leotest <專案>` | LEO(坦克 + 兩支手把)真實程式 |
+| `-leotest <專案> -noclock` | LEO(坦克 + 兩支手把)真實程式(加 `-noclock`,不然前 20 秒是 AUTO,手把無效) |
+| `-leoauto <專案>` | LEO 真實程式不碰手把,記錄 AUTO(20 秒)路徑/射擊,用來檢查與調整自動模式 |
 | `-realtest <專案> -noclock` | swerve 真實程式(射擊、吃球) |
 | `-portoffset N` | 連線埠偏移,可與已開著的模擬器同時測試 |
 

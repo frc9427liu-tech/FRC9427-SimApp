@@ -62,6 +62,22 @@ namespace FrcSim
         [System.Runtime.InteropServices.DllImport("winmm.dll")] static extern uint timeBeginPeriod(uint ms);
 
         bool agentActive;
+        float readySince = -1f;
+        // 機器人程式「真的開始跑了」:有物理 agent 時要等到 agent 已開始推馬達狀態(它啟動後會先等 8 秒才接管馬達),再多等 1 秒;沒有 agent 時連線後 2 秒。
+        // 比賽時鐘用它判斷何時開始倒數,這樣程式的 AUTO(前 20 秒)才會完整跑到。
+        public bool Ready
+        {
+            get
+            {
+                if (Hal == null || !Hal.Connected) { readySince = -1f; return false; }
+                bool ok;
+                if (agentActive) { lock (agentState) ok = agentState.Count > 0; }
+                else ok = true;
+                if (!ok) { readySince = -1f; return false; }
+                if (readySince < 0f) readySince = Time.time;
+                return Time.time - readySince > (agentActive ? 1f : 2f);
+            }
+        }
         // Java agent 每 ~8ms 經本機 TCP(3399)推來「id 位置 速度 …」一行;HALSim 的回聲更新不可靠,改用這條直連
         readonly Dictionary<int, double[]> agentState = new Dictionary<int, double[]>();
         volatile bool agentStop;

@@ -31,6 +31,7 @@
     "feeder": "Talon FX (v6)[8]",
     "flywheel": "Talon FX (v6)[9]",
     "turret": "Talon FX (v6)[10]",
-    "turretRatio": 20.0
+    "turretRatio": 20.0,
+    "shot": { "elevDeg": 60.0, "speedPerRps": 0.14, "speedBase": 2.0, "note": "猜的:球速 = 0.14*飛輪rps + 2.0 m/s,固定仰角 60°;實車量到球速/仰角後改這裡" }
   }
 }
