@@ -14,6 +14,17 @@ using Debug = UnityEngine.Debug;
 namespace FrcSim
 {
 
+    // 測試用:-portoffset N 讓 HALSim(3300)與物理 agent(3399)的連線埠各加 N,這樣自動測試可以和使用者開著的模擬器同時跑
+    public static class SimPorts
+    {
+        public static readonly int Offset = Parse();
+        static int Parse()
+        {
+            var a = Environment.GetCommandLineArgs(); int i = Array.IndexOf(a, "-portoffset");
+            return i >= 0 && i + 1 < a.Length && int.TryParse(a[i + 1], out int v) ? v : 0;
+        }
+    }
+
     // 把機器人專案準備成模擬器能 build 的「工作副本」:
     //  - GradleRIO 不能在 OneDrive 或含中文的路徑 build → 複製到 C:\FRC9427SimWork\<名稱>
     //  - 這台電腦的 Windows 應用程式控制原則會擋 REVLibDriver.dll(SparkMax 載不起來)→ 用 Sim\overlay 的替身檔覆蓋(只改副本)
@@ -44,7 +55,7 @@ namespace FrcSim
             bool hasSpark = File.Exists(Path.Combine(dir, "src", "main", "java", "frc", "robot", "subsystems", "drive", "DriveIOSparkMax.java"));
             bool needCopy = dir.IndexOf("OneDrive", StringComparison.OrdinalIgnoreCase) >= 0 || System.Linq.Enumerable.Any(name, c => c > 127) || hasSpark;
             if (!needCopy) return dir;
-            string dst = @"C:\FRC9427SimWork\" + System.Text.RegularExpressions.Regex.Replace(profile, "[^A-Za-z0-9_]", "_");
+            string dst = @"C:\FRC9427SimWork\" + System.Text.RegularExpressions.Regex.Replace(profile, "[^A-Za-z0-9_]", "_") + (SimPorts.Offset != 0 ? "_p" + SimPorts.Offset : "");   // 測試用 -portoffset 時用獨立副本,不干擾使用者開著的模擬器
             try
             {
                 var psi = new ProcessStartInfo("robocopy", "\"" + dir.TrimEnd('\\') + "\" \"" + dst + "\" /MIR /XD .gradle build .git bin /NFL /NDL /NJH /NJS /NP")
@@ -176,7 +187,7 @@ namespace FrcSim
             try
             {
                 Status = "starting robot code";
-                logPath = Path.Combine(Path.GetTempPath(), "frc9427-sim-robot.log");
+                logPath = Path.Combine(Path.GetTempPath(), SimPorts.Offset != 0 ? "frc9427-sim-robot-p" + SimPorts.Offset + ".log" : "frc9427-sim-robot.log");
                 string init = Path.Combine(Path.GetTempPath(), "frc9427-enable-ws.init.gradle");
                 File.WriteAllText(init, InitScript);
 
@@ -205,6 +216,8 @@ namespace FrcSim
                     if (File.Exists(motorsTxt)) psi.EnvironmentVariables["JAVA_TOOL_OPTIONS"] += " -Dsimagent.motors=" + motorsTxt.Replace('\\', '/');
                 }
                 // 只讓機器人送我們要用的訊息:預設它每個週期把所有 HAL 裝置狀態都丟過來(~11k 則/秒),會擠掉 Unity→機器人的回授
+                psi.EnvironmentVariables["HALSIMWS_PORT"] = (3300 + SimPorts.Offset).ToString();
+                if (SimPorts.Offset != 0) psi.EnvironmentVariables["JAVA_TOOL_OPTIONS"] += " -Dsimagent.port=" + (3399 + SimPorts.Offset);
                 psi.EnvironmentVariables["HALSIMWS_FILTERS"] = "CANMotor,CANEncoder,CANGyro,Gyro,DriverStation";
                 gradle = Process.Start(psi);
                 var w = new StreamWriter(logPath, false);
@@ -215,7 +228,7 @@ namespace FrcSim
 
                 // 等 HALSim 伺服器(編譯需要約 1 分鐘)
                 Status = "compiling/starting robot";
-                var uri = new Uri("ws://127.0.0.1:3300/wpilibws");
+                var uri = new Uri("ws://127.0.0.1:" + (3300 + SimPorts.Offset) + "/wpilibws");
                 for (int i = 0; i < 240 && !ct.IsCancellationRequested; i++)
                 {
                     ws?.Dispose();

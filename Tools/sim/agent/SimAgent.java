@@ -85,7 +85,7 @@ public class SimAgent {
     // 本機 TCP(127.0.0.1:3399):把每顆馬達的轉子位置/速度直接推給 Unity(HALSim 的回聲更新不可靠、會過期)
     static void startServer() {
         Thread srv = new Thread(() -> {
-            try (java.net.ServerSocket ss = new java.net.ServerSocket(3399, 1, java.net.InetAddress.getLoopbackAddress())) {
+            try (java.net.ServerSocket ss = new java.net.ServerSocket(Integer.getInteger("simagent.port", 3399), 1, java.net.InetAddress.getLoopbackAddress())) {
                 while (true) {
                     java.net.Socket s = ss.accept();
                     s.setTcpNoDelay(true);

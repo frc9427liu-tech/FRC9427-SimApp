@@ -74,7 +74,7 @@ namespace FrcSim
                     using (var c = new System.Net.Sockets.TcpClient())
                     {
                         c.NoDelay = true;
-                        c.Connect("127.0.0.1", 3399);
+                        c.Connect("127.0.0.1", 3399 + SimPorts.Offset);
                         using (var rd = new StreamReader(c.GetStream()))
                         {
                             string line;
