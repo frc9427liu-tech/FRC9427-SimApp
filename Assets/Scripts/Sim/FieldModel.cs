@@ -82,7 +82,7 @@ namespace FrcSim
                         mats[i] = nm;
                     }
                     r.sharedMaterials = mats;
-                    r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
+                    r.shadowCastingMode = r.bounds.size.magnitude < 0.3f ? UnityEngine.Rendering.ShadowCastingMode.Off : UnityEngine.Rendering.ShadowCastingMode.On;   // 小零件不投影,省陰影運算
                     r.receiveShadows = true;
                 }
 
@@ -94,6 +94,17 @@ namespace FrcSim
                 if (field != null)
                     foreach (var r in field.GetComponentsInChildren<Renderer>(true)) r.enabled = false;
 
+                if (System.Array.IndexOf(Environment.GetCommandLineArgs(), "-dumpoutpost") >= 0)
+                {
+                    var sbd = new System.Text.StringBuilder();
+                    foreach (var r in root.GetComponentsInChildren<Renderer>(false))
+                    {
+                        var bb = r.bounds;
+                        if (bb.center.x < 2.6f && bb.center.z > 2.6f && bb.center.z < 5.5f && bb.size.magnitude > 0.3f && bb.max.y > 0.05f)
+                            sbd.AppendLine($"{r.name} min=({bb.min.x:0.00},{bb.min.y:0.00},{bb.min.z:0.00}) max=({bb.max.x:0.00},{bb.max.y:0.00},{bb.max.z:0.00})");
+                    }
+                    File.WriteAllText(Path.Combine(Path.GetDirectoryName(Application.dataPath), "outpostdump.txt"), sbd.ToString());
+                }
                 Bounds b = default; bool first = true;
                 foreach (var r in root.GetComponentsInChildren<Renderer>(false)) { if (first) { b = r.bounds; first = false; } else b.Encapsulate(r.bounds); }
                 var top = new System.Text.StringBuilder();

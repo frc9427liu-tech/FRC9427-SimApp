@@ -11,7 +11,7 @@ namespace FrcSim
             get => Mathf.Clamp(PlayerPrefs.GetInt("fpsIdx", 0), 0, FpsOptions.Length - 1);
             set { PlayerPrefs.SetInt("fpsIdx", value); PlayerPrefs.Save(); }
         }
-        public static readonly float[] RenderScales = { 1.0f, 1.5f, 2.0f };   // 超取樣比例(畫質)
+        public static readonly float[] RenderScales = { 1.0f, 1.25f, 1.5f, 2.0f };   // 超取樣比例(畫質)
         public static int RenderScaleIndex
         {
             get => Mathf.Clamp(PlayerPrefs.GetInt("rscale", 1), 0, RenderScales.Length - 1);
@@ -45,9 +45,9 @@ namespace FrcSim
             // 畫質:4x 抗鋸齒、高解析柔和陰影、各向異性過濾
             QualitySettings.antiAliasing = 4;
             QualitySettings.shadows = ShadowQuality.All;
-            QualitySettings.shadowResolution = ShadowResolution.VeryHigh;
-            QualitySettings.shadowDistance = 45f;
-            QualitySettings.shadowCascades = 4;
+            QualitySettings.shadowResolution = ShadowResolution.High;
+            QualitySettings.shadowDistance = 35f;
+            QualitySettings.shadowCascades = 2;
             QualitySettings.anisotropicFiltering = AnisotropicFiltering.ForceEnable;
             QualitySettings.pixelLightCount = 4;
             int f = FpsOptions[FpsIndex];

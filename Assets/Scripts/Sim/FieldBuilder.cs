@@ -161,10 +161,13 @@ namespace FrcSim
             // TOWER:靠聯盟牆
             // 位置依官方 2026 AprilTag 場地配置(WPILib 2026-rebuilt-welded.json):藍方 TOWER 牆面 tag 31/32 的 y 平均 = 3.965 m,
             // 紅方 15/16 的 y 平均 = 4.105 m(場地旋轉對稱:y → W - y)
-            float towerY = blue ? 3.965f : W - 3.965f;
-            Box(root, (blue ? "BlueTower" : "RedTower"),
-                new Vector3(X(SimConstants.TowerDepth / 2f), SimConstants.TowerHeight / 2f, towerY),
-                new Vector3(SimConstants.TowerDepth, SimConstants.TowerHeight, SimConstants.TowerWidth), c, true);
+            // 依官方場地模型(FE-2026 CAD)重新量過:TOWER 是「開放式」框架——靠牆一面板、前面兩根細立柱(x 1.02~1.11 m,
+            // y 3.30~3.34 與 4.16~4.19,高 1.83 m),橫桿(rung)離地 0.66 m 以上。機器人本體(保險桿高度)可以開進兩立柱之間,
+            // 原本用一整塊實心方塊會把機器人擋在外面,也和畫面上看到的形狀對不上,所以只留兩根立柱當碰撞體。
+            foreach (float zc in new[] { 3.32f, 4.175f })
+                Box(root, (blue ? "BlueTowerPost" : "RedTowerPost"),
+                    new Vector3(X(1.065f), 0.915f, blue ? zc : W - zc),
+                    new Vector3(0.10f, 1.83f, 0.045f), c, true);
 
             // DEPOT:沿聯盟牆(貼地)
             // 位置依官方圖面 FE-2026 第 3 頁:藍方 DEPOT 中心離計分台側牆 234.85in(5.965m),紅方對稱(W - y)
@@ -173,8 +176,10 @@ namespace FrcSim
 
             // OUTPOST:貼聯盟牆,AprilTag 29/30(藍)y=26.22/43.22in → 中心 34.72in(0.882m);圖面寬 49.84in(1.266m)、深 28.13in(0.7145m)。
             // 高度圖面文字沒標,先用 1.0m 的方塊(有碰撞,機器人不能穿過);紅方對稱
+            // 2026-10-10 更正:官方場地模型裡 OUTPOST 在聯盟牆「後面」(場外的人類球員區,場內只有牆上的出球口與膠帶),
+            // 場內根本沒有東西。原本放的 1m 實心方塊是看不見的牆,機器人去接球(補球處)會被卡住,所以拿掉碰撞體,只留不可見參考。
             Box(root, blue ? "BlueOutpost" : "RedOutpost", new Vector3(X(0.7145f / 2f), 0.5f, blue ? 0.882f : W - 0.882f),
-                new Vector3(0.7145f, 1.0f, 1.266f), c, true);
+                new Vector3(0.7145f, 1.0f, 1.266f), c, false);
         }
     }
 }
