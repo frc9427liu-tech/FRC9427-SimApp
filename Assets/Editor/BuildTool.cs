@@ -106,6 +106,7 @@ public static class BuildTool
             string simDir = OutDir + "/Sim";
             Directory.CreateDirectory(simDir);
             foreach (var g in Directory.GetFiles("Tools/sim", "*.mech.json")) File.Copy(g, simDir + "/" + Path.GetFileName(g), true);
+            if (File.Exists("Tools/Set-High-Performance-GPU.bat")) File.Copy("Tools/Set-High-Performance-GPU.bat", OutDir + "/Set-High-Performance-GPU.bat", true);
             if (File.Exists("Tools/sim/field/Field2026.glb")) { Directory.CreateDirectory(simDir + "/field"); File.Copy("Tools/sim/field/Field2026.glb", simDir + "/field/Field2026.glb", true); }
             if (Directory.Exists("Tools/sim/overlay")) { Directory.CreateDirectory(simDir + "/overlay"); foreach (var g in Directory.GetFiles("Tools/sim/overlay", "*.java")) File.Copy(g, simDir + "/overlay/" + Path.GetFileName(g), true); }
             if (File.Exists("Tools/sim/agent/simagent.jar")) File.Copy("Tools/sim/agent/simagent.jar", simDir + "/simagent.jar", true);
