@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -52,7 +52,7 @@ namespace FrcSim
             var sc = cg.GetComponent<CanvasScaler>();
             sc.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             sc.referenceResolution = new Vector2(1920, 1080);
-            sc.matchWidthOrHeight = 0.5f;
+            sc.matchWidthOrHeight = 1f;
             root = cg.GetComponent<RectTransform>();
 
             dim = UiKit.Img("Dim", root, new Color(0, 0, 0, 0));
@@ -87,7 +87,7 @@ namespace FrcSim
                 float a = t < 0.8f ? t / 0.8f : (t > total - 0.8f ? (total - t) / 0.8f : 1f);
                 foreach (var tx in texts) { var c = tx.color; c.a = a; tx.color = c; }
                 var lc = line.color; lc.a = a * 0.55f; line.color = lc;
-                if (t > 0.4f && (Input.anyKeyDown || Input.GetMouseButtonDown(0))) break;
+                if (t > 0.4f && (Input.anyKeyDown || Input.GetMouseButtonDown(0) || Pad.Down(Pad.A) || Pad.Down(Pad.Start))) break;
                 yield return null;
             }
             Destroy(bg.gameObject);
@@ -126,18 +126,20 @@ namespace FrcSim
 
             // 按鈕
             float y = 330f;
+            float step = Mathf.Min(92f, (990f - 330f) / Mathf.Max(1, items.Length));
+            float bh = Mathf.Min(78f, step - 10f);
             foreach (var it in items)
             {
                 var b = new UiButton { TextFn = it.Text, OnClick = it.Click, Enabled = it.Enabled };
                 b.Bg = UiKit.Img("Btn", rt, new Color(1, 1, 1, 0.04f));
                 b.Rt = b.Bg.rectTransform;
-                UiKit.PlaceTL(b.Rt, 90, y, 580, 78);
+                UiKit.PlaceTL(b.Rt, 90, y, 580, bh);
                 b.Bar = UiKit.Img("Bar", b.Rt, UiTheme.Accent);
-                UiKit.PlaceTL(b.Bar.rectTransform, 0, 0, 6, 78);
+                UiKit.PlaceTL(b.Bar.rectTransform, 0, 0, 6, bh);
                 b.Label = UiKit.Label("Text", b.Rt, it.Text(), 34, UiTheme.TextDim, TextAnchor.MiddleLeft);
-                UiKit.PlaceTL(b.Label.rectTransform, 34, 0, 540, 78);
+                UiKit.PlaceTL(b.Label.rectTransform, 34, 0, 540, bh);
                 s.Buttons.Add(b);
-                y += 92f;
+                y += step;
             }
 
             // 提示列
@@ -386,7 +388,7 @@ namespace FrcSim
             // 遊戲中按 Esc / 手把 Back 開暫停選單
             if (!menuVisible && GameSession.Active)
             {
-                if (Input.GetKeyDown(KeyCode.Escape) || Input.GetKeyDown(KeyCode.JoystickButton6)) ShowPause();
+                if (Input.GetKeyDown(KeyCode.Escape) || Input.GetKeyDown(KeyCode.JoystickButton6) || Pad.Down(Pad.Start) || Pad.Down(Pad.Back)) ShowPause();
                 return;
             }
             if (!menuVisible || cur == null) return;
@@ -407,7 +409,7 @@ namespace FrcSim
             }
 
             // 上/下(W/S、方向鍵、手把左搖桿)
-            float ax = Input.GetAxisRaw("Vertical");
+            float ax = Input.GetAxisRaw("Vertical") + Pad.LY + (Pad.Held(Pad.DUp) ? 1f : 0f) - (Pad.Held(Pad.DDown) ? 1f : 0f);
             int move = 0;
             if (ax > 0.6f && prevAxis <= 0.6f) move = -1;
             if (ax < -0.6f && prevAxis >= -0.6f) move = 1;
@@ -425,10 +427,10 @@ namespace FrcSim
 
             if (cur.Sel >= 0 && cur.Sel < cur.Buttons.Count &&
                 (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter) ||
-                 Input.GetKeyDown(KeyCode.JoystickButton0)))
+                 Input.GetKeyDown(KeyCode.JoystickButton0) || Pad.Down(Pad.A)))
                 Activate(cur.Buttons[cur.Sel]);
 
-            if (Input.GetKeyDown(KeyCode.Escape) || Input.GetKeyDown(KeyCode.JoystickButton1))
+            if (Input.GetKeyDown(KeyCode.Escape) || Input.GetKeyDown(KeyCode.JoystickButton1) || Pad.Down(Pad.B))
                 cur?.OnBack?.Invoke();
         }
 
