@@ -36,7 +36,7 @@ namespace FrcSim
         Image dim;
         MenuScreen cur;
         bool menuVisible, splashing, inGameMenu;
-        bool justOpened;
+        bool justOpened, shownNewer;
         float prevAxis;
         Action settingsBack;
 
@@ -202,7 +202,7 @@ namespace FrcSim
 
         void ShowMain()
         {
-            var s = Build(() => Loc.T("app.title"), () => Loc.T("app.sub"), new[]
+            var s = Build(() => Loc.T("app.title"), () => Loc.T("app.sub") + (UpdateCheck.Newer ? (Loc.Lang == "zh" ? "   ●有新版 v" + UpdateCheck.Latest + "(按 U 下載)" : "   ●New v" + UpdateCheck.Latest + " (press U)") : ""), new[]
             {
                 new Item(() => Loc.T("menu.start"),    ShowModes),
                 new Item(() => Loc.T("menu.settings"), () => { settingsBack = ShowMain; ShowSettings(false); }),
@@ -426,6 +426,10 @@ namespace FrcSim
             if (!menuVisible || cur == null) return;
 
             if (justOpened) { justOpened = false; return; }
+
+            // 有新版:主畫面按 U 開啟下載頁;更新結果晚到時重畫副標題
+            if (!inGameMenu && UpdateCheck.Newer && Input.GetKeyDown(KeyCode.U)) Application.OpenURL(UpdateCheck.Page);
+            if (UpdateCheck.Newer != shownNewer) { shownNewer = UpdateCheck.Newer; RefreshScreen(); }
 
             // 滑鼠 hover / 點擊
             Vector2 mp = Input.mousePosition;

@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace FrcSim
 {
@@ -36,6 +36,8 @@ namespace FrcSim
 
         void LateUpdate()
         {
+            int wantFps = SettingsStore.EffectiveFps;
+            if (Application.targetFrameRate != wantFps) Application.targetFrameRate = wantFps;   // 選單時 30、遊戲中用設定值(預設 60)
             if (!MenuSystem.Blocking) AutoQuality();
             float s = SettingsStore.RenderScale;
             if (curScale == s && w == Screen.width && h == Screen.height) return;

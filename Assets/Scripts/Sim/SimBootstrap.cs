@@ -9,10 +9,11 @@ namespace FrcSim
         static void Init()
         {
             SettingsStore.Apply();
-            Time.fixedDeltaTime = 1f / 100f;
+            Time.fixedDeltaTime = 1f / 60f;   // 物理 60Hz(原本 100Hz 太吃 CPU;機器人程式本身的 20ms 週期由 MechSim 累計)
             Physics.defaultSolverIterations = 8;
             Physics.defaultSolverVelocityIterations = 2;
 
+            new GameObject("UpdateCheck").AddComponent<UpdateCheck>();
             FieldBuilder.Build();
             if (System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-boxfield") < 0) FieldModel.Load();   // 官方場地模型(-boxfield 可退回方塊外觀)
 

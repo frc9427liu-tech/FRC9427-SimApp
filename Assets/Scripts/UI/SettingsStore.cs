@@ -4,12 +4,12 @@ namespace FrcSim
 {
     public static class SettingsStore
     {
-        public static readonly int[] FpsOptions = { 60, 90, 120, 144, 150, 240, 0 };   // 0 = 不限
+        public static readonly int[] FpsOptions = { 30, 60, 90, 120, 144 };   // 不再提供 240/不限(會讓顯卡、CPU 滿載燒機)
 
         public static int FpsIndex
         {
-            get => Mathf.Clamp(PlayerPrefs.GetInt("fpsIdx", 0), 0, FpsOptions.Length - 1);
-            set { PlayerPrefs.SetInt("fpsIdx", value); PlayerPrefs.Save(); }
+            get => Mathf.Clamp(PlayerPrefs.GetInt("fps2", 1), 0, FpsOptions.Length - 1);
+            set { PlayerPrefs.SetInt("fps2", value); PlayerPrefs.Save(); }
         }
         public static readonly float[] RenderScales = { 1.0f, 1.25f, 1.5f, 2.0f };   // 超取樣比例(畫質)
         public static int RenderScaleIndex
@@ -38,6 +38,9 @@ namespace FrcSim
             get => PlayerPrefs.GetInt("full", 0) == 1;
             set { PlayerPrefs.SetInt("full", value ? 1 : 0); PlayerPrefs.Save(); }
         }
+
+        // 目前該用的幀率上限:選單/暫停時固定 30(待機不燒機),遊戲中用設定值
+        public static int EffectiveFps => MenuSystem.Blocking ? 30 : FpsOptions[FpsIndex];
 
         public static void Apply()
         {
