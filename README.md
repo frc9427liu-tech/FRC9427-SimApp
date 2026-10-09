@@ -1,5 +1,7 @@
 # FRC 9427 模擬器(FRC 2026 REBUILT)
 
+> ⚠️ 請一律下載 [最新版 Release](../../releases/latest)。v0.1.2 以前的舊版沒有「自動檢查更新」,也有已修正的問題(卡住、GPU 燒機)。
+
 FRC 9427 隊自製的 Unity 桌面模擬器:官方 2026 REBUILT 場地、FUEL 球物理、HUB 計分、可選機器人模型,並能直接執行機器人的 Java 程式(WPILib HALSim)。
 
 ## 下載(Windows)
