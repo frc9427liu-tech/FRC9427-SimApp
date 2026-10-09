@@ -48,6 +48,7 @@ namespace FrcSim
                 float kbR = (Input.GetKey(KeyCode.D) ? 1f : 0f) - (Input.GetKey(KeyCode.A) ? 1f : 0f);
                 tankL = TankShape(Mathf.Clamp(Pad.LY + kbF + kbR, -1f, 1f));
                 tankR = TankShape(Mathf.Clamp(Pad.RY + kbF - kbR, -1f, 1f));
+                Drive.FieldCentric = false;   // 坦克:往前 = 車頭(intake)方向,不是場地方向
                 fwd = (tankL + tankR) * 0.5f; strafeRight = 0f; rot = (tankR - tankL) * 0.5f;
                 if (Input.GetKey(KeyCode.Q)) rot += 1f; if (Input.GetKey(KeyCode.E)) rot -= 1f;
                 rot = Mathf.Clamp(rot, -1f, 1f);
