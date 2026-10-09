@@ -31,6 +31,7 @@ namespace FrcSim
             m.Held = 20; m.ShotsFired = 0;
             Pad.SetFake(true, rt: 1f); yield return new WaitForSeconds(2.0f);
             sb.AppendLine($"RT held 2s: Shooting={m.Shooting} ShotsFired={m.ShotsFired}");
+            sb.AppendLine($"body lean peak: {BodyLean.PeakAbs:0.00} deg (signed {BodyLean.PeakSigned:0.00}); expect > 0.3 if inertia visual works");
             Pad.SetFake(false);
             File.WriteAllText(Path.Combine(Path.GetDirectoryName(Application.dataPath), "padtest.txt"), sb.ToString());
             Application.Quit();

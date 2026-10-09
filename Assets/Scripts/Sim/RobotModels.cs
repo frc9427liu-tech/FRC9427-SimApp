@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Linq;
 using UnityEngine;
@@ -60,8 +60,13 @@ namespace FrcSim
                 Debug.Log($"[RobotModels] Load returned {loaded}");
                 if (loaded)
                 {
+                    // 外觀掛在「慣性傾斜」軸心下:加速時車頭微微上揚、煞車時點頭(以地面接觸點為軸),看得出底盤慣性
+                    var pivot = new GameObject("ModelPivot");
+                    pivot.transform.SetParent(robot, false);
+                    pivot.transform.localPosition = new Vector3(0f, -(SimConstants.BumperHeight / 2f + 0.03f), 0f);
+                    pivot.AddComponent<BodyLean>();
                     var root = new GameObject("ModelRoot");
-                    root.transform.SetParent(robot, false);
+                    root.transform.SetParent(pivot.transform, false);
                     bool inst = await imp.InstantiateMainSceneAsync(root.transform);
                     Debug.Log($"[RobotModels] Instantiate returned {inst}");
                     if (inst)

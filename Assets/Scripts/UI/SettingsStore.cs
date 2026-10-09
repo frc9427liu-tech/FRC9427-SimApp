@@ -58,11 +58,26 @@ namespace FrcSim
         // 目前該用的幀率上限:選單/暫停時固定 30(待機不燒機),遊戲中用設定值
         public static int EffectiveFps => MenuSystem.Blocking ? 30 : FpsOptions[FpsIndex];
 
+        static bool firstRunChecked;
+        // 第一次啟動(沒有存過任何畫質設定)時依顯卡自動選預設:內顯/小顯存 → 低(超取樣 100%、關陰影、MSAA 2x);其餘維持預設(125%、陰影開、4x)
+        static void FirstRunDefaults()
+        {
+            if (firstRunChecked) return; firstRunChecked = true;
+            if (PlayerPrefs.HasKey("rscale") || PlayerPrefs.HasKey("shadows") || PlayerPrefs.HasKey("msaa")) return;
+            string gpu = SystemInfo.graphicsDeviceName ?? "";
+            bool weak = gpu.IndexOf("Intel", System.StringComparison.OrdinalIgnoreCase) >= 0 || gpu.IndexOf("UHD", System.StringComparison.OrdinalIgnoreCase) >= 0
+                        || gpu.IndexOf("Iris", System.StringComparison.OrdinalIgnoreCase) >= 0 || (SystemInfo.graphicsMemorySize > 0 && SystemInfo.graphicsMemorySize < 2000);
+            Debug.Log($"[Settings] first run, GPU=\"{gpu}\" VRAM={SystemInfo.graphicsMemorySize}MB → {(weak ? "low" : "default")} quality preset");
+            if (weak) { PlayerPrefs.SetInt("rscale", 0); PlayerPrefs.SetInt("shadows", 0); PlayerPrefs.SetInt("msaa", 2); PlayerPrefs.Save(); }
+        }
+        public static int Msaa => PlayerPrefs.GetInt("msaa", 4);
+
         public static void Apply()
         {
+            FirstRunDefaults();
             QualitySettings.vSyncCount = VSync ? 1 : 0;
             // 畫質:4x 抗鋸齒、高解析柔和陰影、各向異性過濾
-            QualitySettings.antiAliasing = 4;
+            QualitySettings.antiAliasing = Msaa;
             QualitySettings.shadows = Shadows ? ShadowQuality.All : ShadowQuality.Disable;
             QualitySettings.shadowResolution = ShadowResolution.High;
             QualitySettings.shadowDistance = 35f;
