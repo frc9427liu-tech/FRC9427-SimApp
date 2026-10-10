@@ -172,8 +172,40 @@ namespace FrcSim
                 var f = h.GetComponent<Fuel>();
                 if (f == null) continue;
                 Held++;
+                SpawnAbsorb(f.transform.position);
                 FuelManager.Remove(f);
             }
+        }
+
+        // 吸球動畫:原球移除後留一顆純視覺球,0.18 秒飛進車內再消失
+        void SpawnAbsorb(Vector3 from)
+        {
+            var g = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            Destroy(g.GetComponent<Collider>());
+            g.transform.position = from;
+            g.transform.localScale = Vector3.one * (Fuel.Radius * 2f);
+            g.GetComponent<Renderer>().sharedMaterial = FuelManager.BallMat;
+            g.AddComponent<AbsorbAnim>().Init(transform, new Vector3(0f, 0.35f, 0f));
+        }
+
+        // 車內球數顯示:Held 顆小球疊在車內(最多 24 顆),球數變多肉眼看得到
+        readonly System.Collections.Generic.List<Transform> heldViz = new System.Collections.Generic.List<Transform>();
+        void LateUpdate()
+        {
+            int n = Mathf.Min(Held, 24);
+            while (heldViz.Count < n)
+            {
+                var g = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                Destroy(g.GetComponent<Collider>());
+                g.transform.SetParent(transform, false);
+                g.transform.localScale = Vector3.one * (Fuel.Radius * 1.8f);
+                g.GetComponent<Renderer>().sharedMaterial = FuelManager.BallMat;
+                int i = heldViz.Count;
+                int col = i % 4, row = (i / 4) % 3, layer = i / 12;
+                g.transform.localPosition = new Vector3(-0.18f + col * 0.12f, 0.30f + layer * 0.14f, -0.12f + row * 0.12f);
+                heldViz.Add(g.transform);
+            }
+            for (int i = 0; i < heldViz.Count; i++) heldViz[i].gameObject.SetActive(i < n);
         }
 
         void Fire(Vector2 pos, float heading)

@@ -44,10 +44,24 @@ namespace FrcSim
         }
     }
 
+    // 被吸進車內的球:純視覺,飛向機器人內部後消失
+    public class AbsorbAnim : MonoBehaviour
+    {
+        Transform target; Vector3 local; Vector3 start; float t;
+        public void Init(Transform robot, Vector3 localTarget) { target = robot; local = localTarget; start = transform.position; }
+        void Update()
+        {
+            t += Time.deltaTime / 0.18f;
+            if (target == null || t >= 1f) { Destroy(gameObject); return; }
+            transform.position = Vector3.Lerp(start, target.TransformPoint(local), t * t);
+        }
+    }
+
     public static class FuelManager
     {
         public static readonly List<Fuel> All = new List<Fuel>();
         static Material mat;
+        public static Material BallMat => mat;
         static PhysicsMaterial pm;
         static Transform root;
 
