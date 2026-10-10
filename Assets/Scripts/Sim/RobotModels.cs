@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -171,9 +171,9 @@ namespace FrcSim
                         else if (m.HasProperty("_BaseColor")) c = m.GetColor("_BaseColor");
                         else if (m.HasProperty("_Color")) c = m.GetColor("_Color");
                     }
-                    c.a = 1f; if (cadModel) c = new Color(c.r * 0.55f, c.g * 0.55f, c.b * 0.55f, 1f);   // CAD 匯入件原色偏亮,場館強光下頂面會過曝成白
+                    c.a = 1f; if (cadModel) c = new Color(c.r * 0.3f, c.g * 0.3f, c.b * 0.3f, 1f);   // CAD 匯入件原色偏亮,場館強光下頂面會過曝成白
                     if (red && c.b > c.r + 0.15f && c.b > c.g) c = new Color(c.b, c.g * 0.4f, c.r * 0.6f, 1f);   // 紅方:藍色保險桿改紅色
-                    { Color32 c32 = c; int key = (c32.r << 16) | (c32.g << 8) | c32.b; if (!matCache.TryGetValue(key, out var cm)) { cm = FieldBuilder.MakeMat(c); matCache[key] = cm; } mats[i] = cm; }   // 同色共用材質,才能合批
+                    { Color32 c32 = c; int key = (c32.r << 16) | (c32.g << 8) | c32.b | (cadModel ? 1 << 24 : 0); if (!matCache.TryGetValue(key, out var cm)) { cm = cadModel ? FieldBuilder.MakeMat(c, 0.06f, 0f) : FieldBuilder.MakeMat(c); matCache[key] = cm; } mats[i] = cm; }   // 同色共用材質,才能合批
                 }
                 r.sharedMaterials = mats;
                 r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
@@ -229,3 +229,5 @@ namespace FrcSim
         }
     }
 }
+
+
