@@ -35,6 +35,7 @@ namespace FrcSim
         void Start() { born = Time.unscaledTime; if (System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-f12test") >= 0) Invoke(nameof(TestShot), 8f); }
         void TestShot() { StartCoroutine(SaveShot()); }
 
+        float tutStart = -1f; bool tutDone, tutKey;
         string shotMsg = "", bannerPhase, bannerText = ""; float shotUntil, bannerUntil;
         System.Collections.IEnumerator SaveShot()
         {
@@ -55,6 +56,7 @@ namespace FrcSim
         {
             fps = Mathf.Lerp(fps, 1f / Mathf.Max(Time.unscaledDeltaTime, 1e-4f), 0.05f);
             if (Input.GetKeyDown(KeyCode.F3)) showDebug = !showDebug;
+            if (tutStart >= 0f && Input.GetKeyDown(KeyCode.Space)) tutKey = true;
             if (Input.GetKeyDown(KeyCode.F12)) StartCoroutine(SaveShot());
             if (Input.GetKeyDown(KeyCode.G) && !MenuSystem.Blocking) Prefs.SetInt("minimap", Prefs.GetInt("minimap", 1) == 1 ? 0 : 1);
             if (Input.GetKeyDown(KeyCode.F5) && !MenuSystem.Blocking) GameSession.Rematch();
@@ -243,6 +245,20 @@ namespace FrcSim
             }
             GUI.Label(new Rect(16, H - 74, 300, 20), L("F1 按鍵說明   F3 詳細數據", "F1 help   F3 details"), Style(12, new Color(1f, 1f, 1f, 0.55f)));
             DrawMinimap(W);
+            // 新手提示:第一次進比賽顯示 12 秒操作重點(按任意常用鍵或時間到就收起);測試旗標 -tuttest 強制顯示
+            if (tutStart < 0f && (Prefs.GetInt("tutSeen", 0) == 0 || System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-tuttest") >= 0) && !MenuSystem.Blocking) tutStart = Time.unscaledTime;
+            if (tutStart >= 0f && !tutDone)
+            {
+                float tt = Time.unscaledTime - tutStart; float ta = Mathf.Clamp01(Mathf.Min(tt * 2f, (12f - tt) * 1.5f));
+                if (tt > 12f || (tutKey && tt > 4f)) { tutDone = true; if (!SuperSample.IsTestRun()) { Prefs.SetInt("tutSeen", 1); PlayerPrefs.Save(); } }
+                else
+                {
+                    var tr2 = new Rect(cx - 280, H * 0.30f, 560, 176); GUI.color = new Color(1, 1, 1, ta); Panel(tr2, 0.8f);
+                    GUI.Label(new Rect(tr2.x, tr2.y + 10, tr2.width, 30), L("第一次玩?三個重點", "First time? Three things"), Style(20, new Color(0.55f, 0.8f, 1f, ta), TextAnchor.MiddleCenter, FontStyle.Bold));
+                    GUI.Label(new Rect(tr2.x + 30, tr2.y + 46, tr2.width - 60, 120), L("WASD 移動、Q/E 旋轉\nI 放下收球手臂,靠近球自動吸\n空白鍵(或滑鼠左鍵)按住發射\nC 切換視角 ・ F1 看全部按鍵", "WASD move, Q/E rotate\nI toggles the intake — drive over fuel to collect\nHold Space (or left click) to shoot\nC changes camera · F1 shows all keys"), Style(16, new Color(1, 1, 1, ta), TextAnchor.UpperCenter));
+                    GUI.color = Color.white;
+                }
+            }
             // 階段切換橫幅:AUTO / 轉換期 / SHIFT / END GAME 變換時,畫面中上方淡出大字
             if (ScoreManager.ClockOn && ScoreManager.Phase != bannerPhase) { if (bannerPhase != null && !ScoreManager.Ended) { bannerUntil = Time.unscaledTime + 1.8f; bannerText = PhaseName(ScoreManager.Phase); } bannerPhase = ScoreManager.Phase; }
             if (Time.unscaledTime < bannerUntil)
@@ -396,6 +412,9 @@ namespace FrcSim
         }
     }
 }
+
+
+
 
 
 
