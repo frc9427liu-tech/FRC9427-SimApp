@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 namespace FrcSim
 {
@@ -133,6 +133,8 @@ namespace FrcSim
                 Box(root, nm + "_W", new Vector3(hubCx - hs / 2f + t / 2f, hh / 2f, W / 2f), new Vector3(t, hh, hs - 2 * t), c, true);
                 // 底板(球掉進去前的保險,不讓球卡在地板下)
                 Box(root, nm + "_Base", new Vector3(hubCx, 0.15f, W / 2f), new Vector3(hs - 2 * t, 0.3f, hs - 2 * t), c, true);
+                // 擋板(球網):在面向中立區那一側,從 0.4m(底下留縫)到 3.3m;從中立區射會被擋,射太遠的球撞網掉回中立區(官方 HUB 導覽影片)
+                Box(root, nm + "_Net", new Vector3(hubCx + (blue ? 1f : -1f) * (hs / 2f + 0.05f), 1.85f, W / 2f), new Vector3(0.06f, 2.9f, hs + 0.5f), c, true);
             }
 
             // BUMP x2:HUB 兩側(場寬 y = W/2 ± (hub/2 + bump/2))。官方 GE-26100:雙斜坡(15°)山形剖面,

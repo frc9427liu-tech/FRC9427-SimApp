@@ -169,10 +169,10 @@ namespace FrcSim
 
         Vector2 ShootSpot(Vector2 p)
         {
-            // 離自己 HUB 約 2.8m、朝中立區那一側;依目前位置選靠近的角度(±40°)
+            // 離自己 HUB 約 2.8m、在己方聯盟區那一側;依目前位置選靠近的角度(±40°)
             Vector2 toMe = p - hub;
             float ang = Mathf.Atan2(toMe.y, toMe.x);   // 從 HUB 看過去的方位
-            float baseAng = Mathf.PI;                   // 紅方 HUB 在場地右側,中立區在 -x 方向
+            float baseAng = 0f;                         // 真實規則:只能從己方聯盟區射(紅方 HUB 靠右牆那一側 = +x),中立區那面有球網擋板
             float delta = Mathf.Clamp(Wrap(ang - baseAng), -0.7f, 0.7f);
             float a = baseAng + delta;
             return hub + new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * 2.8f;
