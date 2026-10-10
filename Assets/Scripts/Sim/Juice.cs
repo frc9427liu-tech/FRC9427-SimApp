@@ -71,8 +71,9 @@ namespace FrcSim
         }
 
         // ---- event handlers (called from the existing code, see section 2.9) ----
+        public static bool LastScoreBlue; public static float LastScoreT;
         public static void OnScore(bool blueHub, bool active, Vector3 pos)
-        {
+        { LastScoreBlue = blueHub; LastScoreT = Time.unscaledTime;
             bool mine = blueHub == PlayerIsBlue; int side = blueHub ? 0 : 1;
             if (!active) { SfxBus.Play("thump", 0.25f, 1.5f, Pan(pos)); Fx.Dust(pos); return; }   // dull "no points" thunk
             float now = Time.unscaledTime;

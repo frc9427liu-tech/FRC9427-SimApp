@@ -10,7 +10,7 @@ namespace FrcSim
         public int Mode = 1;
         Vector3 velPos;
         float chaseYaw; bool chaseInit;
-        public static int ActiveMode; float orbitT; int dirScore; float dirHold, dirHub;
+        public static int ActiveMode; bool slowApplied; float orbitT; int dirScore; float dirHold, dirHub;
 
         public string ModeName => Mode == 0 ? "overview" : Mode == 1 ? "chase" : Mode == 7 ? "operator" : Mode == 8 ? "broadcast" : "top-down";
 
@@ -75,7 +75,14 @@ namespace FrcSim
 
             ActiveMode = Mode;
             if (ScoreCube.Overhead != null) ScoreCube.Overhead.SetActive(!(Mode == 0 || Mode == 2 || Mode == 5 || Orbit));   // 高機位(全景/俯視)會被桁架和計分板擋住視線
-            if (ScoreCube.Overhead != null) ScoreCube.Overhead.SetActive(!(Mode == 0 || Mode == 2 || Mode == 5 || Orbit));
+            // 導播視角的進球回放感:進球特寫的前 1.2 秒慢動作(只在導播視角、沒開選單時)
+            if (Mode == 8 && !MenuSystem.Blocking && Time.timeScale > 0.01f)
+            {
+                float left = dirHold - Time.unscaledTime;
+                float want = (left > 2.3f && left <= 3.5f) ? 0.4f : 1f;
+                Time.timeScale = want; slowApplied = want < 1f;
+            }
+            else if (slowApplied && !MenuSystem.Blocking && Time.timeScale > 0.01f) { Time.timeScale = 1f; slowApplied = false; }
             Vector3 pos; Quaternion rot;
             if (Mode == 0)
             {
@@ -115,7 +122,7 @@ namespace FrcSim
             {
                 // 導播視角:自動切鏡。進球 -> 籃框特寫;平時在側面高機位 / 追車低機位 / 全景輪流,每 7 秒換鏡
                 int sc = ScoreManager.BlueScore + ScoreManager.RedScore;
-                if (sc != dirScore) { dirScore = sc; dirHold = Time.unscaledTime + 3.5f; dirHub = Target.position.x < L / 2f ? 4.62f : L - 4.62f; if (ScoreManager.RedScore != 0 || ScoreManager.BlueScore != 0) dirHub = (Random.value < 0.5f) ? 4.62f : L - 4.62f; }
+                if (sc != dirScore) { dirScore = sc; dirHold = Time.unscaledTime + 3.5f; dirHub = Juice.LastScoreBlue ? 4.62f : L - 4.62f; }   // 鏡頭切到「剛進球的那個」HUB(以前是隨機選一個,常常切錯邊)
                 if (Time.unscaledTime < dirHold)
                 {
                     float k = 1f - Mathf.Clamp01((dirHold - Time.unscaledTime) / 3.5f); float dd = Mathf.Lerp(6.5f, 3.2f, k); pos = new Vector3(dirHub + (dirHub < L / 2f ? dd : -dd), Mathf.Lerp(4f, 2.6f, k), W / 2f - Mathf.Lerp(6.5f, 3.5f, k));
