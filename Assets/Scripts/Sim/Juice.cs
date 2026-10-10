@@ -79,8 +79,8 @@ namespace FrcSim
             streak[side] = (now - lastScoreT[side] < 2.5f) ? streak[side] + 1 : 1; lastScoreT[side] = now;
             int s = streak[side];
             float pitch = Mathf.Pow(2f, Scale[Mathf.Min(s - 1, Scale.Length - 1)] / 12f);
-            SfxBus.Play("ding", mine ? 0.7f : 0.35f, pitch, Pan(pos));
-            if (s > 1 && s % 5 == 0) SfxBus.Play("ding", mine ? 0.45f : 0.2f, pitch * 2f, Pan(pos));   // octave sparkle on every 5th
+            SfxBus.Play("ballin", mine ? 0.8f : 0.4f, Random.Range(0.92f, 1.12f), Pan(pos));
+               // octave sparkle on every 5th
             Fx.HubScore(pos, blueHub, s);
             excitement = Mathf.Min(1.2f, excitement + (mine ? 0.35f : 0.2f));
             if (mine)
@@ -88,7 +88,7 @@ namespace FrcSim
                 ScorePop = 1f;
                 JuiceFX.AddTrauma(0.12f, 0.5f); JuiceFX.FovPunch(1.2f);
                 Rumble.Driver(0f, 0.35f, 0.08f);
-                if (s >= 3) SfxBus.Play("roar", 0.25f + 0.05f * Mathf.Min(s, 8), 1f, 0f, SfxGroup.Amb);
+                
             }
         }
         public static void OnShot(RobotMechanisms m, Vector3 pos, Vector3 dir)
@@ -160,7 +160,7 @@ namespace FrcSim
             }
             SfxBus.SetLoop("intake", "intake_loop", rps > 6f ? 0.10f + 0.10f * Mathf.Clamp01(rps / 40f) : 0f, Mathf.Clamp(0.5f + rps / 40f * 0.7f, 0.4f, 2f));
             SfxBus.SetLoop("fly", "fly_loop", fly > 4f ? 0.08f + 0.10f * Mathf.Clamp01(fly / 80f) : 0f, Mathf.Clamp(0.4f + fly / 75f, 0.4f, 2.5f));
-            SfxBus.SetLoop("crowd", "crowd_loop", play ? 0.10f + 0.45f * Mathf.Clamp01(excitement) : 0f, 1f + 0.10f * excitement, SfxGroup.Amb);
+            SfxBus.SetLoop("crowd", "crowd_loop", play ? 0.03f + 0.07f * Mathf.Clamp01(excitement) : 0f, 1f + 0.10f * excitement, SfxGroup.Amb);
             SfxBus.SetLoop("music", "music_loop", play ? 0.35f : 0.6f, ScoreManager.Phase == "END GAME" ? 1.05f : 1f, SfxGroup.Music);
 
             if (!play || !ScoreManager.ClockOn) return;
@@ -197,7 +197,7 @@ namespace FrcSim
             else if (to == "END GAME") { SfxBus.Play("stinger_end", 0.8f, 1f, 0f, SfxGroup.Music); SfxBus.Duck(0.45f, 1.4f); JuiceFX.AddTrauma(0.2f, 0.3f); }
             else if (to == "SCORING GRACE")
             {
-                SfxBus.Play("buzzer", 1f); SfxBus.Duck(0.3f, 2.0f); SfxBus.Play("roar", 0.8f, 1f, 0f, SfxGroup.Amb);
+                SfxBus.Play("buzzer", 1f); SfxBus.Duck(0.3f, 2.0f); 
                 JuiceFX.AddTrauma(0.35f, 0.5f); Rumble.Pulse(Pad.DriverIndex, 0.6f, 0.4f, 0.5f);
             }
             else if (to == "MATCH OVER")

@@ -16,7 +16,7 @@ namespace FrcSim
 
         static readonly Dictionary<string, float> Lens = new Dictionary<string, float>
         {
-            {"ding",0.5f},{"thump",0.3f},{"shoot",0.14f},{"ballhit",0.10f},{"bump",0.35f},{"ramp",0.4f},{"pluck",0.12f},{"beep",0.16f},
+            {"ding",0.5f},{"ballin",0.65f},{"thump",0.3f},{"shoot",0.14f},{"ballhit",0.10f},{"bump",0.35f},{"ramp",0.4f},{"pluck",0.12f},{"beep",0.16f},
             {"buzzer",1.6f},{"tick",0.05f},{"uiclick",0.06f},{"stinger_start",1.0f},{"stinger_end",1.3f},{"stinger_win",1.7f},
             {"stinger_lose",1.7f},{"roar",2.4f},{"intake_loop",1f},{"fly_loop",1f},{"crowd_loop",4f},{"music_loop",8f}
         };
@@ -84,7 +84,16 @@ namespace FrcSim
                     for (int i = 0; i < n; i++) { float t = i * dt;
                         d[i] = (0.6f * Mathf.Sin(TAU * 880f * t) + 0.25f * Mathf.Sin(TAU * 1760f * t) * Mathf.Exp(-t * 8f) + 0.15f * Mathf.Sin(TAU * 2640f * t) * Mathf.Exp(-t * 14f)) * Mathf.Exp(-t * 7f) * Atk(t, 0.002f); }
                     break;
-                case "thump":  // filtered sub sweep + 4 ms click
+                case "ballin":  // 球掉進 HUB:漏斗內滑落的氣流聲 + 三次逐漸變小的泡棉球落地「噗、噗、噗」
+                {
+                    float a1 = Lp(1400f, sr), a2 = Lp(700f, sr), l2 = 0f;
+                    for (int i = 0; i < n; i++) { float t = i * dt; lp += a1 * (Nz() - lp); l2 += a2 * (Nz() - l2);
+                        float v = lp * 0.5f * Mathf.Exp(-Mathf.Pow((t - 0.05f) * 14f, 2f));   // 短促的滑落氣流
+                        float[] bt = { 0.16f, 0.30f, 0.41f }; float[] ba = { 1f, 0.55f, 0.28f };
+                        for (int k = 0; k < 3; k++) { float u = t - bt[k]; if (u > 0f) v += (l2 * 2.0f * Mathf.Exp(-u * 60f) + Mathf.Sin(TAU * (190f - 50f * Mathf.Min(1f, u * 18f)) * u) * 0.8f * Mathf.Exp(-u * 40f)) * ba[k]; }
+                        d[i] = v * Atk(t, 0.003f); }
+                    break;
+                }                case "thump":  // filtered sub sweep + 4 ms click
                     for (int i = 0; i < n; i++) { float t = i * dt; ph += TAU * (45f + 110f * Mathf.Exp(-t * 28f)) * dt;
                         d[i] = (Mathf.Sin(ph) * Mathf.Exp(-t * 9f) + (t < 0.004f ? Nz() * 0.5f * (1f - t / 0.004f) : 0f)) * Atk(t, 0.001f); }
                     break;

@@ -10,7 +10,7 @@ namespace FrcSim
         public int Mode = 1;
         Vector3 velPos;
         float chaseYaw; bool chaseInit;
-        float orbitT; int dirScore; float dirHold, dirHub;
+        public static int ActiveMode; float orbitT; int dirScore; float dirHold, dirHub;
 
         public string ModeName => Mode == 0 ? "overview" : Mode == 1 ? "chase" : Mode == 7 ? "operator" : Mode == 8 ? "broadcast" : "top-down";
 
@@ -32,6 +32,7 @@ namespace FrcSim
                 return;
             }
 
+            ActiveMode = Mode;
             Vector3 pos; Quaternion rot;
             if (Mode == 0)
             {
@@ -74,7 +75,7 @@ namespace FrcSim
                 if (sc != dirScore) { dirScore = sc; dirHold = Time.unscaledTime + 3.5f; dirHub = Target.position.x < L / 2f ? 4.62f : L - 4.62f; if (ScoreManager.RedScore != 0 || ScoreManager.BlueScore != 0) dirHub = (Random.value < 0.5f) ? 4.62f : L - 4.62f; }
                 if (Time.unscaledTime < dirHold)
                 {
-                    pos = new Vector3(dirHub + (dirHub < L / 2f ? 4.5f : -4.5f), 3.4f, W / 2f - 5f);
+                    float k = 1f - Mathf.Clamp01((dirHold - Time.unscaledTime) / 3.5f); float dd = Mathf.Lerp(6.5f, 3.2f, k); pos = new Vector3(dirHub + (dirHub < L / 2f ? dd : -dd), Mathf.Lerp(4f, 2.6f, k), W / 2f - Mathf.Lerp(6.5f, 3.5f, k));
                     rot = Quaternion.LookRotation(new Vector3(dirHub, 1.9f, W / 2f) - pos, Vector3.up);
                 }
                 else
@@ -82,7 +83,7 @@ namespace FrcSim
                     int shot = (int)(Time.unscaledTime / 7f) % 3;
                     if (shot == 0) { pos = new Vector3(Mathf.Lerp(L * 0.3f, L * 0.7f, Mathf.PingPong(Time.unscaledTime * 0.05f, 1f)), 5.5f, -1.2f); rot = Quaternion.LookRotation(new Vector3(Target.position.x, 0.5f, W / 2f) - pos, Vector3.up); }
                     else if (shot == 1) { pos = Target.position + new Vector3(-1.8f, 2.8f, -3.6f); rot = Quaternion.LookRotation(Target.position + Vector3.up * 0.4f - pos, Vector3.up); }
-                    else { pos = new Vector3(L / 2f, 9f, W / 2f - 8f); rot = Quaternion.LookRotation(new Vector3(L / 2f, 0f, W / 2f) - pos, Vector3.up); }
+                    else { pos = new Vector3(L / 2f + Mathf.Sin(Time.unscaledTime * 0.25f) * 4f, 9f - Mathf.PingPong(Time.unscaledTime * 0.3f, 1.5f), W / 2f - 8f); rot = Quaternion.LookRotation(new Vector3(L / 2f, 0f, W / 2f) - pos, Vector3.up); }
                 }
             }            else if (Mode == 6)
             {
