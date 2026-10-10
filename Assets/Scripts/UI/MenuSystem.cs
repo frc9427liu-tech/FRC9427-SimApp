@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -37,6 +37,7 @@ namespace FrcSim
         Image dim;
         MenuScreen cur;
         bool menuVisible, splashing, inGameMenu;
+        float busyRefreshT;
         bool justOpened, shownNewer; string shownProgress = "";
         float prevAxis;
         Action settingsBack;
@@ -343,7 +344,7 @@ namespace FrcSim
                 var m2 = mm;
                 l.Add(new Item(() =>
                 {
-                    string st = m2.State == "…" ? Z("下載中…", "Downloading…") : m2.State != "" ? m2.State : ModelLibrary.Installed(m2) ? (RobotModels.Selected == m2.File ? Z("使用中 ✓", "In use ✓") : Z("已下載,按一下使用", "Installed — click to use")) : Z("按一下下載", "Click to download");
+                    string st = m2.State == "…" ? Z("下載中…", "Downloading…") : m2.State != "" ? m2.State : ModelLibrary.Installed(m2) ? (RobotModels.Selected == m2.File ? Z("使用中 ✓", "In use ✓") : Z("已下載", "Installed")) : Z("按一下下載", "Download");
                     return ModelLibrary.Name(m2) + "  —  " + st;
                 }, () =>
                 {
@@ -363,7 +364,7 @@ namespace FrcSim
                 var en2 = en;
                 l.Add(new Item(() =>
                 {
-                    string st = en2.State == "…" ? Z("下載中…", "Downloading…") : en2.State != "" ? en2.State
+                    string st = en2.State == "…" ? OpenSourceCatalog.Busy(en2) : en2.State != "" ? en2.State
                         : OpenSourceCatalog.Installed(en2) ? (Prefs.GetString("robotProject", "") == en2.Dir ? Z("使用中 ✓", "In use ✓") : Z("已下載,按一下使用", "Installed — click to use")) : Z("按一下下載", "Click to download");
                     string tag = en2.Status == "ok" ? Z("可用", "Works") : en2.Status == "partial" ? Z("部分", "Partial") : Z("未測試", "Untested");
                     return en2.Team + "   [" + tag + "]";
@@ -377,7 +378,7 @@ namespace FrcSim
                     {
                         var lm = string.IsNullOrEmpty(en2.LibModel) ? null : ModelLibrary.Find(en2.LibModel);
                         string mdl = lm == null ? "" : Z("模型", "Model") + ": " + ModelLibrary.Name(lm) + (ModelLibrary.Installed(lm) ? "" : (lm.State == "…" ? Z("(下載中…)", "(downloading…)") : "")) + "   ·   ";
-                        return (en2.State == "…" ? Z("下載中…", "Downloading…") : en2.State != "" ? en2.State : OpenSourceCatalog.Installed(en2) ? (Prefs.GetString("robotProject", "") == en2.Dir ? Z("使用中 ✓", "In use ✓") : Z("已下載,按一下使用", "Installed — click to use")) : Z("按一下下載", "Click to download")) + "   ·   " + mdl + en2.Note;
+                        return (en2.State == "…" ? OpenSourceCatalog.Busy(en2) : en2.State != "" ? en2.State : OpenSourceCatalog.Installed(en2) ? (Prefs.GetString("robotProject", "") == en2.Dir ? Z("使用中 ✓", "In use ✓") : Z("已下載,按一下使用", "Installed — click to use")) : Z("按一下下載", "Click to download")) + "   ·   " + mdl + en2.Note;
                     }
                 });
             }
@@ -655,3 +656,4 @@ namespace FrcSim
         }
     }
 }
+

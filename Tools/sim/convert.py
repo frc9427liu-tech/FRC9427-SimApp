@@ -1,4 +1,4 @@
-"""FRC9427 Sim - 機器人 CAD 匯入轉檔:C:\FRC\models\incoming 內的 .step/.stp/.glb/.gltf -> C:\FRC\models\team_<名稱>.glb
+﻿"""FRC9427 Sim - 機器人 CAD 匯入轉檔:C:\FRC\models\incoming 內的 .step/.stp/.glb/.gltf -> C:\FRC\models\team_<名稱>.glb
 檔名尾巴可加 _yawNN(度)修正車頭方向,例如 1690_yaw90.step。模型規格:Y 向上、公尺、置中貼地、車頭 +Z(模擬器約定)。"""
 import os, re, sys, glob, math, numpy as np, trimesh
 SRC = r"C:\FRC\models\incoming"; DST = r"C:\FRC\models"; MAXF = 180000
@@ -10,7 +10,7 @@ def load_scene(path):
         tmp = path + ".tmp.glb"
         cascadio.step_to_glb(path, tmp, tol_linear=0.05, tol_angular=0.5, tol_relative=False, merge_primitives=True)
         sc = trimesh.load(tmp, force="scene"); os.remove(tmp); return sc, True
-    return trimesh.load(path, force="scene"), False
+    return trimesh.load(path, force="scene"), ext == ".gltf"   # Onshape 匯出的 .gltf 是 Z-up
 
 def convert(path):
     name = os.path.splitext(os.path.basename(path))[0]
@@ -19,20 +19,38 @@ def convert(path):
     sc, zup = load_scene(path)
     meshes = [g for g in sc.dump(concatenate=False) if isinstance(g, trimesh.Trimesh)]
     if not meshes: print("no mesh:", path); return False
-    mesh = trimesh.util.concatenate(meshes)
+    for g in meshes:
+        try:
+            mt = getattr(g.visual, "material", None); bc = getattr(mt, "baseColorFactor", None)
+            c = [int(x) for x in bc[:3]] if bc is not None else [150, 155, 165]
+            g.visual = trimesh.visual.ColorVisuals(g, vertex_colors=np.tile(c + [255], (len(g.vertices), 1)))
+        except Exception: g.visual = trimesh.visual.ColorVisuals(g, vertex_colors=np.tile([150, 155, 165, 255], (len(g.vertices), 1)))
+    mesh = trimesh.util.concatenate(meshes); vcol = np.array(mesh.visual.vertex_colors)
     if zup: mesh.apply_transform(trimesh.transformations.rotation_matrix(-math.pi / 2, [1, 0, 0]))   # Z-up -> Y-up
+    try: trimesh.repair.fix_winding(mesh)
+    except Exception as e: print("winding skipped:", e)
     ext = mesh.bounds[1] - mesh.bounds[0]
     if max(ext) > 20: mesh.apply_scale(0.001)   # 毫米 -> 公尺
     if yaw: mesh.apply_transform(trimesh.transformations.rotation_matrix(math.radians(yaw), [0, 1, 0]))
     b = mesh.bounds; mesh.apply_translation([-(b[0][0] + b[1][0]) / 2, -b[0][1], -(b[0][2] + b[1][2]) / 2])
     if len(mesh.faces) > MAXF:
         try:
-            import fast_simplification
+            import fast_simplification; vsrc = np.array(mesh.vertices)
             v, f = fast_simplification.simplify(mesh.vertices, mesh.faces, target_reduction=1 - MAXF / len(mesh.faces))
             mesh = trimesh.Trimesh(v, f, process=False)
+            from scipy.spatial import cKDTree
+            _, ix = cKDTree(vsrc).query(np.array(v)); vcol = vcol[ix]
         except Exception as e: print("simplify skipped:", e)
-    mesh.visual = trimesh.visual.ColorVisuals(mesh, vertex_colors=np.tile([185, 190, 200, 255], (len(mesh.vertices), 1)))
-    out = os.path.join(DST, "team_" + base + ".glb"); mesh.export(out)
+    fc = np.array(vcol)[mesh.faces[:, 0]][:, :3].astype(int); q = (np.minimum(fc * 0.55, 255).astype(int) // 24) * 24 + 12
+    uq, inv = np.unique(q, axis=0, return_inverse=True); inv = np.asarray(inv).reshape(-1)
+    scn = trimesh.Scene()
+    for k, col in enumerate(uq):
+        idx = np.where(inv == k)[0]
+        if len(idx) == 0: continue
+        sm = mesh.submesh([idx], append=True)
+        sm.visual = trimesh.visual.TextureVisuals(material=trimesh.visual.material.PBRMaterial(baseColorFactor=[int(col[0]), int(col[1]), int(col[2]), 255], metallicFactor=0.15, roughnessFactor=0.6, doubleSided=True))
+        scn.add_geometry(sm, node_name="c%d" % k)
+    out = os.path.join(DST, "team_" + base + ".glb"); scn.export(out)
     print("OK", out, "faces", len(mesh.faces), "size(m)", np.round(mesh.bounds[1] - mesh.bounds[0], 2)); return True
 
 if __name__ == "__main__":
@@ -43,3 +61,10 @@ if __name__ == "__main__":
                 if convert(p): os.replace(p, p + ".done"); n += 1
             except Exception as e: print("FAIL", p, e)
     print("converted", n)
+
+
+
+
+
+
+

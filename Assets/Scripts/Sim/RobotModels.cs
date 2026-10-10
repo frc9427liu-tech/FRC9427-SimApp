@@ -90,7 +90,7 @@ namespace FrcSim
                     Debug.Log($"[RobotModels] Instantiate returned {inst}");
                     if (inst)
                     {
-                        Fix(root, robot, yawDeg, red); CombineByMaterial(root);
+                        cadModel = file.StartsWith("team_"); Fix(root, robot, yawDeg, red); cadModel = false; doubleSide = file.StartsWith("team_"); CombineByMaterial(root); doubleSide = false;
                         ok = true;
                     }
                     else UnityEngine.Object.Destroy(root);
@@ -104,6 +104,21 @@ namespace FrcSim
         static readonly Dictionary<int, Material> matCache = new Dictionary<int, Material>();
 
         // 把整個模型依材質合併成少數幾個 Mesh(模型不會動,只會跟著車走),draw call 從幾百降到十幾個;不可讀的 Mesh 就略過
+        static bool cadModel;
+        static bool doubleSide;   // CAD 匯入的薄板模型(Standard 材質剔除背面會破洞):合併時補一份反向面
+
+        static void DoubleSide(Mesh m)
+        {
+            var v = m.vertices; var n = m.normals; var t = m.triangles; int vc = v.Length;
+            var nv = new Vector3[vc * 2]; var nn = new Vector3[vc * 2];
+            System.Array.Copy(v, nv, vc); System.Array.Copy(v, 0, nv, vc, vc);
+            for (int i = 0; i < vc; i++) { nn[i] = n.Length == vc ? n[i] : Vector3.up; nn[vc + i] = -nn[i]; }
+            var nt = new int[t.Length * 2]; System.Array.Copy(t, nt, t.Length);
+            for (int i = 0; i < t.Length; i += 3) { nt[t.Length + i] = t[i] + vc; nt[t.Length + i + 1] = t[i + 2] + vc; nt[t.Length + i + 2] = t[i + 1] + vc; }
+            var uv = m.uv; Vector2[] nuv = null; if (uv.Length == vc) { nuv = new Vector2[vc * 2]; System.Array.Copy(uv, nuv, vc); System.Array.Copy(uv, 0, nuv, vc, vc); }
+            m.Clear(); m.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32; m.vertices = nv; m.normals = nn; if (nuv != null) m.uv = nuv; m.triangles = nt;
+        }
+
         static void CombineByMaterial(GameObject root)
         {
             try
@@ -128,6 +143,7 @@ namespace FrcSim
                 {
                     var mesh = new Mesh { indexFormat = UnityEngine.Rendering.IndexFormat.UInt32 };
                     mesh.CombineMeshes(kv.Value.ToArray(), true, true);
+                    if (doubleSide) DoubleSide(mesh);
                     var go = new GameObject("Combined");
                     go.transform.SetParent(root.transform, false);
                     go.AddComponent<MeshFilter>().sharedMesh = mesh;
@@ -155,7 +171,8 @@ namespace FrcSim
                         else if (m.HasProperty("_BaseColor")) c = m.GetColor("_BaseColor");
                         else if (m.HasProperty("_Color")) c = m.GetColor("_Color");
                     }
-                    c.a = 1f; if (red && c.b > c.r + 0.15f && c.b > c.g) c = new Color(c.b, c.g * 0.4f, c.r * 0.6f, 1f);   // 紅方:藍色保險桿改紅色
+                    c.a = 1f; if (cadModel) c = new Color(c.r * 0.55f, c.g * 0.55f, c.b * 0.55f, 1f);   // CAD 匯入件原色偏亮,場館強光下頂面會過曝成白
+                    if (red && c.b > c.r + 0.15f && c.b > c.g) c = new Color(c.b, c.g * 0.4f, c.r * 0.6f, 1f);   // 紅方:藍色保險桿改紅色
                     { Color32 c32 = c; int key = (c32.r << 16) | (c32.g << 8) | c32.b; if (!matCache.TryGetValue(key, out var cm)) { cm = FieldBuilder.MakeMat(c); matCache[key] = cm; } mats[i] = cm; }   // 同色共用材質,才能合批
                 }
                 r.sharedMaterials = mats;

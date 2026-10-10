@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Diagnostics;
 using System.IO;
 using System.Threading;
@@ -29,10 +29,17 @@ namespace FrcSim
             new M { Id = "as_presto", ZhName = "Presto(6328)", EnName = "Presto (6328)", Tag = "frc-6328-assets-v2", Zip = "Robot_PrestoV3.zip", Credit = "FRC 6328 / AdvantageScope assets" },
         };
 
+        static string TeamLabel(string n)
+        {
+            n = n.Replace("_", " ");
+            switch (n.Split(' ')[0]) { case "971": return "FRC 971 Mixtape"; case "604": return "FRC 604 Quixilver"; case "3928": return "FRC 3928 Neutrino"; case "48": return "FRC 48 E.L.I.T.E."; case "1678": return "FRC 1678 Citrus Circuits"; case "2910": return "FRC 2910 Jack in the Bot"; case "6328": return "FRC 6328 Mechanical Advantage"; case "967": return "FRC 967"; }
+            return n;
+        }
+
         // 使用者匯入的隊伍車模(C:\FRC\models\team_*.glb,由 convert.py 轉出:Y 向上、車頭 +Z)
         public static M[] Customs()
         {
-            try { var l = new System.Collections.Generic.List<M>(); foreach (var f in Directory.GetFiles(LibDir, "team_*.glb")) { string n = System.IO.Path.GetFileNameWithoutExtension(f).Substring(5); l.Add(new M { Id = System.IO.Path.GetFileNameWithoutExtension(f), ZhName = n.Replace("_", " ") + "(匯入)", EnName = n.Replace("_", " ") + " (imported)", Credit = "imported" }); } return l.ToArray(); }
+            try { var l = new System.Collections.Generic.List<M>(); foreach (var f in Directory.GetFiles(LibDir, "team_*.glb")) { string n = System.IO.Path.GetFileNameWithoutExtension(f).Substring(5); l.Add(new M { Id = System.IO.Path.GetFileNameWithoutExtension(f), ZhName = TeamLabel(n) + "(2026 真機 CAD)", EnName = TeamLabel(n) + " (2026 real CAD)", Credit = "imported" }); } return l.ToArray(); }
             catch { return new M[0]; }
         }
         public static void ImportIncoming(System.Action done = null)
@@ -69,3 +76,4 @@ namespace FrcSim
         }
     }
 }
+

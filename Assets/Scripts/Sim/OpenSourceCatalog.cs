@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -12,7 +12,7 @@ namespace FrcSim
     {
         public class Entry
         {
-            public string Id, Team, Repo, Note, Status, Model, LibModel;      // Status: ok / partial / untested
+            public string Id, Team, Repo, Note, Status, Model, LibModel; public string StageZh = "", StageEn = ""; public long T0;   // 安裝進度:目前步驟(中/英)與開始時間(tick)      // Status: ok / partial / untested
             public string PatchFile, PatchFind, PatchReplace;
             public string Patch2File, Patch2Find, Patch2Replace;   // 第二個修補(例如把機器人程式內的起始位姿對齊模擬器)
             public string Dir => Path.Combine(Root, Id);
@@ -60,7 +60,7 @@ namespace FrcSim
         {
             if (e.State == "…") return;
             { var lm = string.IsNullOrEmpty(e.LibModel) ? null : ModelLibrary.Find(e.LibModel); if (lm != null) ModelLibrary.Install(lm); }   // 順便把對應模型一起下載
-            e.State = "…";
+            e.State = "…"; e.T0 = DateTime.UtcNow.Ticks; Stage(e, "步驟 1/3:下載程式碼", "Step 1/3: downloading code");
             new Thread(() =>
             {
                 try
@@ -69,8 +69,9 @@ namespace FrcSim
                     if (!Installed(e))
                     {
                         var psi = new ProcessStartInfo("git", "clone --depth 1 -q " + e.Repo + " \"" + e.Dir + "\"") { UseShellExecute = false, CreateNoWindow = true };
-                        using (var p = Process.Start(psi)) { p.WaitForExit(180000); if (p.ExitCode != 0) { e.State = "git clone 失敗"; return; } }
+                        using (var p = Process.Start(psi)) { p.WaitForExit(180000); if (p.ExitCode != 0) { e.State = Er("下載程式碼失敗(要連網,且已安裝 git)", "Code download failed (needs internet and git)"); return; } }
                     }
+                    Stage(e, "步驟 2/3:套用模擬設定", "Step 2/3: applying sim patches");
                     if (e.PatchFile != null && e.PatchFind != null)
                     {
                         string f = Path.Combine(e.Dir, e.PatchFile);
@@ -92,7 +93,7 @@ namespace FrcSim
                         }
                     }
                     // 第一次要連網把模擬用的函式庫(Phoenix sim 等)抓進 Gradle 快取;模擬器之後是離線啟動的
-                    e.State = "…";
+                    Stage(e, "步驟 3/3:下載模擬函式庫(第一次要幾分鐘)", "Step 3/3: fetching sim libraries (first time takes minutes)");
                     string jdk = @"C:\Users\Public\wpilib\2026\jdk";
                     var gp = new ProcessStartInfo(Path.Combine(e.Dir, "gradlew.bat"), "simulateJava --console=plain")
                     { WorkingDirectory = e.Dir, UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true, RedirectStandardError = true };
@@ -105,12 +106,22 @@ namespace FrcSim
                         g.BeginOutputReadLine(); g.BeginErrorReadLine();
                         while (!up && !g.HasExited && sw.Elapsed.TotalSeconds < 420) Thread.Sleep(500);
                         try { Process.Start(new ProcessStartInfo("taskkill", "/PID " + g.Id + " /T /F") { UseShellExecute = false, CreateNoWindow = true })?.WaitForExit(10000); } catch { }
-                        if (!up) { e.State = "下載函式庫失敗(要連網,且已安裝 WPILib 2026)"; return; }
+                        if (!up) { e.State = Er("下載函式庫失敗(要連網,且已安裝 WPILib 2026)", "Library download failed (needs internet and WPILib 2026)"); return; }
                     }
                     e.State = "";
                 }
-                catch (Exception ex) { e.State = "失敗:" + ex.Message; }
+                catch (Exception ex) { e.State = Er("失敗:", "Failed: ") + ex.Message; }
             }) { IsBackground = true }.Start();
+        }
+
+        static void Stage(Entry e, string zh, string en) { e.StageZh = zh; e.StageEn = en; }
+        static string Er(string zh, string en) { return Loc.Lang == "en" ? en : zh; }
+        // 選單顯示用:目前步驟 + 已花時間
+        public static string Busy(Entry e)
+        {
+            int sec = (int)((DateTime.UtcNow.Ticks - e.T0) / TimeSpan.TicksPerSecond);
+            string st = Loc.Lang == "en" ? e.StageEn : e.StageZh; if (string.IsNullOrEmpty(st)) st = Loc.Lang == "en" ? "Downloading…" : "下載中…";
+            return st + "  " + (sec / 60) + ":" + (sec % 60).ToString("00");
         }
     }
     public class InstallTest : UnityEngine.MonoBehaviour

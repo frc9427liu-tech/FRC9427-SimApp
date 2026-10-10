@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
@@ -17,7 +17,7 @@ namespace FrcSim
     //   找不到差異包(或失敗)時退回「開啟下載頁」,讓使用者手動下載完整版。
     public class UpdateCheck : MonoBehaviour
     {
-        public const string Current = "0.5.22";
+        public const string Current = "0.5.27";
         const string Repo = "frc9427liu-tech/FRC9427-SimApp";
         const string ReleasesApi = "https://api.github.com/repos/" + Repo + "/releases?per_page=30";
         public const string Page = "https://github.com/" + Repo + "/releases/latest";
@@ -125,11 +125,11 @@ namespace FrcSim
                 foreach (var s in chain)
                 {
                     n++;
-                    Progress = $"下載更新 v{s.Tag}({n}/{chain.Count})…";
+                    Progress = Loc.Lang == "en" ? $"Downloading update v{s.Tag} ({n}/{chain.Count})…" : $"下載更新 v{s.Tag}({n}/{chain.Count})…";
                     string zipPath = Path.Combine(work, "delta-v" + s.Tag + ".zip");
                     using (var c = NewClient()) c.DownloadFile(s.Url, zipPath);
 
-                    Progress = $"解壓縮並校驗 v{s.Tag}…";
+                    Progress = Loc.Lang == "en" ? $"Unpacking & verifying v{s.Tag}…" : $"解壓縮並校驗 v{s.Tag}…";
                     using (var za = ZipFile_Open(zipPath))
                     {
                         JObject man = null;
@@ -157,7 +157,7 @@ namespace FrcSim
                     }
                 }
 
-                Progress = "校驗檔案…";
+                Progress = Loc.Lang == "en" ? "Verifying files…" : "校驗檔案…";
                 foreach (var kv in expected)
                 {
                     string p = Path.Combine(stage, kv.Key);
@@ -183,12 +183,12 @@ namespace FrcSim
                     $"-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File \"{ps1}\" -ProcId {pid} -Src \"{stage}\" -Dst \"{InstallDir}\" -Exe \"{exe}\" -Work \"{work}\"")
                 { UseShellExecute = false, CreateNoWindow = true };
                 System.Diagnostics.Process.Start(psi);
-                Progress = "更新完成,重新啟動中…";
+                Progress = Loc.Lang == "en" ? "Update done, restarting…" : "更新完成,重新啟動中…";
                 ReadyToQuit = true;
             }
             catch (Exception e)
             {
-                Progress = "自動更新失敗(" + e.Message + "),請手動下載";
+                Progress = Loc.Lang == "en" ? "Auto-update failed (" + e.Message + "). Please download manually." : "自動更新失敗(" + e.Message + "),請手動下載";
                 Debug.LogWarning("[UpdateCheck] " + e);
                 Busy = false;
                 OpenPageFlag = true;
@@ -235,3 +235,9 @@ Start-Process -FilePath $Exe -WorkingDirectory $Dst
 ";
     }
 }
+
+
+
+
+
+
