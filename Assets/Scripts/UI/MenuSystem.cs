@@ -29,6 +29,7 @@ namespace FrcSim
         class Item
         {
             public Func<string> Text; public Action Click; public bool Enabled = true; public Func<bool> EnabledFn;
+            public Func<string> Sub;   // 第二行小字(說明);有的話按鈕變成兩行版型
             public Item(Func<string> t, Action c, bool e = true) { Text = t; Click = c; Enabled = e; }
         }
 
@@ -96,6 +97,9 @@ namespace FrcSim
             if (startMenu == "controls") { ShowControls(); yield break; }
             if (startMenu == "settings") { settingsBack = ShowMain; ShowSettings(false); yield break; }
             if (startMenu == "modes") { ShowModes(); yield break; }
+            if (startMenu == "catalog") { ShowSub(() => Z("開源機器人程式庫", "Open-source robot library"), () => Z("別隊公開的 2026 程式:下載後直接在模擬器跑", "Public 2026 team code: download and run"), CatalogItems()); yield break; }
+            if (startMenu == "models") { ShowSub(() => Z("開源機器人模型", "Open-source robot models"), () => Z("真實隊伍的 3D 機器人(AdvantageScope 公開資產)", "Real FRC team 3D robots (AdvantageScope assets)"), ModelLibItems()); yield break; }
+            if (startMenu == "presets") { ShowSub(() => Z("內建機構", "Built-in mechanisms"), () => Z("不用機器人程式,直接用內建行為", "No robot code needed"), PresetItems()); yield break; }
             if (startMenu == "main") { ShowMain(); yield break; }
             if (startMenu == "language") { ShowLanguage(); yield break; }
             if (!Loc.HasChosen) ShowLanguage(); else ShowMain();
@@ -133,6 +137,8 @@ namespace FrcSim
             float y = firstY;
             float step = firstY > 330f ? 70f : Mathf.Min(92f, (990f - 330f) / Mathf.Max(1, items.Length));
             float bh = firstY > 330f ? 60f : Mathf.Min(78f, step - 10f);
+            bool twoLine = false; foreach (var it0 in items) if (it0.Sub != null) twoLine = true;
+            if (twoLine) { step = Mathf.Min(96f, (985f - 330f) / Mathf.Max(1, items.Length)); bh = step - 8f; }
             foreach (var it in items)
             {
                 var b = new UiButton { TextFn = it.Text, OnClick = it.Click, Enabled = it.Enabled };
@@ -143,6 +149,16 @@ namespace FrcSim
                 b.Label.resizeTextForBestFit = true;   // 長標籤(例如比賽計時)自動縮小,不超出按鈕
                 b.Label.resizeTextMinSize = 18; b.Label.resizeTextMaxSize = 34;
                 UiKit.PlaceTL(b.Label.rectTransform, 30, 0, 598, bh);
+                if (it.Sub != null)
+                {
+                    // 兩行版型:上面主標題(固定 30),下面小字說明(20,淡色)
+                    b.Label.resizeTextForBestFit = false; b.Label.fontSize = 29; b.Label.alignment = TextAnchor.MiddleLeft;
+                    UiKit.PlaceTL(b.Label.rectTransform, 30, 3, 598, 38f);
+                    var subL = UiKit.Label("SubText", b.Rt, it.Sub(), 18, new Color(0.79f, 0.83f, 0.90f, 0.9f), TextAnchor.UpperLeft);
+                    subL.horizontalOverflow = HorizontalWrapMode.Wrap; subL.verticalOverflow = VerticalWrapMode.Truncate;
+                    UiKit.PlaceTL(subL.rectTransform, 30, 41f, 598, bh - 43f);
+                    var itS = it; s.Refreshers.Add(() => subL.text = itS.Sub());
+                }
                 s.Buttons.Add(b);
                 y += step;
             }
@@ -346,12 +362,20 @@ namespace FrcSim
                     string st = en2.State == "…" ? Z("下載中…", "Downloading…") : en2.State != "" ? en2.State
                         : OpenSourceCatalog.Installed(en2) ? (Prefs.GetString("robotProject", "") == en2.Dir ? Z("使用中 ✓", "In use ✓") : Z("已下載,按一下使用", "Installed — click to use")) : Z("按一下下載", "Click to download");
                     string tag = en2.Status == "ok" ? Z("可用", "Works") : en2.Status == "partial" ? Z("部分", "Partial") : Z("未測試", "Untested");
-                    string mdl = string.IsNullOrEmpty(en2.LibModel) ? "" : "  ·  " + Z("模型", "Model") + ": " + ModelLibrary.Name(ModelLibrary.Find(en2.LibModel)) + (ModelLibrary.Installed(ModelLibrary.Find(en2.LibModel)) ? "" : (ModelLibrary.Find(en2.LibModel).State == "…" ? Z("(下載中…)", "(downloading…)") : "")); return en2.Team + "  [" + tag + "]  " + st + mdl + (string.IsNullOrEmpty(en2.Note) ? "" : "  ·  " + en2.Note);
+                    return en2.Team + "   [" + tag + "]";
                 }, () =>
                 {
                     if (!OpenSourceCatalog.Installed(en2)) { OpenSourceCatalog.Install(en2); return; }
                     Prefs.SetString("robotProject", en2.Dir); Prefs.SetInt("useRealCode", 1); OpenSourceCatalog.UseModel(en2); Prefs.SetInt("tankMode", 0); PlayerPrefs.Save();
-                }));
+                })
+                {
+                    Sub = () =>
+                    {
+                        var lm = string.IsNullOrEmpty(en2.LibModel) ? null : ModelLibrary.Find(en2.LibModel);
+                        string mdl = lm == null ? "" : Z("模型", "Model") + ": " + ModelLibrary.Name(lm) + (ModelLibrary.Installed(lm) ? "" : (lm.State == "…" ? Z("(下載中…)", "(downloading…)") : "")) + "   ·   ";
+                        return (en2.State == "…" ? Z("下載中…", "Downloading…") : en2.State != "" ? en2.State : OpenSourceCatalog.Installed(en2) ? (Prefs.GetString("robotProject", "") == en2.Dir ? Z("使用中 ✓", "In use ✓") : Z("已下載,按一下使用", "Installed — click to use")) : Z("按一下下載", "Click to download")) + "   ·   " + mdl + en2.Note;
+                    }
+                });
             }
             return l.ToArray();
         }        Item ItReal() => new Item(() => Loc.T("setup.real") + ":  " + Loc.T(Prefs.GetInt("useRealCode", 0) == 1 ? "on" : "off"), () => { Prefs.SetInt("useRealCode", Prefs.GetInt("useRealCode", 0) == 1 ? 0 : 1); PlayerPrefs.Save(); });

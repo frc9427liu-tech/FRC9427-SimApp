@@ -41,7 +41,7 @@ namespace FrcSim
                 PatchFind = @"new Translation2d\(14\.0, 5\.0\), Rotation2d\.fromDegrees\(180\)", PatchReplace = "new Translation2d(2.11, 4.04), Rotation2d.fromDegrees(0)" },
             new Entry { Id = "REV-ION-StarterBot", LibModel = "as_kitbot2026", Team = "REV ION", Repo = "https://github.com/REVrobotics/2026-REV-ION-FRC-StarterBot.git", Status = "untested",
                 Model = "proc:0.70,0.70,0.50,#FF8A00",
-                Note = "官方入門機(BSD-3);用 SparkMax/Flex,模擬器目前只模擬 TalonFX,暫時無法驅動" },
+                Note = "官方入門機(BSD-3);用 SparkMax,暫不支援" },
         };
 
         public static bool Installed(Entry e) { return File.Exists(Path.Combine(e.Dir, "gradlew.bat")); }
