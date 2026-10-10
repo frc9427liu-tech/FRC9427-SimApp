@@ -25,6 +25,7 @@ namespace FrcSim
         public float FireInterval;       // >0:AI 難度用的發射間隔(秒);玩家 0 = 預設 1/8 秒
         public float CollectPerSec;      // >0:AI 難度用的吸球速率上限(顆/秒);玩家 0 = 不限
         float nextCollect;
+        public float RollerRps;          // 滾輪轉速(真實程式模式,測試/除錯用)
         public int TotalCollected;       // 本場吸進的球數(成績卡統計)
         public float SpreadDeg;          // 出球散布(度,AI 難度用;玩家 0)
         public int ShotsFired;
@@ -57,7 +58,7 @@ namespace FrcSim
         void RealStepCfg(Newtonsoft.Json.Linq.JObject cfg)
         {
             string Name(string k) => (string)cfg[k];
-            float rollerRps = Mathf.Abs((float)Sim.Vel(Name("roller")));
+            float rollerRps = Mathf.Abs((float)Sim.Vel(Name("roller"))); RollerRps = rollerRps;
             double armDown = (double?)cfg["armDownRev"] ?? 2.0;
             IntakeDown = Sim.Pos(Name("arm")) > armDown;
             ArmExt = Mathf.MoveTowards(ArmExt, IntakeDown ? ArmMax : 0f, ArmSpeed * Time.fixedDeltaTime);

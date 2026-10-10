@@ -76,7 +76,7 @@ namespace FrcSim
                 for (int i = 0; i < h.Buttons.Length; i++) { h.Buttons[i] = false; h.Buttons2[i] = false; }
                 h.Axes[1] = -rawL; h.Axes[5] = -rawR;
                 h.Buttons[0] = Pad.Held(Pad.A) || kA;
-                h.Buttons[1] = Pad.Held(Pad.B) || kB;
+                h.Axes[3] = Mathf.Max(Pad2.Separate ? Pad.RT : (Pad.Held(Pad.B) ? 1f : 0f), kB ? 1f : 0f);   // LEO 新版:駕駛 RT = intake 收球(兩支手把用駕駛 RT;單手把時 B 代替,因為 RT 要留給發射)
                 float turret = (Pad2.Held(Pad.DRight) || Input.GetKey(KeyCode.X) ? 1f : 0f) - (Pad2.Held(Pad.DLeft) || Input.GetKey(KeyCode.Z) ? 1f : 0f);
                 if (Pad2.Separate) turret = Mathf.Clamp(turret + Pad2.LX, -1f, 1f);   // 兩支手把:操作手左搖桿左右 = 砲塔(跟 LEO RobotContainer 一樣);一支時左搖桿是左輪,只能用十字鍵
                 h.Axes2[0] = turret;

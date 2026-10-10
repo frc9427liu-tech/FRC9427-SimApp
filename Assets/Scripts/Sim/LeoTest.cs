@@ -33,9 +33,9 @@ namespace FrcSim
             h.Axes[1] = 0f; h.Axes[5] = 0f; yield return new WaitForSeconds(1f);
             h.Buttons[0] = true; yield return new WaitForSeconds(2f);
             sb.AppendLine($"A held 2s: IntakeDown={m.IntakeDown} ArmExt={m.ArmExt:0.00}");
-            h.Buttons[0] = false; h.Buttons[1] = true; yield return new WaitForSeconds(2f);
-            sb.AppendLine($"B held 2s: IntakeDown={m.IntakeDown}");
-            h.Buttons[1] = false;
+            h.Buttons[0] = false; h.Axes[3] = 1f; yield return new WaitForSeconds(2f);   // 駕駛 RT = 收球(原本 B)
+            sb.AppendLine($"driver RT held 2s: IntakeDown={m.IntakeDown} RollerRps={m.RollerRps:0.0} (expect > 10)");
+            h.Axes[3] = 0f;
             m.Held = 20; m.ShotsFired = 0;
             h.Axes2[3] = 1f; yield return new WaitForSeconds(4f);
             sb.AppendLine($"RT held 4s: FlywheelRps={m.FlywheelRps:0.0} Shooting={m.Shooting} ShotsFired={m.ShotsFired}");
