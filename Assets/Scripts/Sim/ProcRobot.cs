@@ -47,6 +47,14 @@ namespace FrcSim
             foreach (int sz in new[] { -1, 1 }) Part(root, PrimitiveType.Cube, new Vector3(L / 2f - 0.14f, 0.14f, sz * W * 0.42f), new Vector3(0.28f, 0.12f, 0.025f), steel);
             // 儲球槽
             Part(root, PrimitiveType.Cube, new Vector3(L * 0.12f, 0.2f, 0), new Vector3(L * 0.34f, 0.025f, W * 0.7f), steel);
+            // 細節:swerve 模組外殼、Limelight 相機盒、電池、天線、LED 條
+            foreach (int sx in new[] { -1, 1 }) foreach (int sz in new[] { -1, 1 })
+                Part(root, PrimitiveType.Cube, new Vector3(sx * (L / 2f - 0.14f), 0.115f, sz * (W / 2f - 0.11f)), new Vector3(0.13f, 0.05f, 0.11f), steel);
+            Part(root, PrimitiveType.Cube, new Vector3(L / 2f - 0.07f, 0.34f, W * 0.18f), new Vector3(0.08f, 0.06f, 0.10f), dark);
+            Part(root, PrimitiveType.Sphere, new Vector3(L / 2f - 0.05f, 0.34f, W * 0.18f), new Vector3(0.035f, 0.035f, 0.035f), new Color(0.3f, 0.9f, 1f));
+            Part(root, PrimitiveType.Cube, new Vector3(-L * 0.28f, 0.14f, -W * 0.18f), new Vector3(0.18f, 0.09f, 0.13f), new Color(0.08f, 0.08f, 0.1f));
+            Part(root, PrimitiveType.Cylinder, new Vector3(-L * 0.36f, 0.45f, W * 0.3f), new Vector3(0.012f, 0.18f, 0.012f), dark);
+            Part(root, PrimitiveType.Cube, new Vector3(-L / 2f + 0.01f, 0.2f, 0), new Vector3(0.01f, 0.02f, W * 0.6f), acc);
             // 主色飾條(隊色)
             Part(root, PrimitiveType.Cube, new Vector3(0, 0.215f, 0), new Vector3(L - 0.02f, 0.015f, 0.05f), acc);
         }
