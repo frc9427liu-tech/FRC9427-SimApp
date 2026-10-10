@@ -11,9 +11,10 @@ namespace FrcSim
         public RobotMechanisms Mech;
         public int Level = 1;
 
-        enum St { Collect, GoShoot, Shoot }
+        enum St { Collect, GoShoot, Shoot, Defend }
         St st = St.Collect;
         float speed, shootAt, spread, think;
+        float defendUntil, nextDefend;
         Vector2 lastPos; float stuckPosT, moved = 9f, escapeT; Vector2 escapeDir;
         float nextThink, stuckT, shootStart, lastShootEnd;
         Vector2 target; bool hasTarget;
@@ -56,6 +57,15 @@ namespace FrcSim
                 else if (st == St.Collect && Mech.Held >= RobotMechanisms.Capacity - 2) st = St.GoShoot;
                 if (st == St.Shoot && (Mech.Held <= 0 || !active)) { st = St.Collect; hasTarget = false; lastShootEnd = Time.time; }
                 if (st == St.GoShoot && Mech.Held <= 0) { st = St.Collect; hasTarget = false; }
+                // 防守(困難以上):自己的 HUB 沒啟動、對手有球又啟動時,去擋玩家與 HUB 之間(最多 6 秒,之後 10 秒內不再擋)
+                if (Level >= 2 && GameSession.Drive != null && GameSession.Mech != null)
+                {
+                    bool blueActive = !ScoreManager.ClockOn || ScoreManager.BlueActive;
+                    int ph = GameSession.Mech.Held;
+                    bool wantDef = blueActive && ((!active && ph >= 4) || (Level >= 3 && ph >= 10 && Mech.Held < 3));
+                    if (st != St.Defend && st != St.Shoot && wantDef && Time.time > nextDefend) { st = St.Defend; defendUntil = Time.time + 6f; hasTarget = false; }
+                    if (st == St.Defend && (Time.time > defendUntil || !wantDef)) { st = St.Collect; nextDefend = Time.time + 10f; hasTarget = false; }
+                }
                 if (st == St.Collect && (!hasTarget || TargetGone())) PickBall(p);
             }
 
@@ -81,7 +91,17 @@ namespace FrcSim
                         if ((spot - p).magnitude < 0.5f && Drive.Speed < 0.35f) { st = St.Shoot; shootStart = Time.time; }
                     }
                     break;
-                case St.Shoot:
+                case St.Defend:
+                    {
+                        Mech.Shooting = false; Mech.IntakeDown = false;
+                        Vector2 pp = GameSession.Drive.Pose2d;
+                        Vector2 hubAim = RobotMechanisms.BlueHub;
+                        Vector2 spot = pp + (hubAim - pp).normalized * 1.5f;      // 擋在玩家前方、HUB 方向 1.5m
+                        Vector2 d = Route(p, spot) - p;
+                        wantHeading = Mathf.Atan2(pp.y - p.y, pp.x - p.x); turn = true;
+                        want = d.normalized * speed * Mathf.Clamp01((spot - p).magnitude / 1.0f + 0.25f);
+                    }
+                    break;                case St.Shoot:
                     Mech.IntakeDown = false;
                     Mech.Shooting = true;
                     wantHeading = Mathf.Atan2(hub.y - p.y, hub.x - p.x); turn = true;
