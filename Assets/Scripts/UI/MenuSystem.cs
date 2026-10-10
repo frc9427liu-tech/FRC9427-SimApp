@@ -97,6 +97,7 @@ namespace FrcSim
             if (startMenu == "setup") { ShowRobotSetup(); yield break; } if (startMenu == "pad") { ShowPadSetup(ShowRobotSetup, ShowMain); yield break; }
             if (startMenu == "controls") { ShowControls(); yield break; }
             if (startMenu == "about") { ShowAbout(); yield break; }
+            if (startMenu == "pause") { ShowPause(); yield break; }
             if (startMenu == "settings") { settingsBack = ShowMain; ShowSettings(false); yield break; }
             if (startMenu == "modes") { ShowModes(); yield break; }
             if (startMenu == "catalog") { ShowSub(() => Z("開源機器人程式庫", "Open-source robot library"), () => Z("別隊公開的 2026 程式:下載後直接在模擬器跑", "Public 2026 team code: download and run"), CatalogItems()); yield break; }
@@ -676,6 +677,7 @@ namespace FrcSim
         }
     }
 }
+
 
 
 
