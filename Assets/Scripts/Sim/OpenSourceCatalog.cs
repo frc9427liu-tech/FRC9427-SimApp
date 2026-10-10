@@ -34,6 +34,8 @@ namespace FrcSim
                 Note = "swerve + 吸球/飛輪/送球可用(實測);自動把 simMode 改成 REAL",
                 PatchFile = @"src\main\java\frc\robot\Constants.java",
                 PatchFind = @"Mode simMode = Mode\.SIM;", PatchReplace = "Mode simMode = Mode.REAL;" },
+            new Entry { Id = "4915-Artemis", Model = "proc:0.70,0.74,0.60,#3DDC84", Team = "FRC 4915 Spartronics (MIT)", Repo = "https://github.com/Spartronics4915/2026-Rebuilt.git", Status = "partial",
+                Note = "能開車、操作手 LT 吸球;射擊靠自動瞄準的條件尚未對上" },
             new Entry { Id = "REV-ION-StarterBot", Team = "REV ION", Repo = "https://github.com/REVrobotics/2026-REV-ION-FRC-StarterBot.git", Status = "untested",
                 Model = "proc:0.70,0.70,0.50,#FF8A00",
                 Note = "官方入門機(BSD-3);用 SparkMax/Flex,模擬器目前只模擬 TalonFX,暫時無法驅動" },

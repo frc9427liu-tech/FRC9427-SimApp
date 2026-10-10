@@ -1,0 +1,48 @@
+{
+  "note": "FRC 4915 Spartronics ARTEMIS 2026(開源 MIT,Phoenix 6 swerve + 旋轉砲塔);馬達 ID 取自 Constants.java",
+  "agentMotors": ["Talon FX (v6)[1]","Talon FX (v6)[2]","Talon FX (v6)[4]","Talon FX (v6)[5]","Talon FX (v6)[7]","Talon FX (v6)[8]","Talon FX (v6)[10]","Talon FX (v6)[11]","Talon FX (v6)[14]","Talon FX (v6)[15]","Talon FX (v6)[17]","Talon FX (v6)[18]","Talon FX (v6)[19]","Talon FX (v6)[21]","Talon FX (v6)[22]","Talon FX (v6)[23]","Talon FX (v6)[24]"],
+  "links": [
+    { "sensor": "CANcoder (v6)[3]", "motor": "Talon FX (v6)[1]", "ratio": 26.0909, "offset": 0.306885 },
+    { "sensor": "CANcoder (v6)[6]", "motor": "Talon FX (v6)[4]", "ratio": 26.0909, "offset": -0.15380859375 },
+    { "sensor": "CANcoder (v6)[9]", "motor": "Talon FX (v6)[7]", "ratio": 26.0909, "offset": 0.08837890625 },
+    { "sensor": "CANcoder (v6)[12]", "motor": "Talon FX (v6)[10]", "ratio": 26.0909, "offset": -0.155517578125 }
+  ],
+  "loads": {
+    "[1]": { "inertia": 0.002, "friction": 0.01, "lead": 0.04 },
+    "[4]": { "inertia": 0.002, "friction": 0.01, "lead": 0.04 },
+    "[7]": { "inertia": 0.002, "friction": 0.01, "lead": 0.04 },
+    "[10]": { "inertia": 0.002, "friction": 0.01, "lead": 0.04 },
+    "[14]": { "inertia": 0.0002, "friction": 0.01, "minRot": -0.5, "maxRot": 19.0, "note": "pivot arm 50.625:1, -2..132 deg" },
+    "[15]": { "inertia": 0.00045, "friction": 0.005, "note": "intake roller" },
+    "[17]": { "inertia": 0.00045, "friction": 0.005, "note": "indexer" },
+    "[18]": { "inertia": 0.00045, "friction": 0.005, "note": "feeder" },
+    "[22]": { "inertia": 0.00155, "friction": 0.005, "note": "shooter lead" },
+    "[23]": { "inertia": 0.00155, "friction": 0.005, "note": "shooter follower" }
+  },
+  "chassis": {
+    "type": "swerve",
+    "modules": [
+      { "name": "FL", "drive": "Talon FX (v6)[2]", "encoder": "CANcoder (v6)[3]", "x": 0.2435, "y": 0.309, "userSign": 1 },
+      { "name": "FR", "drive": "Talon FX (v6)[5]", "encoder": "CANcoder (v6)[6]", "x": 0.2435, "y": -0.309, "userSign": -1 },
+      { "name": "BL", "drive": "Talon FX (v6)[8]", "encoder": "CANcoder (v6)[9]", "x": -0.2435, "y": 0.309, "userSign": 1 },
+      { "name": "BR", "drive": "Talon FX (v6)[11]", "encoder": "CANcoder (v6)[12]", "x": -0.2435, "y": -0.309, "userSign": -1 }
+    ],
+    "driveRatio": 7.03125,
+    "wheelRadius": 0.0508,
+    "gyro": "Pigeon 2 (v6)[13]"
+  },
+  "mechanisms": {
+    "effects": [
+      { "name": "collect", "motor": "roller", "dir": "+", "minRps": 10 },
+      { "name": "eject", "motor": "roller", "dir": "-", "minRps": 10, "interval": 0.18, "speed": 1.5 },
+      { "name": "leak", "motor": "feeder", "dir": "abs", "minRps": 10, "flywheelBelow": 15, "interval": 0.45, "speed": 2.2 },
+      { "name": "shoot", "motor": "feeder", "dir": "abs", "minRps": 10, "flywheelAbove": 15 }
+    ],
+    "roller": "Talon FX (v6)[15]",
+    "arm": "Talon FX (v6)[14]",
+    "armDownRev": 9.0,
+    "feeder": "Talon FX (v6)[18]",
+    "flywheel": "Talon FX (v6)[22]",
+    "shot": { "elevDeg": 60.0, "speedPerRps": 0.23, "speedBase": 0.0 }
+  }
+}
