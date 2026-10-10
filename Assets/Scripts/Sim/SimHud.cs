@@ -209,7 +209,9 @@ namespace FrcSim
                 if (ScoreManager.ClockOn)
                 {
                     int tl = Mathf.CeilToInt(ScoreManager.Ended ? 0f : ScoreManager.TimeLeft);
-                    GUI.Label(new Rect(cx - 70, sy + 6, 140, 34), $"{tl / 60}:{tl % 60:00}", Style(28, tl <= 10 && !ScoreManager.Ended ? new Color(1f, 0.55f, 0.4f) : Color.white, TextAnchor.MiddleCenter, FontStyle.Bold));
+                    bool urgent = tl <= 10 && tl > 0 && !ScoreManager.Ended;   // 最後 10 秒:紅色字隨秒數脈動放大
+                    float pulse = urgent ? 1f - Mathf.Repeat(ScoreManager.TimeLeft, 1f) : 0f;
+                    GUI.Label(new Rect(cx - 70, sy + 6, 140, 34), $"{tl / 60}:{tl % 60:00}", Style(urgent ? Mathf.RoundToInt(28f + 8f * Mathf.Pow(1f - pulse, 3f)) : 28, urgent ? Color.Lerp(new Color(1f, 0.35f, 0.3f), Color.white, 0.35f * pulse) : Color.white, TextAnchor.MiddleCenter, FontStyle.Bold));
                     string hubs = ScoreManager.Ended ? "" : $"  {(ScoreManager.BlueActive ? "●" : "○")} {L("藍", "B")}   {(ScoreManager.RedActive ? "●" : "○")} {L("紅", "R")}";
                     GUI.Label(new Rect(cx - 90, sy + 38, 180, 20), PhaseName(ScoreManager.Phase) + hubs, Style(12, dim, TextAnchor.UpperCenter, FontStyle.Bold));
                 }
