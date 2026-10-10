@@ -21,7 +21,15 @@ namespace FrcSim
             if (System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-intro") < 0)
             foreach (var a in System.Environment.GetCommandLineArgs())
                 if (a == "-batchmode" || a == "-shot" || a.EndsWith("test") || a == "-leoauto" || a == "-vsai" || a == "-noclock") return;
-            introT = 0f; chaseInit = false; Debug.Log("[Intro] start");
+            introPending = true; introWait = 0f;   // 等「載入程式」的畫面結束(真實程式連上線)才開始放,不然會被載入 UI 擋住
+        }
+        bool introPending; float introWait;
+        void TickIntroPending()
+        {
+            if (!introPending) return;
+            introWait += Time.unscaledDeltaTime;
+            bool ready = GameSession.Hal == null || GameSession.Hal.Connected || GameSession.Hal.Failed;
+            if (ready && introWait > 0.8f || introWait > 400f) { introPending = false; introT = 0f; chaseInit = false; }
         }
         bool IntroOn => introT < IntroLen;
         GUIStyle gBig, gSmall;
@@ -46,6 +54,7 @@ namespace FrcSim
 
         void Update()
         {
+            TickIntroPending();
             if (IntroOn) introT += Mathf.Min(Time.unscaledDeltaTime, 0.033f);   // 載入卡頓的大幀不能把進場動畫一次吃掉
             if (!Orbit && !MenuSystem.Blocking && Input.GetKeyDown(KeyCode.C)) Mode = Mode == 1 ? 2 : Mode == 2 ? 0 : Mode == 0 ? 7 : Mode == 7 ? 8 : 1;
         }

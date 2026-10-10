@@ -31,7 +31,7 @@ namespace FrcSim
                 if (PlayerPrefs.HasKey("robotModel"))
                 {
                     string s = Prefs.GetString("robotModel", "");
-                    return s == "" || List().Contains(s) ? s : "";
+                    return s == "" || ProcRobot.Is(s) || List().Contains(s) ? s : "";
                 }
                 var l = List();
                 return l.Length > 0 ? l[0] : "";
@@ -52,6 +52,12 @@ namespace FrcSim
         public static async void Attach(Transform robot, string file, float yawDeg, Action<bool> done, bool red = false)
         {
             bool ok = false;
+            if (ProcRobot.Is(file))
+            {
+                var pv = new GameObject("ModelPivot"); pv.transform.SetParent(robot, false); pv.transform.localPosition = new Vector3(0f, -(SimConstants.BumperHeight / 2f + 0.03f), 0f); pv.AddComponent<BodyLean>();
+                var pr = new GameObject("ModelRoot"); pr.transform.SetParent(pv.transform, false); ProcRobot.Build(file, pr.transform);
+                Fix(pr, robot, yawDeg, red); CombineByMaterial(pr); done?.Invoke(true); return;
+            }
             try
             {
                 var path = Path.Combine(Dir, file);

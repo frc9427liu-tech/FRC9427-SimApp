@@ -323,7 +323,7 @@ namespace FrcSim
                 }, () =>
                 {
                     if (!OpenSourceCatalog.Installed(en2)) { OpenSourceCatalog.Install(en2); return; }
-                    Prefs.SetString("robotProject", en2.Dir); Prefs.SetInt("useRealCode", 1); Prefs.SetInt("tankMode", 0); PlayerPrefs.Save();
+                    Prefs.SetString("robotProject", en2.Dir); Prefs.SetInt("useRealCode", 1); if (!string.IsNullOrEmpty(en2.Model)) { Prefs.SetString("robotModel", en2.Model); PlayerPrefs.DeleteKey("modelYaw"); } Prefs.SetInt("tankMode", 0); PlayerPrefs.Save();
                 }));
             }
             return l.ToArray();
