@@ -65,6 +65,7 @@ namespace FrcSim
             if (Orbit || Target == null)
             {
                 orbitT += Time.unscaledDeltaTime * 0.12f;
+                if (ScoreCube.Overhead != null) ScoreCube.Overhead.SetActive(false);
                 Vector3 c = new Vector3(L / 2f, 0.5f, W / 2f);
                 Vector3 p = c + new Vector3(Mathf.Cos(orbitT) * 13f, 6.5f, Mathf.Sin(orbitT) * 8.5f);
                 transform.position = p;
@@ -73,6 +74,8 @@ namespace FrcSim
             }
 
             ActiveMode = Mode;
+            if (ScoreCube.Overhead != null) ScoreCube.Overhead.SetActive(!(Mode == 0 || Mode == 2 || Mode == 5 || Orbit));   // 高機位(全景/俯視)會被桁架和計分板擋住視線
+            if (ScoreCube.Overhead != null) ScoreCube.Overhead.SetActive(!(Mode == 0 || Mode == 2 || Mode == 5 || Orbit));
             Vector3 pos; Quaternion rot;
             if (Mode == 0)
             {

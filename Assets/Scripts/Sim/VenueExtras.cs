@@ -6,8 +6,10 @@ namespace FrcSim
     public class ScoreCube : MonoBehaviour
     {
         TextMesh[] tms = new TextMesh[4];
-        public static void Build(Transform parent, float L, float W)
+        public static GameObject Overhead;   // 桁架+計分板;俯視/全景機位在它們下方會被擋住,CameraRig 在那些機位把它藏起來
+        public static void Build(Transform parent0, float L, float W)
         {
+            Overhead = new GameObject("Overhead"); Overhead.transform.SetParent(parent0, false); Transform parent = Overhead.transform;
             Font font = null; try { font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf"); } catch { }
             var steel = new Material(Shader.Find("Standard")); steel.SetColor("_Color", new Color(0.12f, 0.13f, 0.16f)); steel.SetFloat("_Glossiness", 0.3f);
             // 桁架:兩根沿長邊 + 數根橫梁 + 吊桿
