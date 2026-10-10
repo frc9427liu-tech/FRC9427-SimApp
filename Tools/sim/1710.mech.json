@@ -2,10 +2,10 @@
   "note": "FRC 1710 2026(開源,Phoenix 6 swerve,馬達 ID 取自 CanIdConstants/TunerConstants)",
   "agentMotors": ["Talon FX (v6)[1]","Talon FX (v6)[3]","Talon FX (v6)[6]","Talon FX (v6)[9]","Talon FX (v6)[12]","Talon FX (v6)[10]","Talon FX (v6)[7]","Talon FX (v6)[4]","Talon FX (v6)[20]","Talon FX (v6)[21]","Talon FX (v6)[22]","Talon FX (v6)[30]","Talon FX (v6)[40]","Talon FX (v6)[41]","Talon FX (v6)[42]","Talon FX (v6)[43]","Talon FX (v6)[60]"],
   "links": [
-    { "sensor": "CANcoder (v6)[11]", "motor": "Talon FX (v6)[12]", "ratio": 26 },
-    { "sensor": "CANcoder (v6)[8]", "motor": "Talon FX (v6)[9]", "ratio": 26 },
-    { "sensor": "CANcoder (v6)[5]", "motor": "Talon FX (v6)[6]", "ratio": 26 },
-    { "sensor": "CANcoder (v6)[2]", "motor": "Talon FX (v6)[3]", "ratio": 26 }
+    { "sensor": "CANcoder (v6)[11]", "motor": "Talon FX (v6)[12]", "ratio": 26, "offset": -0.41357421875 },
+    { "sensor": "CANcoder (v6)[8]", "motor": "Talon FX (v6)[9]", "ratio": 26, "offset": -0.239013671875 },
+    { "sensor": "CANcoder (v6)[5]", "motor": "Talon FX (v6)[6]", "ratio": 26, "offset": 0.1962890625 },
+    { "sensor": "CANcoder (v6)[2]", "motor": "Talon FX (v6)[3]", "ratio": 26, "offset": -0.581298828125 }
   ],
   "loads": {
     "[12]": { "inertia": 0.002, "friction": 0.01, "lead": 0.04 },

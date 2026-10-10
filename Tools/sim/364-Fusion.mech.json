@@ -2,10 +2,10 @@
   "note": "FRC 364 Fusion 2026(開源,AdvantageKit 範本 + Phoenix 6 swerve + 旋轉砲塔)",
   "agentMotors": ["Talon FX (v6)[4]","Talon FX (v6)[3]","Talon FX (v6)[2]","Talon FX (v6)[1]","Talon FX (v6)[8]","Talon FX (v6)[7]","Talon FX (v6)[6]","Talon FX (v6)[5]","Talon FX (v6)[9]","Talon FX (v6)[10]","Talon FX (v6)[11]","Talon FX (v6)[12]","Talon FX (v6)[13]","Talon FX (v6)[14]","Talon FX (v6)[44]","Talon FX (v6)[15]","Talon FX (v6)[16]","Talon FX (v6)[17]"],
   "links": [
-    { "sensor": "CANcoder (v6)[1]", "motor": "Talon FX (v6)[3]", "ratio": 26.09 },
-    { "sensor": "CANcoder (v6)[0]", "motor": "Talon FX (v6)[1]", "ratio": 26.09 },
-    { "sensor": "CANcoder (v6)[4]", "motor": "Talon FX (v6)[7]", "ratio": 26.09 },
-    { "sensor": "CANcoder (v6)[3]", "motor": "Talon FX (v6)[5]", "ratio": 26.09 }
+    { "sensor": "CANcoder (v6)[1]", "motor": "Talon FX (v6)[3]", "ratio": 26.09, "offset": 0.017333984375 },
+    { "sensor": "CANcoder (v6)[0]", "motor": "Talon FX (v6)[1]", "ratio": 26.09, "offset": -0.405029296875 },
+    { "sensor": "CANcoder (v6)[4]", "motor": "Talon FX (v6)[7]", "ratio": 26.09, "offset": 0.18603515625 },
+    { "sensor": "CANcoder (v6)[3]", "motor": "Talon FX (v6)[5]", "ratio": 26.09, "offset": 0.37890625 }
   ],
   "loads": {
     "[3]": { "inertia": 0.002, "friction": 0.01, "lead": 0.04 },
