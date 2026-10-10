@@ -22,7 +22,7 @@ namespace FrcSim
 
         public static float Dist = 2.7f;   // 滾輪縮放:鏡頭距離(公尺)
         public static float DragDeg;   // 滑鼠左鍵在右側空白處拖曳 = 轉動檢視角度
-        GUIStyle nameSt, subSt;
+        GUIStyle nameSt, subSt; string dims = ""; float dimsT;
         void OnGUI()
         {
             if (!Active || Event.current.type != EventType.Repaint) return;
@@ -31,6 +31,13 @@ namespace FrcSim
             string proj = Prefs.GetString("robotProject", "");
             string team = string.IsNullOrEmpty(proj) || Prefs.GetInt("useRealCode", 0) != 1 ? Loc.T("model.builtin") : System.IO.Path.GetFileName(proj.TrimEnd('\\', '/'));
             string mdl = string.IsNullOrEmpty(RobotModels.Selected) ? "" : RobotModels.Display(RobotModels.Selected);
+            if (car != null && dimsT < Time.unscaledTime)
+            {   // 量尺寸(模型載入後才有 Renderer):長寬高,每 0.5 秒更新
+                dimsT = Time.unscaledTime + 0.5f; Bounds bb = default; bool any = false;
+                foreach (var rr in car.GetComponentsInChildren<Renderer>()) { if (!rr.enabled) continue; if (!any) { bb = rr.bounds; any = true; } else bb.Encapsulate(rr.bounds); }
+                dims = any ? Mathf.Max(bb.size.x, bb.size.z).ToString("0.00") + " × " + Mathf.Min(bb.size.x, bb.size.z).ToString("0.00") + " × " + bb.size.y.ToString("0.00") + " m" : "";
+            }
+            if (dims != "") mdl = mdl + "   ·   " + dims;
             var r = new Rect(Screen.width * 0.45f, Screen.height - 130 * sc, Screen.width * 0.52f, 56 * sc);
             GUI.color = new Color(0, 0, 0, 0.5f); GUI.Label(new Rect(r.x + 2, r.y + 2, r.width, r.height), team, nameSt); GUI.color = Color.white; GUI.Label(r, team, nameSt);
             GUI.color = new Color(1, 1, 1, 0.75f); GUI.Label(new Rect(r.x, r.y + 40 * sc, r.width, 24 * sc), mdl + "   ·   " + Loc.T("hint.drag"), subSt); GUI.color = Color.white;
@@ -75,3 +82,4 @@ namespace FrcSim
         void OnDestroy() { if (I == this) I = null; }
     }
 }
+
