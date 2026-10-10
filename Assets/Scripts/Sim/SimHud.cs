@@ -222,8 +222,8 @@ namespace FrcSim
                 Panel(new Rect(sx, sy, sw, sh), 0.66f);
                 Rounded(new Rect(sx + 6, sy + 6, 150, sh - 12), new Color(0.12f, 0.36f, 1f, 0.9f), 14f);
                 Rounded(new Rect(sx + sw - 156, sy + 6, 150, sh - 12), new Color(0.95f, 0.2f, 0.22f, 0.9f), 14f);
-                GUI.Label(new Rect(sx + 6, sy + 6, 150, sh - 12), $"{ScoreManager.BlueScore}", Style(38, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold));
-                GUI.Label(new Rect(sx + sw - 156, sy + 6, 150, sh - 12), $"{ScoreManager.RedScore}", Style(38, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold));
+                GUI.Label(new Rect(sx + 6, sy + 6, 150, sh - 12), $"{ScoreManager.BlueScore}", Style(38 + Mathf.RoundToInt(12f * (Juice.LastScoreBlue ? Juice.ScorePop : 0f)), Color.white, TextAnchor.MiddleCenter, FontStyle.Bold));
+                GUI.Label(new Rect(sx + sw - 156, sy + 6, 150, sh - 12), $"{ScoreManager.RedScore}", Style(38 + Mathf.RoundToInt(12f * (!Juice.LastScoreBlue ? Juice.ScorePop : 0f)), Color.white, TextAnchor.MiddleCenter, FontStyle.Bold));
                 if (ScoreManager.ClockOn)
                 {
                     int tl = Mathf.CeilToInt(ScoreManager.Ended ? 0f : ScoreManager.TimeLeft);
@@ -360,6 +360,7 @@ namespace FrcSim
         }
     }
 }
+
 
 
 
