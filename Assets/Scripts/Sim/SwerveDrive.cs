@@ -77,7 +77,14 @@ namespace FrcSim
             cmdOmega = Mathf.Clamp(rot, -1f, 1f) * SimConstants.MaxAngularSpeed;
         }
 
-        void FixedUpdate()
+                void OnCollisionEnter(Collision c)
+        {
+            float v = c.relativeVelocity.magnitude;
+            if (v < 1f) return;
+            if (c.collider.attachedRigidbody != null && c.collider.attachedRigidbody.mass < 1f) return;   // FUEL 球不算撞擊
+            Juice.OnRobotBump(this, c.contactCount > 0 ? c.GetContact(0).point : transform.position, v);
+        }
+void FixedUpdate()
         {
             float dt = Time.fixedDeltaTime;
             // 車身高度固定:被擠進地板會產生巨大摩擦把車煞住,所以每步檢查並拉回

@@ -9,7 +9,8 @@ namespace FrcSim
         public const float Radius = 0.0750f;
         public const float Mass = 0.215f;
         public bool Scored;
-        public float ShotDist = -1f;   // 玩家發射時離 HUB 的距離(統計用,進球後清掉)
+        public float ShotDist = -1f;
+        void OnCollisionEnter(Collision c) { float v = c.relativeVelocity.magnitude; if (v < 0.8f) return; Juice.OnBallImpact(transform.position, v); }   // 玩家發射時離 HUB 的距離(統計用,進球後清掉)
         public float IgnoreRobotUntil;
         public Collider RobotCollider;
         public Collider Col;

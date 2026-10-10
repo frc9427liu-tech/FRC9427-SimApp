@@ -360,6 +360,22 @@ namespace FrcSim
             catch (Exception) { }
             return dir;
         }
+        void ShowSoundSettings(bool game)
+        {
+            MenuScreen s = null;
+            string P(float v) { return Mathf.RoundToInt(v * 100f) + "%"; }
+            s = Build(() => Z("聲音與回饋", "Sound & feedback"), null, new[]
+            {
+                new Item(() => Z("主音量", "Master volume") + ":  " + P(JuiceSettings.Master), () => { JuiceSettings.Master = JuiceSettings.Step(JuiceSettings.Master); SfxBus.Play("tick", 0.8f); RefreshScreen(); }),
+                new Item(() => Z("音效", "Effects") + ":  " + P(JuiceSettings.Sfx), () => { JuiceSettings.Sfx = JuiceSettings.Step(JuiceSettings.Sfx); SfxBus.Play("ding", 0.6f); RefreshScreen(); }),
+                new Item(() => Z("音樂", "Music") + ":  " + P(JuiceSettings.Music), () => { JuiceSettings.Music = JuiceSettings.Step(JuiceSettings.Music); RefreshScreen(); }),
+                new Item(() => Z("鏡頭晃動", "Camera shake") + ":  " + (JuiceSettings.Shake > 0.75f ? Z("正常", "Normal") : JuiceSettings.Shake > 0.25f ? Z("減弱", "Reduced") : Z("關", "Off")), () => { JuiceSettings.Shake = JuiceSettings.ShakeCycle(JuiceSettings.Shake); RefreshScreen(); }),
+                new Item(() => Z("手把震動", "Controller rumble") + ":  " + Loc.T(JuiceSettings.Rumble ? "on" : "off"), () => { JuiceSettings.Rumble = !JuiceSettings.Rumble; Rumble.Pulse(Pad.DriverIndex, 0.4f, 0.4f, 0.15f); RefreshScreen(); }),
+                new Item(() => Z("減少閃光與粒子", "Reduce flashes & particles") + ":  " + Loc.T(JuiceSettings.ReduceFlash ? "on" : "off"), () => { JuiceSettings.ReduceFlash = !JuiceSettings.ReduceFlash; RefreshScreen(); }),
+                new Item(() => Loc.T("menu.back"), () => ShowSettings(game)),
+            }, () => ShowSettings(game));
+            Show(s, game);
+        }
         void ShowSettings(bool game)
         {
             MenuScreen s = null;
@@ -405,6 +421,7 @@ namespace FrcSim
                     RefreshScreen();
                 }),
                 new Item(() => Z("手把設定", "Controllers"), () => ShowPadSetup(() => ShowSettings(game), () => ShowSettings(game))),
+                new Item(() => Z("聲音與回饋  ▸", "Sound & feedback  ▸"), () => ShowSoundSettings(game)),
                 new Item(() => Z("後製特效", "Post effects") + ":  " + (PostFX.Quality == 0 ? Z("關", "Off") : PostFX.Quality == 1 ? Z("基本", "Basic") : PostFX.Quality == 2 ? Z("泛光", "Bloom") : "AO"), () => { PostFX.Quality = (PostFX.Quality + 1) % 3; }),
                 new Item(() => Z("液態玻璃(毛玻璃)", "Liquid glass") + ":  " + (UiGlass.Disabled ? Z("關", "Off") : Z("開", "On")), () => { UiGlass.Disabled = !UiGlass.Disabled; if (UiGlass.Disabled) UiGlass.Ready = false; PlayerPrefs.SetInt("noGlass", UiGlass.Disabled ? 1 : 0); PlayerPrefs.Save(); }),
                 new Item(() => Loc.T("menu.back"), () => settingsBack?.Invoke()),
@@ -566,7 +583,7 @@ namespace FrcSim
             if (g != null) g.PressT = 0f;
         }
         void Activate(UiButton b)
-        { if (b.Enabled && b.Glass != null) StartCoroutine(PressPulse(b.Glass));
+        { if (b.Enabled && b.Glass != null) StartCoroutine(PressPulse(b.Glass)); if (b.Enabled) Juice.UiClick();
             if (!b.Enabled) return;
             b.OnClick?.Invoke();
             RefreshScreen();

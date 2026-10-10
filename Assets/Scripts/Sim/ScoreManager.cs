@@ -68,6 +68,7 @@ namespace FrcSim
             float d = SimConstants.AllianceZoneDepth + SimConstants.HubSize / 2f;
             blueHub = new Vector2(d, W / 2f);
             redHub = new Vector2(L - d, W / 2f);
+            Juice.ResetMatch();
         }
 
         // N:跳過 AUTO / TRANSITION,直接進 TELEOP(真實程式模式下 AUTO 手把無效,想直接開車就按 N)
@@ -100,6 +101,7 @@ namespace FrcSim
                 // 吐回場上:朝中立區那一側的底部出口
                 Vector2 hub = inBlue ? blueHub : redHub;
                 float dir = inBlue ? 1f : -1f;
+                Juice.OnScore(inBlue, active, new Vector3(hub.x, 1.9f, hub.y));
                 f.transform.position = new Vector3(hub.x + dir * 0.78f, 0.25f, hub.y + Random.Range(-0.3f, 0.3f));
                 rb.linearVelocity = new Vector3(dir * Random.Range(0.4f, 0.9f), 0f, Random.Range(-0.4f, 0.4f));   // 輕輕吐出,不會滾到老遠
                 rb.angularVelocity = Vector3.zero;

@@ -35,6 +35,7 @@ namespace FrcSim
             camObj.AddComponent<SuperSample>();
             var rig = camObj.AddComponent<CameraRig>();
             rig.Orbit = true;
+            Juice.Boot(camObj);   // 音效/粒子/鏡頭回饋(Juice 套件)
 
             bool selfTest = System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-selftest") >= 0;
             if (selfTest)

@@ -26,7 +26,10 @@ Shader "FrcSim/Fuel"
             o.Albedo = _Color.rgb;
             o.Metallic = _Metallic;
             o.Smoothness = _Glossiness;
-            o.Emission = _RimColor.rgb * f * _RimAmt + _Color.rgb * _Emit;
+            // 地面反彈光:球的下半部吃到地毯反射的暖光,不會變成一半亮一半黑(看起來像沉進地板)
+            float3 nn = normalize(IN.worldNormal);
+            float bounce = saturate(-nn.y * 0.75 + 0.35);
+            o.Emission = _RimColor.rgb * f * _RimAmt + _Color.rgb * (_Emit + bounce * 0.34);
         }
         ENDCG
     }

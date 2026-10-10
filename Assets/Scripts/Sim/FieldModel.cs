@@ -101,6 +101,7 @@ namespace FrcSim
                             r.sharedMaterials = ms;
                             r.receiveShadows = true;
                             nCarpet++;
+                            Debug.Log($"[FieldModel] carpet bounds min.y={bb.min.y:0.000} max.y={bb.max.y:0.000} size={bb.size}");
                             tangentsOk &= Look.EnsureTangents(r);
                         }
                     }

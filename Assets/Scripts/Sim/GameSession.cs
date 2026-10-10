@@ -37,6 +37,7 @@ namespace FrcSim
         // 不重開機器人程式,直接把場地/比分/機器人位置重置成開賽狀態(「再來一場」「F5」)
         public static void Rematch()
         {
+            Juice.ResetMatch();
             Drill = false; ShotLog.Reset();
             if (!Active || Drive == null) return;
             FuelManager.Clear(); FuelManager.Init(); FuelManager.SpawnStart();

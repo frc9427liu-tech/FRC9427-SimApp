@@ -228,6 +228,7 @@ namespace FrcSim
                 Held++; TotalCollected++;
                 if (CollectPerSec > 0f) nextCollect = Time.time + 1f / CollectPerSec;
                 SpawnAbsorb(f.transform.position);
+                Juice.OnCollect(this, f.transform.position);
                 FuelManager.Remove(f);
                 if (CollectPerSec > 0f) break;
             }
@@ -351,6 +352,7 @@ namespace FrcSim
                 Mathf.Sin(yaw) * Mathf.Cos(elev) * speed + tv.y);
             Vector3 p = new Vector3(pos.x + off.x, LaunchHeight, pos.y + off.y);
             var shotFuel = FuelManager.Spawn(p, v, RobotCollider);
+            Juice.OnShot(this, p, v.normalized);
             LastFireTime = Time.time;
             if (this == GameSession.Mech) { float sd = Vector2.Distance(pos, TargetHub); shotFuel.ShotDist = sd; ShotLog.AddShot(sd); }
             Held--;

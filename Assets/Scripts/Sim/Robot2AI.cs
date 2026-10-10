@@ -134,7 +134,7 @@ namespace FrcSim
             {
                 aiTestT += Time.deltaTime;
                 if (aiTestT > Mathf.Floor(aiTestT - Time.deltaTime) && Mathf.Floor(aiTestT) != Mathf.Floor(aiTestT - Time.deltaTime))
-                    log.AppendLine($"t={aiTestT:0} st={st} pos=({p.x:0.0},{p.y:0.0}) hd={Drive.HeadingRad * Mathf.Rad2Deg:0} held={Mech.Held} shots={Mech.ShotsFired} red={ScoreManager.RedScore} blue={ScoreManager.BlueScore} spd={Drive.Speed:0.0} tgt=({target.x:0.0},{target.y:0.0}){(hasTarget ? "" : "!")} want=({want.x:0.0},{want.y:0.0}) esc={escapeT:0.0}");
+                    log.AppendLine($"t={aiTestT:0} st={st} pos=({p.x:0.0},{p.y:0.0}) hd={Drive.HeadingRad * Mathf.Rad2Deg:0} held={Mech.Held} shots={Mech.ShotsFired} red={ScoreManager.RedScore} blue={ScoreManager.BlueScore} spd={Drive.Speed:0.0} fuelMinY={FuelMinY():0.000} sunk={FuelSunk()} tgt=({target.x:0.0},{target.y:0.0}){(hasTarget ? "" : "!")} want=({want.x:0.0},{want.y:0.0}) esc={escapeT:0.0}");
                 if (aiTestT > aiEnd)
                 {
                     System.IO.File.WriteAllText(System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Application.dataPath), "aitest-L" + Level + ".txt"), log.ToString());
@@ -160,6 +160,9 @@ namespace FrcSim
             if (inBand && Mathf.Abs(p.y - lane) > 0.45f) return new Vector2(p.x + 0.5f * sp, lane);   // 在帶內:先橫移到車道再前進(避免貼著 HUB 角)
             return new Vector2(hx + (inBand ? Mathf.Sign(goal.x - hx) : -sp) * 2.3f, lane);
         }
+
+        static float FuelMinY() { float m = 9f; foreach (var f in FuelManager.All) if (f != null) m = Mathf.Min(m, f.transform.position.y); return m; }
+        static int FuelSunk() { int c = 0; foreach (var f in FuelManager.All) if (f != null && f.transform.position.y < Fuel.Radius - 0.03f) c++; return c; }
 
         bool TargetGone()
         {
