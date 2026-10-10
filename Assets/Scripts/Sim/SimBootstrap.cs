@@ -58,6 +58,7 @@ namespace FrcSim
                 }
                 if (System.Array.IndexOf(a, "-installtest") >= 0) { new GameObject("InstallTest").AddComponent<InstallTest>(); return; }
                 { int mi = System.Array.IndexOf(a, "-model"); if (mi >= 0 && mi + 1 < a.Length) { Prefs.SetString("robotModel", a[mi + 1]); PlayerPrefs.DeleteKey("modelYaw"); } }
+                { int li0 = System.Array.IndexOf(a, "-lang"); if (li0 >= 0 && li0 + 1 < a.Length) Loc.Lang = a[li0 + 1]; }
                 int pti = System.Array.IndexOf(a, "-projtest");
                 if (pti >= 0 && pti + 1 < a.Length) { GameSession.Begin(rig, false, a[pti + 1]); new GameObject("ProjTest").AddComponent<ProjTest>(); return; }
                 int bi2 = System.Array.IndexOf(a, "-bindtest");

@@ -322,9 +322,9 @@ namespace FrcSim
                 if (p.y < 0.05f) break;
             }
             ShotWillScore = crossed && inside;
-            if (!crossed) ShotHint = "球飛不到 HUB 高度";
-            else if (inside) ShotHint = "預測進球";
-            else ShotHint = along < 0f ? $"太短 {Mathf.Abs(along):0.0} m" : $"太長 {along:0.0} m";
+            if (!crossed) ShotHint = Loc.Lang == "en" ? "ball can't reach HUB height" : "球飛不到 HUB 高度";
+            else if (inside) ShotHint = Loc.Lang == "en" ? "predicted: in" : "預測進球";
+            else ShotHint = along < 0f ? (Loc.Lang == "en" ? $"short {Mathf.Abs(along):0.0} m" : $"太短 {Mathf.Abs(along):0.0} m") : (Loc.Lang == "en" ? $"long {along:0.0} m" : $"太長 {along:0.0} m");
             arc.enabled = true;
             arc.positionCount = arcPts.Count;
             arc.SetPositions(arcPts.ToArray());

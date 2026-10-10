@@ -97,7 +97,17 @@ namespace FrcSim
             }
             var sb = new System.Text.StringBuilder();
             foreach (var k in order) { if (sb.Length > 0) sb.Append("   "); sb.Append(k).Append(' ').Append(d[k]); }
-            return sb.ToString();
+            return Loc.Lang == "en" ? ToEn(sb.ToString()) : sb.ToString();
         }
+
+        // 英文介面時把自動產生的說明列翻成英文(使用者自己寫的中文註解保持原樣)
+        static readonly string[,] EnMap =
+        {
+            { "左/右輪(坦克)", "L/R wheels (tank)" }, { "左/右搖桿", "L/R stick" }, { "左搖桿", "L-stick " }, { "右搖桿", "R-stick " },
+            { "到速送球", "feed when at speed" }, { "砲塔旋轉", "turret" }, { "收手臂", "raise arm" }, { "放手臂", "lower arm" },
+            { "飛輪", "flywheel" }, { "吐球", "eject" }, { "收球", "intake" }, { "送球", "feed" }, { "旋轉", "rotate" },
+            { "(模擬器尚無效果)", "(not simulated)" }, { "放下", "lower" }, { "收起", "up" },
+        };
+        static string ToEn(string s) { for (int i = 0; i < EnMap.GetLength(0); i++) s = s.Replace(EnMap[i, 0], EnMap[i, 1]); return s; }
     }
 }

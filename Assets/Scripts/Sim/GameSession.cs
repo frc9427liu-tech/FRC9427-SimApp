@@ -130,10 +130,10 @@ namespace FrcSim
                 {
                     bool hasProfile = System.IO.File.Exists(System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Application.dataPath), "Sim", SimProject.Profile(chosen) + ".mech.json"));
                     Notice = hasProfile
-                        ? "這個專案是 swerve 型式,請在『機器人設定』把操控方式改成『全向』再開始,目前改用內建行為"
-                        : "這個專案還沒有模擬設定檔(Sim\\" + SimProject.Profile(chosen) + ".mech.json),目前只能用內建行為;見 docs/ARCHITECTURE.md";
+                        ? (Loc.Lang == "en" ? "This project is swerve: set Controls to Swerve in Robot setup. Using built-in behavior for now." : "這個專案是 swerve 型式,請在『機器人設定』把操控方式改成『全向』再開始,目前改用內建行為")
+                        : (Loc.Lang == "en" ? "No simulation profile yet (Sim\\" + SimProject.Profile(chosen) + ".mech.json); using built-in behavior. See docs/ARCHITECTURE.md" : "這個專案還沒有模擬設定檔(Sim\\" + SimProject.Profile(chosen) + ".mech.json),目前只能用內建行為;見 docs/ARCHITECTURE.md");
                 }
-                else if (string.IsNullOrEmpty(proj) && string.IsNullOrEmpty(chosen)) Notice = "還沒選機器人程式專案,使用內建行為(機器人設定 → 機器人程式)";
+                else if (string.IsNullOrEmpty(proj) && string.IsNullOrEmpty(chosen)) Notice = Loc.Lang == "en" ? "No robot project chosen — using built-in behavior (Robot setup → Robot code)" : "還沒選機器人程式專案,使用內建行為(機器人設定 → 機器人程式)";
                 if (Notice != "") { NoticeUntil = Time.time + 12f; Debug.LogWarning("[GameSession] " + Notice); }
             }
             if (!string.IsNullOrEmpty(proj) && System.IO.File.Exists(System.IO.Path.Combine(proj, "gradlew.bat")))

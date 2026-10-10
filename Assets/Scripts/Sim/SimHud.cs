@@ -173,7 +173,7 @@ namespace FrcSim
                 GUI.Label(new Rect(x0 + pw - 134, yy, 120, 22), st2, Style(14, Mech.Shooting ? new Color(0.4f, 1f, 0.5f) : dim, TextAnchor.UpperRight, FontStyle.Bold));
                 Bar(new Rect(x0 + 14, yy + 24, pw - 28, 8), Mech.FlywheelRps / 40f, Mech.ShotWillScore ? new Color(0.3f, 1f, 0.4f) : new Color(0.4f, 0.7f, 1f));
                 yy += 42f;
-                string hint = Mech.ShotHint != "" ? Mech.ShotHint : L("開飛輪後顯示預測落點", "spin flywheel to preview shot");
+                string hint = Mech.ShotHint != "" ? Mech.ShotHint : L("開飛輪後顯示預測落點", "spin up to preview");
                 Color hc = Mech.ShotHint == "" ? new Color(1f, 1f, 1f, 0.45f) : (Mech.ShotWillScore ? new Color(0.4f, 1f, 0.5f) : new Color(1f, 0.7f, 0.25f));
                 GUI.Label(new Rect(x0 + 14, yy, pw - 28, 22), hint + $"      {L("吸球器", "intake")} " + (Mech.IntakeDown ? L("放下", "DOWN") : L("收起", "up")) + (Mech.Feeding ? L(" · 送球", " · feed") : "") + (Mech.Ejecting ? L(" · 吐球", " · eject") : ""), Style(14, hc, TextAnchor.UpperLeft, FontStyle.Bold));
             }
@@ -310,7 +310,7 @@ namespace FrcSim
                 {
                     string cc = Pad2.Separate ? "" : L("   [單手把:砲塔=十字鍵左右,收球=B]", "   [single pad: turret = D-pad, intake = B]");
                     t1 = L("駕駛手  ", "Driver  ") + BindingMap.Line(true);
-                    t2 = L("操作手  ", "Operator  ") + BindingMap.Line(false) + cc + "      " + L("(說明由程式的 RobotContainer 自動產生)", "(auto-generated from RobotContainer)");
+                    t2 = L("操作手  ", "Operator  ") + BindingMap.Line(false) + cc + "      " + L("(說明由程式的 RobotContainer 自動產生)", "(auto)");
                 }                float hw = Mathf.Min(W - 20, 1100);
                 Panel(new Rect(cx - hw / 2f, H - (bound ? 84 : 62), hw, bound ? 74 : 52), 0.6f);
                 var hs = Style(14, dim);
