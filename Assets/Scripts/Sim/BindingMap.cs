@@ -10,7 +10,7 @@ namespace FrcSim
     //  2. 單手把模式需要知道「收球」綁在駕駛 RT 還是 B,才知道怎麼把 B 轉給程式
     public static class BindingMap
     {
-        public class Bind { public bool Driver; public string Key; public string Desc; }
+        public class Bind { public bool Driver; public string Key; public string Desc; public string Raw = ""; public bool Supported = true; }
         public static readonly List<Bind> List = new List<Bind>();
         public static bool Loaded;
         public static bool IntakeOnDriverRT;
@@ -68,9 +68,9 @@ namespace FrcSim
                     if (mv.Success) { vars[mv.Groups[1].Value] = new KeyValuePair<bool, string>(mv.Groups[2].Value == "driver", mv.Groups[3].Value); continue; }
                     // m_driver.a().whileTrue(cmd);   或   flywheelOn.whileTrue(cmd);
                     var mb = Regex.Match(line, @"m_(driver|operator)\.(\w+)\(([^)]*)\)\s*\.\s*(whileTrue|onTrue|toggleOnTrue|onFalse|whileFalse)\((.*)\)\s*;");
-                    if (mb.Success) { List.Add(new Bind { Driver = mb.Groups[1].Value == "driver", Key = KeyName(mb.Groups[2].Value), Desc = Describe(mb.Groups[5].Value, comment) }); continue; }
+                    if (mb.Success) { List.Add(new Bind { Driver = mb.Groups[1].Value == "driver", Key = KeyName(mb.Groups[2].Value), Desc = Describe(mb.Groups[5].Value, comment), Raw = mb.Groups[5].Value }); continue; }
                     var mw = Regex.Match(line, @"(\w+)\s*\.\s*(whileTrue|onTrue|toggleOnTrue)\((.*)\)\s*;");
-                    if (mw.Success && vars.TryGetValue(mw.Groups[1].Value, out var kv)) { List.Add(new Bind { Driver = kv.Key, Key = KeyName(kv.Value), Desc = Describe(mw.Groups[3].Value, comment) }); continue; }
+                    if (mw.Success && vars.TryGetValue(mw.Groups[1].Value, out var kv)) { List.Add(new Bind { Driver = kv.Key, Key = KeyName(kv.Value), Desc = Describe(mw.Groups[3].Value, comment), Raw = mw.Groups[3].Value }); continue; }
                     // setDefaultCommand(...::getLeftX)
                     var md = Regex.Match(line, @"m_(\w+)\.setDefaultCommand\(m_\w+\.(\w+)\(.*m_(driver|operator)::(get\w+)");
                     if (md.Success) List.Add(new Bind { Driver = md.Groups[3].Value == "driver", Key = KeyName(md.Groups[4].Value), Desc = Describe(md.Groups[1].Value + "." + md.Groups[2].Value, comment) });
@@ -78,6 +78,8 @@ namespace FrcSim
                     if (mt.Success) List.Add(new Bind { Driver = true, Key = "左/右搖桿", Desc = "左/右輪(坦克)" });
                 }
                 foreach (var b in List) if (b.Driver && b.Key == "RT" && b.Desc.ToLower().Contains("intake")) IntakeOnDriverRT = true;
+                // 覆蓋檢查:綁定的指令名稱認不出任何「模擬器有做的動作」→ 標 ⚠(說明面板會顯示),新增機構時一眼看出模擬器還沒支援
+                foreach (var b in List) { string s = (b.Raw + " " + b.Desc).ToLower(); b.Supported = Regex.IsMatch(s, "intake|roller|arm|lower|raise|eject|flywheel|spin|feed|orbit|turret|manual|tankdrive|shoot|收|放|吐|送|發射|飛輪|砲塔|輪"); if (!b.Supported) Debug.LogWarning("[BindingMap] 模擬器尚無對應動作: " + b.Key + " → " + b.Desc); }
                 Loaded = List.Count > 0;
                 Debug.Log("[BindingMap] " + List.Count + " bindings, intakeOnDriverRT=" + IntakeOnDriverRT);
             }
@@ -90,7 +92,8 @@ namespace FrcSim
             foreach (var b in List)
             {
                 if (b.Driver != driver) continue;
-                if (d.ContainsKey(b.Key)) d[b.Key] += "+" + b.Desc; else { d[b.Key] = b.Desc; order.Add(b.Key); }
+                string dd = b.Supported ? b.Desc : "⚠" + b.Desc + "(模擬器尚無效果)";
+                if (d.ContainsKey(b.Key)) d[b.Key] += "+" + dd; else { d[b.Key] = dd; order.Add(b.Key); }
             }
             var sb = new System.Text.StringBuilder();
             foreach (var k in order) { if (sb.Length > 0) sb.Append("   "); sb.Append(k).Append(' ').Append(d[k]); }
