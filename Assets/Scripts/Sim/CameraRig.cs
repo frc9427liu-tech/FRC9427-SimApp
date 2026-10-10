@@ -103,7 +103,7 @@ namespace FrcSim
             else if (Mode == 7)
             {
                 // 操作者視角:站在己方聯盟牆後的駕駛台,抬高一點看向場中央(真實比賽駕駛員的位置)
-                bool nearBlue = Target.position.x < L / 2f;
+                bool nearBlue = GameSession.Mech != null ? GameSession.Mech.TargetHub.x < L / 2f : Target.position.x < L / 2f;   // 看自己聯盟(目標 HUB 在哪一側),不看車現在跑到哪,過半場視角才不會翻到對面
                 pos = new Vector3(nearBlue ? -2.4f : L + 2.4f, 3.5f, Mathf.Clamp(Target.position.z, 1.5f, W - 1.5f) * 0.6f + W * 0.2f);
                 Vector3 look = Vector3.Lerp(new Vector3(L / 2f, 0.6f, W / 2f), Target.position, 0.45f);
                 rot = Quaternion.LookRotation(look - pos, Vector3.up);
