@@ -153,52 +153,67 @@ namespace FrcSim
                 }
             }
 
-            // ---- 左上面板:車速 / 持球條 / 飛輪條 / 射擊預測
-            float x0 = 12f, y0 = 12f, pw = 330f;
-            float ph = Mech != null ? 150f : 44f;
-            if (showDebug) ph += 22f * 3;
-            var pr = new Rect(x0, y0, pw, ph);
-            Panel(pr, 0.6f);
-            GUI.Label(new Rect(x0 + 14, y0 + 8, pw - 28, 24), $"{Drive.Speed:0.0} m/s    {L("朝向", "hdg")} {Mathf.DeltaAngle(0f, Drive.HeadingRad * Mathf.Rad2Deg):0}°    {fps:0} FPS    {L("手把", "pads")} {Pad.Count}", Style(15, dim));
+            // ---- 左下:機器人狀態卡(車速大字 / 儲球圓點 / 飛輪錶 / 射擊預測)
+            float cx = W / 2f;
             if (Mech != null)
             {
-                float yy = y0 + 38f;
-                GUI.Label(new Rect(x0 + 14, yy, 120, 22), L("儲球", "Fuel"), Style(14, dim));
-                GUI.Label(new Rect(x0 + pw - 114, yy, 100, 22), $"{Mech.Held} / {RobotMechanisms.Capacity}", Style(16, Color.white, TextAnchor.UpperRight, FontStyle.Bold));
-                Bar(new Rect(x0 + 14, yy + 24, pw - 28, 8), Mech.Held / (float)RobotMechanisms.Capacity, new Color(1f, 0.85f, 0.1f));
-                yy += 42f;
+                float cw0 = 330f, ch0 = showDebug ? 236f : 172f, cx0 = 16f, cy0 = H - ch0 - 78f;
+                var card = new Rect(cx0, cy0, cw0, ch0); Panel(card, 0.62f);
+                // 車速:大字
+                GUI.Label(new Rect(cx0 + 18, cy0 + 8, 150, 52), $"{Drive.Speed:0.0}", Style(44, Color.white, TextAnchor.UpperLeft, FontStyle.Bold));
+                GUI.Label(new Rect(cx0 + 18 + (Drive.Speed >= 10f ? 112 : 84), cy0 + 30, 60, 24), "m/s", Style(15, dim));
+                // 飛輪狀態膠囊
                 bool spun = Mech.FlywheelRps > 8f;
-                GUI.Label(new Rect(x0 + 14, yy, 150, 22), L("飛輪", "Flywheel") + $" {Mech.FlywheelRps:0} rps", Style(14, dim));
-                string st2 = Mech.Shooting ? L("發射中", "FIRING") : (spun ? L("轉速中", "SPINNING") : L("待機", "IDLE"));
-                GUI.Label(new Rect(x0 + pw - 134, yy, 120, 22), st2, Style(14, Mech.Shooting ? new Color(0.4f, 1f, 0.5f) : dim, TextAnchor.UpperRight, FontStyle.Bold));
-                Bar(new Rect(x0 + 14, yy + 24, pw - 28, 8), Mech.FlywheelRps / 40f, Mech.ShotWillScore ? new Color(0.3f, 1f, 0.4f) : new Color(0.4f, 0.7f, 1f));
-                yy += 42f;
-                string hint = Mech.ShotHint != "" ? Mech.ShotHint : L("開飛輪後顯示預測落點", "spin up to preview");
-                Color hc = Mech.ShotHint == "" ? new Color(1f, 1f, 1f, 0.45f) : (Mech.ShotWillScore ? new Color(0.4f, 1f, 0.5f) : new Color(1f, 0.7f, 0.25f));
-                GUI.Label(new Rect(x0 + 14, yy, pw - 28, 22), hint + $"      {L("吸球器", "intake")} " + (Mech.IntakeDown ? L("放下", "DOWN") : L("收起", "up")) + (Mech.Feeding ? L(" · 送球", " · feed") : "") + (Mech.Ejecting ? L(" · 吐球", " · eject") : ""), Style(14, hc, TextAnchor.UpperLeft, FontStyle.Bold));
+                string st2 = Mech.Shooting ? L("發射中", "FIRING") : (spun ? L("轉速中", "SPIN") : L("待機", "IDLE"));
+                Color chip = Mech.Shooting ? new Color(0.25f, 0.85f, 0.45f, 0.95f) : (spun ? new Color(0.25f, 0.6f, 1f, 0.95f) : new Color(1f, 1f, 1f, 0.16f));
+                var cr = new Rect(cx0 + cw0 - 104, cy0 + 14, 88, 26); Rounded(cr, chip, 13f);
+                GUI.Label(cr, st2, Style(14, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold));
+                // 儲球圓點(40 顆 = 2 排 20 點)
+                int cap = RobotMechanisms.Capacity, held = Mech.Held;
+                GUI.Label(new Rect(cx0 + 18, cy0 + 62, 120, 20), L("儲球", "FUEL") + $"  {held}/{cap}", Style(13, dim, TextAnchor.UpperLeft, FontStyle.Bold));
+                float dx = cx0 + 18, dy2 = cy0 + 84; int perRow = 20; float dsz = 10f, gap = (cw0 - 36f - perRow * dsz) / (perRow - 1);
+                for (int i = 0; i < cap; i++)
+                {
+                    var dr = new Rect(dx + (i % perRow) * (dsz + gap), dy2 + (i / perRow) * 14f, dsz, dsz);
+                    Rounded(dr, i < held ? new Color(1f, 0.86f, 0.12f, 1f) : new Color(1f, 1f, 1f, 0.14f), dsz / 2f);
+                }
+                // 飛輪轉速條 + 數字
+                float fy = cy0 + 116f;
+                GUI.Label(new Rect(cx0 + 18, fy - 2, 120, 20), L("飛輪", "FLYWHEEL"), Style(13, dim, TextAnchor.UpperLeft, FontStyle.Bold));
+                GUI.Label(new Rect(cx0 + cw0 - 118, fy - 4, 100, 22), $"{Mech.FlywheelRps:0} rps", Style(16, Color.white, TextAnchor.UpperRight, FontStyle.Bold));
+                Bar(new Rect(cx0 + 18, fy + 20, cw0 - 36, 7), Mech.FlywheelRps / 40f, Mech.ShotWillScore ? new Color(0.3f, 1f, 0.4f) : new Color(0.4f, 0.7f, 1f));
+                if (showDebug)
+                {
+                    Vector2 p = Drive.Pose2d; float yq = cy0 + 172f;
+                    GUI.Label(new Rect(cx0 + 18, yq, cw0 - 24, 18), $"x {p.x:0.00}  y {p.y:0.00}   hdg {Mathf.DeltaAngle(0f, Drive.HeadingRad * Mathf.Rad2Deg):0}°   {fps:0} FPS   {L("手把", "pads")} {Pad.Count}", Style(12, dim));
+                    GUI.Label(new Rect(cx0 + 18, yq + 18, cw0 - 24, 18), $"{L("仰角板", "hood")} {Mech.HoodDeg:0.0}°   {L("距 HUB", "hub")} {Mech.TargetDistance:0.00} m   {L("已射", "shots")} {Mech.ShotsFired}", Style(12, dim));
+                    if (GameSession.Hal != null) GUI.Label(new Rect(cx0 + 18, yq + 36, cw0 - 24, 18), L("機器人程式: ", "ROBOT CODE: ") + GameSession.Hal.Status, Style(12, dim));
+                }
+                // 射擊預測:置中小膠囊(只有開飛輪才出現)
+                if (Mech.ShotHint != "")
+                {
+                    Color hc = Mech.ShotWillScore ? new Color(0.4f, 1f, 0.5f) : new Color(1f, 0.7f, 0.25f);
+                    var hr = new Rect(cx - 150, H - 128, 300, 30); Panel(hr, 0.6f);
+                    GUI.Label(hr, Mech.ShotHint + "   " + L("吸球器", "intake") + " " + (Mech.IntakeDown ? L("放下", "down") : L("收起", "up")) + (Mech.Feeding ? L(" · 送球", " · feed") : "") + (Mech.Ejecting ? L(" · 吐球", " · eject") : ""), Style(15, hc, TextAnchor.MiddleCenter, FontStyle.Bold));
+                }
             }
-            if (showDebug)
+            GUI.Label(new Rect(16, H - 74, 300, 20), L("F1 按鍵說明   F3 詳細數據", "F1 help   F3 details"), Style(12, new Color(1f, 1f, 1f, 0.55f)));
+            // ---- 頂部中央:比分 + 計時(運動轉播風格:藍/紅色塊 + 中央大計時)
             {
-                Vector2 p = Drive.Pose2d;
-                float dy = y0 + ph - 66f;
-                GUI.Label(new Rect(x0 + 14, dy, pw - 20, 20), $"x {p.x:0.00}  y {p.y:0.00} m   ω {Drive.Omega:0.0} rad/s  {(Drive.FieldCentric ? L("場地座標", "field") : L("車體座標", "robot"))}", Style(12, dim));
-                if (Mech != null) GUI.Label(new Rect(x0 + 14, dy + 20, pw - 20, 20), $"{L("仰角板", "hood")} {Mech.HoodDeg:0.0}°   {L("距 HUB", "hub dist")} {Mech.TargetDistance:0.00} m   {L("已射", "shots")} {Mech.ShotsFired}", Style(12, dim));
-                if (GameSession.Hal != null) GUI.Label(new Rect(x0 + 14, dy + 40, pw - 20, 20), L("機器人程式: ", "ROBOT CODE: ") + GameSession.Hal.Status + L("  訊息 ", "  msgs ") + GameSession.Hal.MessagesIn, Style(12, dim));
+                float sw = 460f, sh = 62f, sx = cx - sw / 2f, sy = 10f;
+                Panel(new Rect(sx, sy, sw, sh), 0.66f);
+                Rounded(new Rect(sx + 6, sy + 6, 150, sh - 12), new Color(0.12f, 0.36f, 1f, 0.9f), 14f);
+                Rounded(new Rect(sx + sw - 156, sy + 6, 150, sh - 12), new Color(0.95f, 0.2f, 0.22f, 0.9f), 14f);
+                GUI.Label(new Rect(sx + 6, sy + 6, 150, sh - 12), $"{ScoreManager.BlueScore}", Style(38, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold));
+                GUI.Label(new Rect(sx + sw - 156, sy + 6, 150, sh - 12), $"{ScoreManager.RedScore}", Style(38, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold));
+                if (ScoreManager.ClockOn)
+                {
+                    int tl = Mathf.CeilToInt(ScoreManager.Ended ? 0f : ScoreManager.TimeLeft);
+                    GUI.Label(new Rect(cx - 70, sy + 6, 140, 34), $"{tl / 60}:{tl % 60:00}", Style(28, tl <= 10 && !ScoreManager.Ended ? new Color(1f, 0.55f, 0.4f) : Color.white, TextAnchor.MiddleCenter, FontStyle.Bold));
+                    string hubs = ScoreManager.Ended ? "" : $"  {(ScoreManager.BlueActive ? "●" : "○")} {L("藍", "B")}   {(ScoreManager.RedActive ? "●" : "○")} {L("紅", "R")}";
+                    GUI.Label(new Rect(cx - 90, sy + 38, 180, 20), PhaseName(ScoreManager.Phase) + hubs, Style(12, dim, TextAnchor.UpperCenter, FontStyle.Bold));
+                }
             }
-            GUI.Label(new Rect(pr.x + 6, pr.yMax + 2, 300, 20), L("F1 按鍵說明   F3 詳細數據", "F1 help   F3 details"), Style(13, new Color(1f, 1f, 1f, 0.75f)));
-            // ---- 頂部中央:比分 + 計時
-            float cx = W / 2f;
-            Panel(new Rect(cx - 150, 10, 300, 40), 0.6f);
-            GUI.Label(new Rect(cx - 150, 12, 300, 38),
-                $"{L("藍", "BLUE")} {ScoreManager.BlueScore}  :  {ScoreManager.RedScore} {L("紅", "RED")}", Style(26, Color.white, TextAnchor.UpperCenter, FontStyle.Bold));
-            if (ScoreManager.ClockOn)
-            {
-                int tl = Mathf.CeilToInt(ScoreManager.Ended ? 0f : ScoreManager.TimeLeft);
-                string hubs = ScoreManager.Ended ? "" : $"   {L("藍", "B")} HUB {(ScoreManager.BlueActive ? "●" : "○")}  {L("紅", "R")} HUB {(ScoreManager.RedActive ? "●" : "○")}";
-                Panel(new Rect(cx - 220, 54, 440, 26), 0.5f);
-                GUI.Label(new Rect(cx - 220, 56, 440, 24), $"{tl / 60}:{tl % 60:00}   {PhaseName(ScoreManager.Phase)}{hubs}", Style(15, dim, TextAnchor.UpperCenter, FontStyle.Bold));
-            }
-
             if (Time.unscaledTime < padLostUntil) { var tr = new Rect(cx - 250, H - 130, 500, 44); Panel(tr, 0.9f); GUI.Label(tr, L("⚠ 手把掉線了,已暫停。請重新插上 USB", "⚠ Controller lost - paused. Re-plug USB"), Style(18, new Color(1f, 0.8f, 0.3f), TextAnchor.MiddleCenter, FontStyle.Bold)); }
 
             // ---- 比賽結束:成績卡(含各距離命中率) + 再來一場 / 回主選單(手把 A / B,Enter 再來一場)
