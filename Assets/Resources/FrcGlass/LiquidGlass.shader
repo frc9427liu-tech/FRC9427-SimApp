@@ -114,7 +114,7 @@ Shader "FrcSim/LiquidGlass"
 
                     col = min(col, 1.2);   // 限制亮部:飽和的紅/藍發光物不要穿透玻璃
                     float lum = dot(col, float3(0.299, 0.587, 0.114));
-                    col = lerp(lum.xxx, col, 1.35);                                             // vibrancy
+                    col = lerp(lum.xxx, col, 0.95);                                             // vibrancy
                     float adapt = saturate((lum - 0.30) * 1.8);
                     float ta = saturate(_Tint.a + _Light.w * adapt);                            // brighter backdrop -> more tint
                     col = lerp(col, _Tint.rgb, ta);

@@ -24,7 +24,7 @@ namespace FrcSim
         public float Exposure = 1.25f;
         [Range(0, 1)] public float AcesMix = 1f;
         [Range(0, 0.6f)] public float SCurve = 0.22f;
-        public float Saturation = 1.10f;
+        public float Saturation = 1.20f;
         public Color ShadowTint = new Color(0.93f, 0.99f, 1.07f);
         public Color HighlightTint = new Color(1.05f, 1.00f, 0.93f);
 
@@ -35,9 +35,9 @@ namespace FrcSim
         public Color VigColor = new Color(0.35f, 0.40f, 0.52f);
 
         [Header("Bloom")]
-        public float Threshold = 1.25f;
+        public float Threshold = 1.4f;
         [Range(0.01f, 1)] public float Knee = 0.5f;
-        public float BloomIntensity = 0.28f;
+        public float BloomIntensity = 0.22f;
         [Range(0, 1)] public float Scatter = 0.65f;
         [Range(2, 6)] public int Iterations = 5;
 

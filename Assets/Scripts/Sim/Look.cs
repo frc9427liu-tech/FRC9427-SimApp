@@ -27,13 +27,13 @@ namespace FrcSim
             sun.color = new Color(1f, 0.955f, 0.88f);
             sun.intensity = 1.3f;
             sun.shadows = LightShadows.Soft;
-            sun.shadowStrength = 0.72f;
+            sun.shadowStrength = 0.65f;
             sun.shadowBias = 0.04f;
             sun.shadowNormalBias = 0.5f;
 
             RenderSettings.ambientMode = AmbientMode.Trilight;
-            RenderSettings.ambientSkyColor     = new Color(0.38f, 0.46f, 0.62f);
-            RenderSettings.ambientEquatorColor = new Color(0.26f, 0.29f, 0.36f);
+            RenderSettings.ambientSkyColor     = new Color(0.46f, 0.55f, 0.72f);
+            RenderSettings.ambientEquatorColor = new Color(0.32f, 0.36f, 0.44f);
             RenderSettings.ambientGroundColor  = new Color(0.14f, 0.15f, 0.18f);
             RenderSettings.ambientIntensity = 1f;
             RenderSettings.reflectionIntensity = 1f;
@@ -96,7 +96,7 @@ namespace FrcSim
             var m = new Material(Sh("FrcCarpet"));
             m.SetColor("_Color", new Color(0.16f, 0.185f, 0.26f));
             m.SetTexture("_DataTex", carpetData);
-            m.SetFloat("_FineAmt", 0.10f); m.SetFloat("_MidAmt", 0.06f); m.SetFloat("_MacroAmt", 0.10f); m.SetFloat("_MidScale", 2.0f); m.SetFloat("_FineScale", 4.5f); m.SetFloat("_NormStrength", 0.2f);   // 地毯質感收斂:去掉迷彩感的大塊斑紋
+            m.SetFloat("_FineAmt", 0.10f); m.SetFloat("_MidAmt", 0.06f); m.SetFloat("_MacroAmt", 0.10f); m.SetFloat("_MidScale", 2.0f); m.SetFloat("_FineScale", 4.5f); m.SetFloat("_NormStrength", 0.3f);   // 地毯質感收斂:去掉迷彩感的大塊斑紋
             m.SetTexture("_NormTex", carpetNorm);
             m.SetVector("_Pool", new Vector4(2f, 1.2f, (L - 4f) / 5f, (W - 2.4f) / 2f));
             m.SetVector("_FieldRect", new Vector4(0f, 0f, L, W));

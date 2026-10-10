@@ -26,14 +26,14 @@ namespace FrcSim
     public class GlassStyle
     {
         public Color tint = new Color(.055f, .075f, .110f, .44f), selTint = new Color(.25f, .62f, 1f, .62f);
-        public float tintAdapt = .22f, refract = 22f, dispersion = .35f, rim = 1f, bevel = 26f, rimWidth = 1.6f;
+        public float tintAdapt = .32f, refract = 22f, dispersion = .35f, rim = 1f, bevel = 26f, rimWidth = 1.6f;
         public float shadow = .42f, shadowOffset = 18f, pad = 56f, squircle = 2.6f;
         public bool overlay;
 
         public static GlassStyle Card() => new GlassStyle();
-        public static GlassStyle HudPanel() => new GlassStyle { tint = new Color(.055f, .075f, .110f, .36f), refract = 7f, dispersion = .30f, rim = .9f, bevel = 12f, rimWidth = 1.2f, shadow = .30f, shadowOffset = 6f, pad = 20f };
+        public static GlassStyle HudPanel() => new GlassStyle { tint = new Color(.055f, .075f, .110f, .46f), refract = 7f, dispersion = .30f, rim = .9f, bevel = 12f, rimWidth = 1.2f, shadow = .30f, shadowOffset = 6f, pad = 20f };
         public static GlassStyle HudCard() => new GlassStyle { tint = new Color(.055f, .075f, .110f, .46f), tintAdapt = .24f, refract = 14f, bevel = 20f, rimWidth = 1.4f, shadow = .45f, shadowOffset = 14f, pad = 44f };
-        public static GlassStyle Pill() => new GlassStyle { overlay = true, tint = new Color(1, 1, 1, .07f), selTint = new Color(.25f, .62f, 1f, .62f), refract = 0, dispersion = 0, rim = .6f, bevel = 10f, rimWidth = 1.2f, shadow = 0, shadowOffset = 0, pad = 4f, tintAdapt = 0 };
+        public static GlassStyle Pill() => new GlassStyle { overlay = true, tint = new Color(1, 1, 1, .10f), selTint = new Color(.25f, .62f, 1f, .62f), refract = 0, dispersion = 0, rim = .75f, bevel = 10f, rimWidth = 1.2f, shadow = 0, shadowOffset = 0, pad = 4f, tintAdapt = 0 };
         public static GlassStyle PillPrimary() { var s = Pill(); s.tint = new Color(.25f, .62f, 1f, .55f); s.selTint = new Color(.32f, .68f, 1f, .85f); s.rim = 1f; return s; }
         public static GlassStyle BarTrack() { var s = Pill(); s.tint = new Color(1, 1, 1, .22f); s.rim = .35f; s.bevel = 6f; s.rimWidth = 1f; s.pad = 2f; return s; }
         public static GlassStyle BarFill(Color c) { var s = Pill(); s.tint = new Color(c.r, c.g, c.b, .95f); s.rim = .6f; s.bevel = 6f; s.rimWidth = 1f; s.pad = 2f; return s; }
@@ -83,7 +83,7 @@ namespace FrcSim
     public class GlassBackdrop : MonoBehaviour
     {
         public static GlassBackdrop I;
-        public float blurOffset = 1.25f;                  // bigger = blurrier (1.0 - 2.0)
+        public float blurOffset = 1.6f;                  // bigger = blurrier (1.0 - 2.0)
         protected Camera cam;
         Material km;
         readonly RenderTexture[] L = new RenderTexture[4];
