@@ -508,12 +508,12 @@ namespace FrcSim
                 UiKit.PlaceTL(kbT.rectTransform, 90, 300, 600, 32);
                 var kb = UiKit.Label("Kb", content, Loc.T("ctl.kb.body"), 19, UiTheme.Text, TextAnchor.UpperLeft);
                 kb.lineSpacing = 1.1f;
-                UiKit.PlaceTL(kb.rectTransform, 90, 334, 650, 270);
+                UiKit.PlaceTL(kb.rectTransform, 90, 334, 650, 320);
                 var pdT = UiKit.Label("PadT", content, Loc.T("ctl.pad"), 24, UiTheme.Accent, TextAnchor.UpperLeft);
-                UiKit.PlaceTL(pdT.rectTransform, 90, 612, 600, 32);
+                UiKit.PlaceTL(pdT.rectTransform, 90, 668, 600, 32);
                 var pd = UiKit.Label("Pad", content, Loc.T("ctl.pad.body"), 19, UiTheme.Text, TextAnchor.UpperLeft);
                 pd.lineSpacing = 1.1f;
-                UiKit.PlaceTL(pd.rectTransform, 90, 646, 650, 290);
+                UiKit.PlaceTL(pd.rectTransform, 90, 702, 650, 230);
                 // 語言切換時更新內文
                 lastControls = () =>
                 {
@@ -676,6 +676,8 @@ namespace FrcSim
         }
     }
 }
+
+
 
 
 
