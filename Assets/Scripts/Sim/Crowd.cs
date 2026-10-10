@@ -14,22 +14,24 @@ namespace FrcSim
         static Mesh BuildPerson()
         {
             var parts = new List<CombineInstance>();
-            Mesh cube = GetPrimitive(PrimitiveType.Cube), sph = GetPrimitive(PrimitiveType.Sphere);
-            void Add(Mesh m, Vector3 pos, Vector3 scale, Color vc)
+            Mesh cube = GetPrimitive(PrimitiveType.Cube), sph = GetPrimitive(PrimitiveType.Sphere), cap = GetPrimitive(PrimitiveType.Capsule);
+            void Add(Mesh m, Vector3 pos, Vector3 scale, Color vc, Vector3? euler = null)
             {
                 var src = Object.Instantiate(m);
                 var cols = new Color[src.vertexCount]; for (int i = 0; i < cols.Length; i++) cols[i] = vc; src.colors = cols;
-                parts.Add(new CombineInstance { mesh = src, transform = Matrix4x4.TRS(pos, Quaternion.identity, scale) });
+                parts.Add(new CombineInstance { mesh = src, transform = Matrix4x4.TRS(pos, euler.HasValue ? Quaternion.Euler(euler.Value) : Quaternion.identity, scale) });
             }
-            // vertex color: R = arm, G = head, B = 1 shirt / 0.5 pants / 0 skin
-            Add(cube, new Vector3(0f, 0.62f, 0f), new Vector3(0.40f, 0.52f, 0.22f), new Color(0, 0, 1f));        // torso
-            Add(sph, new Vector3(0f, 1.02f, 0.02f), new Vector3(0.21f, 0.24f, 0.22f), new Color(0, 1f, 0f));      // head
-            Add(cube, new Vector3(-0.26f, 0.62f, 0f), new Vector3(0.10f, 0.46f, 0.12f), new Color(1f, 0, 1f));    // arm L
-            Add(cube, new Vector3(0.26f, 0.62f, 0f), new Vector3(0.10f, 0.46f, 0.12f), new Color(1f, 0, 1f));     // arm R
-            Add(cube, new Vector3(-0.10f, 0.30f, 0.22f), new Vector3(0.15f, 0.14f, 0.46f), new Color(0, 0, 0.5f)); // thigh L
-            Add(cube, new Vector3(0.10f, 0.30f, 0.22f), new Vector3(0.15f, 0.14f, 0.46f), new Color(0, 0, 0.5f));  // thigh R
-            Add(cube, new Vector3(-0.10f, 0.12f, 0.42f), new Vector3(0.14f, 0.34f, 0.14f), new Color(0, 0, 0.5f)); // shin L
-            Add(cube, new Vector3(0.10f, 0.12f, 0.42f), new Vector3(0.14f, 0.34f, 0.14f), new Color(0, 0, 0.5f));  // shin R
+            // vertex color: R = arm, G = head, B = 1 shirt / 0.5 pants / 0.2 hair / 0 skin(膠囊/球體,輪廓比方塊圓潤)
+            Add(cap, new Vector3(0f, 0.64f, 0f), new Vector3(0.40f, 0.30f, 0.24f), new Color(0, 0, 1f));                  // torso
+            Add(cap, new Vector3(0f, 0.90f, 0f), new Vector3(0.11f, 0.05f, 0.10f), new Color(0, 0.3f, 0f));                // neck
+            Add(sph, new Vector3(0f, 1.04f, 0.02f), new Vector3(0.21f, 0.24f, 0.22f), new Color(0, 1f, 0f));              // head
+            Add(sph, new Vector3(0f, 1.10f, -0.01f), new Vector3(0.225f, 0.20f, 0.235f), new Color(0, 1f, 0.2f));         // hair cap
+            Add(cap, new Vector3(-0.27f, 0.66f, 0f), new Vector3(0.11f, 0.22f, 0.11f), new Color(1f, 0, 1f), new Vector3(0, 0, 8));   // arm L
+            Add(cap, new Vector3(0.27f, 0.66f, 0f), new Vector3(0.11f, 0.22f, 0.11f), new Color(1f, 0, 1f), new Vector3(0, 0, -8));   // arm R
+            Add(cap, new Vector3(-0.10f, 0.32f, 0.21f), new Vector3(0.16f, 0.23f, 0.16f), new Color(0, 0, 0.5f), new Vector3(90, 0, 0)); // thigh L
+            Add(cap, new Vector3(0.10f, 0.32f, 0.21f), new Vector3(0.16f, 0.23f, 0.16f), new Color(0, 0, 0.5f), new Vector3(90, 0, 0));  // thigh R
+            Add(cap, new Vector3(-0.10f, 0.14f, 0.43f), new Vector3(0.14f, 0.19f, 0.14f), new Color(0, 0, 0.5f));          // shin L
+            Add(cap, new Vector3(0.10f, 0.14f, 0.43f), new Vector3(0.14f, 0.19f, 0.14f), new Color(0, 0, 0.5f));           // shin R
             var mesh = new Mesh { name = "Person" };
             mesh.CombineMeshes(parts.ToArray(), true, true);
             mesh.RecalculateBounds();

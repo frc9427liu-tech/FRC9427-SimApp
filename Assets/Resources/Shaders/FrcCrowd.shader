@@ -32,7 +32,7 @@ Shader "FrcSim/Crowd"
             fixed4 shirt = UNITY_ACCESS_INSTANCED_PROP(Props, _Shirt);
             fixed4 skin = UNITY_ACCESS_INSTANCED_PROP(Props, _Skin);
             float b = IN.vcol.b;
-            fixed3 c = b > 0.75 ? shirt.rgb : (b > 0.25 ? fixed3(0.10, 0.11, 0.16) : skin.rgb);
+            fixed3 c = b > 0.75 ? shirt.rgb : (b > 0.35 ? fixed3(0.10, 0.11, 0.16) : (b > 0.1 ? skin.rgb * fixed3(0.16, 0.12, 0.10) + fixed3(0.02, 0.015, 0.01) : skin.rgb));
             o.Albedo = c * _Color.rgb;
         }
         ENDCG
