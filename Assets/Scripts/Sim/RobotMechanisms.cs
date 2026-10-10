@@ -83,7 +83,7 @@ namespace FrcSim
             }
             float feedRps = Mathf.Abs((float)Sim.Vel(Name("feeder")));
             double ratio = (double?)cfg["turretRatio"] ?? 20.0;
-            TurretRad = Wrap((float)(-Sim.Pos(Name("turret")) / ratio * 2.0 * System.Math.PI));   // 往右(正)= 順時針 = 場地角度減少
+            if (Name("turret") != null) TurretRad = Wrap((float)(-Sim.Pos(Name("turret")) / ratio * 2.0 * System.Math.PI));   // 往右(正)= 順時針 = 場地角度減少
             if (TurretVisual != null) TurretVisual.localRotation = Quaternion.Euler(0f, -TurretRad * Mathf.Rad2Deg, 0f);
             if (ArmVisual != null)
             {

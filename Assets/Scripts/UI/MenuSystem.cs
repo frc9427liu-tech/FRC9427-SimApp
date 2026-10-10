@@ -308,7 +308,26 @@ namespace FrcSim
             Prefs.SetString("robotProject", FindGradleRoot(p));
             PlayerPrefs.Save();
         });
-        Item ItReal() => new Item(() => Loc.T("setup.real") + ":  " + Loc.T(Prefs.GetInt("useRealCode", 0) == 1 ? "on" : "off"), () => { Prefs.SetInt("useRealCode", Prefs.GetInt("useRealCode", 0) == 1 ? 0 : 1); PlayerPrefs.Save(); });
+        Item[] CatalogItems()
+        {
+            var l = new List<Item>();
+            foreach (var en in OpenSourceCatalog.All)
+            {
+                var en2 = en;
+                l.Add(new Item(() =>
+                {
+                    string st = en2.State == "…" ? Z("下載中…", "Downloading…") : en2.State != "" ? en2.State
+                        : OpenSourceCatalog.Installed(en2) ? (Prefs.GetString("robotProject", "") == en2.Dir ? Z("使用中 ✓", "In use ✓") : Z("已下載,按一下使用", "Installed — click to use")) : Z("按一下下載", "Click to download");
+                    string tag = en2.Status == "ok" ? Z("可用", "Works") : en2.Status == "partial" ? Z("部分", "Partial") : Z("未測試", "Untested");
+                    return en2.Team + "  [" + tag + "]  " + st;
+                }, () =>
+                {
+                    if (!OpenSourceCatalog.Installed(en2)) { OpenSourceCatalog.Install(en2); return; }
+                    Prefs.SetString("robotProject", en2.Dir); Prefs.SetInt("useRealCode", 1); Prefs.SetInt("tankMode", 0); PlayerPrefs.Save();
+                }));
+            }
+            return l.ToArray();
+        }        Item ItReal() => new Item(() => Loc.T("setup.real") + ":  " + Loc.T(Prefs.GetInt("useRealCode", 0) == 1 ? "on" : "off"), () => { Prefs.SetInt("useRealCode", Prefs.GetInt("useRealCode", 0) == 1 ? 0 : 1); PlayerPrefs.Save(); });
         Item ItCtl() => new Item(() => Loc.T("setup.ctl") + ":  " + Loc.T(Prefs.GetInt("tankMode", 1) == 1 ? "ctl.tank" : "ctl.swerve"), () => { Prefs.SetInt("tankMode", Prefs.GetInt("tankMode", 1) == 1 ? 0 : 1); PlayerPrefs.Save(); });
         Item ItSpeed() => new Item(() => Loc.T("setup.speed") + ":  " + SettingsStore.MaxSpeedChoice.ToString("0.0") + " m/s", () => { SettingsStore.SpeedIndex = (SettingsStore.SpeedIndex + 1) % SettingsStore.SpeedOptions.Length; });
         Item ItAccel() => new Item(() => Loc.T("setup.accel") + ":  " + SettingsStore.AccelChoice.ToString("0") + " m/s²", () => { SettingsStore.AccelIndex = (SettingsStore.AccelIndex + 1) % SettingsStore.AccelOptions.Length; });
@@ -337,7 +356,7 @@ namespace FrcSim
             var s = Build(() => Loc.T("setup.title"), Sum, new[]
             {
                 new Item(() => Z("外觀  ▸", "Appearance  ▸"), () => ShowSub(() => Z("外觀", "Appearance"), () => Z("機器人模型與方向", "Robot model & orientation"), new[] { ItModel(), ItImport(), ItYaw() })),
-                new Item(() => Z("機器人程式  ▸", "Robot code  ▸"), () => ShowSub(() => Z("機器人程式", "Robot code"), () => Z("專案、是否跑真實程式、操控方式", "Project, real code, controls"), new[] { ItProject(), ItReal(), ItCtl() })),
+                new Item(() => Z("機器人程式  ▸", "Robot code  ▸"), () => ShowSub(() => Z("機器人程式", "Robot code"), () => Z("專案、是否跑真實程式、操控方式", "Project, real code, controls"), new[] { ItProject(), ItReal(), ItCtl(), new Item(() => Z("開源機器人程式庫  ▸", "Open-source robot library  ▸"), () => ShowSub(() => Z("開源機器人程式庫", "Open-source robot library"), () => Z("別隊公開的 2026 程式:下載後直接在模擬器跑(來源 GitHub,未打包)", "Public 2026 team code: download and run (from GitHub, not bundled)"), CatalogItems())) })),
                 new Item(() => Z("手感  ▸", "Handling  ▸"), () => ShowSub(() => Z("手感", "Handling"), () => Z("最高車速與加速度(慣性)", "Top speed & acceleration"), new[] { ItSpeed(), ItAccel() })),
                 new Item(() => Z("比賽  ▸", "Match  ▸"), () => ShowSub(() => Z("比賽", "Match"), () => Z("對手機器人與難度", "Opponent robot & level"), new[] { ItSecond(), ItLevel() })),
                 new Item(() => Loc.T("setup.start"), StartGame),

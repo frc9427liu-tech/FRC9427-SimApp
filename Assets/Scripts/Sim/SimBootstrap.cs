@@ -56,6 +56,8 @@ namespace FrcSim
                     new GameObject("RealTest").AddComponent<RealTest>();
                     return;
                 }
+                int pti = System.Array.IndexOf(a, "-projtest");
+                if (pti >= 0 && pti + 1 < a.Length) { GameSession.Begin(rig, false, a[pti + 1]); new GameObject("ProjTest").AddComponent<ProjTest>(); return; }
                 int bi2 = System.Array.IndexOf(a, "-bindtest");
                 if (bi2 >= 0 && bi2 + 1 < a.Length)
                 {
