@@ -47,6 +47,7 @@ namespace FrcSim
                 Debug.Log($"[FieldModel] staged fuel nodes={fuelPos.Count}");
                 int hidden = 0, shown = 0, texCount = 0, dbg = 0;
                 var matCache = new System.Collections.Generic.Dictionary<int, Material>();
+                var glassCache = new System.Collections.Generic.Dictionary<int, Material>();
                 var colorHist = new System.Collections.Generic.Dictionary<string, int>();
                 foreach (var r in root.GetComponentsInChildren<Renderer>(true))
                 {
@@ -54,6 +55,7 @@ namespace FrcSim
                     if (r.name.Contains("Fuel") || (r.transform.parent != null && r.transform.parent.name.Contains("Fuel"))) { r.gameObject.SetActive(false); hidden++; continue; }
                     shown++;
                     var mats = r.sharedMaterials;
+                    bool hasGlass = false;
                     for (int i = 0; i < mats.Length; i++)
                     {
                         var m = mats[i];
@@ -67,6 +69,7 @@ namespace FrcSim
                             if (m.HasProperty("baseColorTexture")) tex = m.GetTexture("baseColorTexture");
                             else if (m.HasProperty("_MainTex")) tex = m.GetTexture("_MainTex");
                         }
+                        float srcA = c.a;   // glTF 的透明度(聚碳酸酯圍欄/玻璃 alpha 0.1~0.7):以前一律壓成不透明,圍欄變成白牆
                         c.a = 1f;
                         if (tex != null) texCount++;
                         string ck = $"{c.r:0.0},{c.g:0.0},{c.b:0.0}";
@@ -79,10 +82,22 @@ namespace FrcSim
                         int mkey = (c32.r << 16) | (c32.g << 8) | c32.b;
                         if (!matCache.TryGetValue(mkey, out var nm)) { nm = FieldBuilder.MakeMat(c); matCache[mkey] = nm; }
                         if (tex != null) nm.mainTexture = tex;
+                        if (srcA < 0.95f)
+                        {
+                            int gk = Mathf.RoundToInt(srcA * 100f);
+                            if (!glassCache.TryGetValue(gk, out var gm))
+                            {
+                                gm = Look.GlassMaterial(); gm.SetColor("_Color", new Color(0.80f, 0.90f, 1f, 1f)); gm.SetFloat("_Alpha", Mathf.Clamp(srcA * 0.7f, 0.04f, 0.5f)); gm.SetFloat("_Fresnel", 0.5f);
+                                glassCache[gk] = gm;
+                            }
+                            mats[i] = gm; hasGlass = true;
+                        }
+                        else
                         mats[i] = nm;
                     }
                     r.sharedMaterials = mats;
                     r.shadowCastingMode = r.bounds.size.magnitude < 0.3f ? UnityEngine.Rendering.ShadowCastingMode.Off : UnityEngine.Rendering.ShadowCastingMode.On;   // 小零件不投影,省陰影運算
+                    if (hasGlass) { r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off; r.receiveShadows = false; }
                     r.receiveShadows = true;
                 }
 
