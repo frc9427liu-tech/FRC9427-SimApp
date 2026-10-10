@@ -155,8 +155,8 @@ namespace FrcSim
             else if (Mode == 6)
             {
                 // 觀眾席視角(-camera 6):站在場內低處看對面看台,檢查觀眾外觀
-                pos = new Vector3(L * 0.5f, 1.7f, 0.8f);
-                rot = Quaternion.LookRotation(new Vector3(L * 0.25f, 3.2f, W + 3f) - pos, Vector3.up);
+                pos = new Vector3(L * 0.5f, 2.0f, 0.8f);
+                rot = Quaternion.LookRotation(new Vector3(L * 0.5f, 4.6f, W + 12f) - pos, Vector3.up);
             }
             else if (Mode == 5)
             {

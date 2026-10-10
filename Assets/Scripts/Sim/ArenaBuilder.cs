@@ -63,6 +63,7 @@ namespace FrcSim
             }
 
             Crowd.Build(root, L, W);
+            VenueScreens.Build(root, L, W);
             ScoreCube.Build(root, L, W);   // 桁架 + 懸吊計分板   // 真正的觀眾(約 800 人,GPU instancing)
             Box("Ceiling", new Vector3(L / 2f, 18.5f, W / 2f), new Vector3(L + 40f, 0.5f, W + 40f), ceilMat);
             for (int i = 0; i < 6; i++)
