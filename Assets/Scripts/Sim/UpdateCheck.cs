@@ -17,7 +17,7 @@ namespace FrcSim
     //   找不到差異包(或失敗)時退回「開啟下載頁」,讓使用者手動下載完整版。
     public class UpdateCheck : MonoBehaviour
     {
-        public const string Current = "0.1.11";
+        public const string Current = "0.1.12";
         const string Repo = "frc9427liu-tech/FRC9427-SimApp";
         const string ReleasesApi = "https://api.github.com/repos/" + Repo + "/releases?per_page=30";
         public const string Page = "https://github.com/" + Repo + "/releases/latest";
@@ -112,9 +112,11 @@ namespace FrcSim
         {
             try
             {
-                string work = Path.Combine(InstallDir, "_update");
+                // 暫存放在 LocalAppData(不在安裝資料夾):安裝在 OneDrive 桌面時,那裡的資料夾是唯讀/雲端檔案,舊的殘留刪不掉會讓更新一直失敗
+                string work = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "FRC9427-Sim", "update");
                 string stage = Path.Combine(work, "staged");
-                if (Directory.Exists(work)) Directory.Delete(work, true);
+                SafeDelete(work);
+                if (Directory.Exists(work)) { work = work + "-" + DateTime.Now.Ticks; stage = Path.Combine(work, "staged"); }
                 Directory.CreateDirectory(stage);
 
                 var expected = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);   // 相對路徑 → sha256(後面的版本覆蓋前面的)
@@ -190,6 +192,22 @@ namespace FrcSim
                 Debug.LogWarning("[UpdateCheck] " + e);
                 Busy = false;
                 OpenPageFlag = true;
+            }
+        }
+
+        // 刪資料夾:先清唯讀屬性,不行就用 cmd rd(OneDrive 資料夾 Directory.Delete 常常 Access denied)
+        static void SafeDelete(string dir)
+        {
+            if (!Directory.Exists(dir)) return;
+            try { foreach (var f in Directory.GetFileSystemEntries(dir, "*", SearchOption.AllDirectories)) { try { File.SetAttributes(f, FileAttributes.Normal); } catch { } } Directory.Delete(dir, true); }
+            catch
+            {
+                try
+                {
+                    var p = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("cmd.exe", "/c rd /s /q \"" + dir + "\"") { UseShellExecute = false, CreateNoWindow = true });
+                    p.WaitForExit(15000);
+                }
+                catch { }
             }
         }
 
