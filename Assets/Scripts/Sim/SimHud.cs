@@ -40,6 +40,7 @@ namespace FrcSim
             if (Input.GetKeyDown(KeyCode.F3)) showDebug = !showDebug;
             if (Input.GetKeyDown(KeyCode.F5) && !MenuSystem.Blocking) GameSession.Rematch();
             { bool loading = GameSession.Hal != null && !GameSession.Hal.Connected && !GameSession.Hal.Failed; if (loading) { Time.timeScale = 0f; wasLoading = true; } else if (wasLoading) { wasLoading = false; Time.timeScale = 1f; if (GameSession.Hal != null && GameSession.Hal.LoadedSecs > 5f) { PlayerPrefs.SetFloat("robotLoadSecs", GameSession.Hal.LoadedSecs); PlayerPrefs.Save(); } } }
+            if (GameSession.AutoDrillTest && GameSession.Drill && Mech != null) Mech.Shooting = Mech.Held > 0;
             bool padOk = Pad.Mode != 2 || (Pad.DriverOnline && (Pad.OperatorOnline || Pad.OperatorKeyboard));
             if (wasPadOk && !padOk && GameSession.Active && !MenuSystem.Blocking) { padLostUntil = Time.unscaledTime + 8f; MenuSystem.PauseNow(); }   // 手把掉線:自動暫停並提示
             wasPadOk = padOk;
@@ -191,10 +192,12 @@ namespace FrcSim
 
             if (Time.unscaledTime < padLostUntil) { var tr = new Rect(cx - 250, H - 130, 500, 44); Panel(tr, 0.9f); GUI.Label(tr, L("⚠ 手把掉線了,已暫停。請重新插上 USB", "⚠ Controller lost - paused. Re-plug USB"), Style(18, new Color(1f, 0.8f, 0.3f), TextAnchor.MiddleCenter, FontStyle.Bold)); }
 
-            // ---- 比賽結束:成績卡 + 再來一場 / 回主選單(手把 A / B,Enter 再來一場)
+            // ---- 比賽結束:成績卡(含各距離命中率) + 再來一場 / 回主選單(手把 A / B,Enter 再來一場)
             if (ScoreManager.ClockOn && ScoreManager.Ended)
             {
-                float cw = 560, ch = 372;
+                int rows = 0; for (int q = 0; q < 5; q++) if (ShotLog.Att[q] > 0) rows++;
+                float extra = rows > 0 ? rows * 26f + 34f : 0f;
+                float cw = 560, ch = 372 + extra;
                 var cr = new Rect(cx - cw / 2f, H / 2f - ch / 2f, cw, ch);
                 Panel(cr, 0.95f);
                 int bs = ScoreManager.BlueScore, rs = ScoreManager.RedScore;
@@ -203,9 +206,47 @@ namespace FrcSim
                 GUI.Label(new Rect(cr.x, cr.y + 22, cw, 30), L("比賽結束", "MATCH OVER"), Style(18, dim, TextAnchor.UpperCenter, FontStyle.Bold));
                 GUI.Label(new Rect(cr.x, cr.y + 54, cw, 70), res, Style(54, rc2, TextAnchor.UpperCenter, FontStyle.Bold));
                 GUI.Label(new Rect(cr.x, cr.y + 132, cw, 50), $"{L("藍", "BLUE")} {bs}  :  {rs} {L("紅", "RED")}", Style(34, Color.white, TextAnchor.UpperCenter, FontStyle.Bold));
-                if (Mech != null) { int sh = Mech.ShotsFired; GUI.Label(new Rect(cr.x, cr.y + 182, cw, 28), $"{L("你發射", "Shots")} {sh}    {L("進球", "Scored")} {bs}    {L("命中率", "Accuracy")} {(sh > 0 ? Mathf.Min(100, bs * 100 / sh) : 0)}%    {L("吸球", "Collected")} {Mech.TotalCollected}", Style(16, dim, TextAnchor.UpperCenter)); }
-                if (GBtn(new Rect(cr.x + 40, cr.y + 256, 230, 56), L("再來一場  (A)", "Rematch  (A)"), true) || Pad.Down(Pad.A) || Input.GetKeyDown(KeyCode.Return)) GameSession.Rematch();
-                if (GBtn(new Rect(cr.x + cw - 270, cr.y + 256, 230, 56), L("回主選單  (B)", "Main menu  (B)"), false) || Pad.Down(Pad.B)) MenuSystem.GoMain();
+                if (Mech != null) { int sh = ShotLog.DrillShots, hi = ShotLog.DrillHits; GUI.Label(new Rect(cr.x, cr.y + 182, cw, 28), $"{L("你發射", "Shots")} {sh}    {L("進球", "Scored")} {hi}    {L("命中率", "Accuracy")} {(sh > 0 ? hi * 100 / sh : 0)}%    {L("吸球", "Collected")} {Mech.TotalCollected}", Style(16, dim, TextAnchor.UpperCenter)); }
+                if (rows > 0)
+                {
+                    float ry = cr.y + 216f;
+                    GUI.Label(new Rect(cr.x + 40, ry - 4, cw - 80, 22), L("各距離命中率(發射時離 HUB)", "Accuracy by distance"), Style(13, dim, TextAnchor.UpperLeft, FontStyle.Bold));
+                    ry += 22f;
+                    for (int q = 0; q < 5; q++)
+                    {
+                        if (ShotLog.Att[q] == 0) continue;
+                        float fr = ShotLog.Hit[q] / (float)ShotLog.Att[q];
+                        GUI.Label(new Rect(cr.x + 40, ry, 70, 22), ShotLog.Names[q], Style(14, dim, TextAnchor.UpperLeft));
+                        Bar(new Rect(cr.x + 112, ry + 6, cw - 112 - 150, 9), fr, fr >= 0.6f ? new Color(0.4f, 1f, 0.5f) : fr >= 0.3f ? new Color(1f, 0.8f, 0.3f) : new Color(1f, 0.5f, 0.4f));
+                        GUI.Label(new Rect(cr.x + cw - 140, ry, 100, 22), $"{ShotLog.Hit[q]}/{ShotLog.Att[q]}  {Mathf.RoundToInt(fr * 100f)}%", Style(14, Color.white, TextAnchor.UpperRight, FontStyle.Bold));
+                        ry += 26f;
+                    }
+                }
+                if (GBtn(new Rect(cr.x + 40, cr.y + 256 + extra, 230, 56), L("再來一場  (A)", "Rematch  (A)"), true) || Pad.Down(Pad.A) || Input.GetKeyDown(KeyCode.Return)) GameSession.Rematch();
+                if (GBtn(new Rect(cr.x + cw - 270, cr.y + 256 + extra, 230, 56), L("回主選單  (B)", "Main menu  (B)"), false) || Pad.Down(Pad.B)) MenuSystem.GoMain();
+            }
+
+            // ---- 投籃訓練:頂部橫幅 + 射完的結果卡
+            if (GameSession.Drill && Mech != null)
+            {
+                int sh2 = ShotLog.DrillShots, hi2 = ShotLog.DrillHits;
+                var br = new Rect(cx - 230, 90, 460, 34);
+                Panel(br, 0.6f);
+                GUI.Label(br, $"{L("投籃訓練", "Shooting drill")}   {GameSession.DrillDist:0.0} m   {L("剩", "left")} {Mech.Held}   {L("進", "hit")} {hi2}/{sh2}", Style(16, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold));
+                bool done = Mech.Held <= 0 && sh2 >= GameSession.DrillBalls && Time.time - Mech.LastFireTime > 4f;
+                if (done)
+                {
+                    float dw = 520, dh = 300;
+                    var dr = new Rect(cx - dw / 2f, H / 2f - dh / 2f, dw, dh);
+                    Panel(dr, 0.95f);
+                    int pct = sh2 > 0 ? hi2 * 100 / sh2 : 0;
+                    GUI.Label(new Rect(dr.x, dr.y + 20, dw, 28), $"{L("訓練結果", "Drill result")}  ·  {GameSession.DrillDist:0.0} m", Style(18, dim, TextAnchor.UpperCenter, FontStyle.Bold));
+                    GUI.Label(new Rect(dr.x, dr.y + 54, dw, 70), $"{hi2} / {sh2}", Style(56, pct >= 60 ? new Color(0.4f, 1f, 0.55f) : pct >= 30 ? new Color(1f, 0.85f, 0.4f) : new Color(1f, 0.55f, 0.45f), TextAnchor.UpperCenter, FontStyle.Bold));
+                    GUI.Label(new Rect(dr.x, dr.y + 128, dw, 30), $"{L("命中率", "Accuracy")} {pct}%   " + (pct >= 70 ? L("很穩!試試更遠", "Solid! try further") : pct >= 40 ? L("不錯,再微調", "Decent, tune it") : L("距離不對,換個距離看看", "Try another distance")), Style(16, dim, TextAnchor.UpperCenter));
+                    if (GBtn(new Rect(dr.x + 24, dr.y + 200, 150, 52), L("同距離 (A)", "Again (A)"), true) || Pad.Down(Pad.A) || Input.GetKeyDown(KeyCode.Return)) GameSession.StartDrill();
+                    if (GBtn(new Rect(dr.x + 185, dr.y + 200, 150, 52), L("+0.5 m (Y)", "+0.5 m (Y)"), false) || Pad.Down(Pad.Y)) { GameSession.DrillDist = GameSession.DrillDist >= 5.5f ? 2.0f : GameSession.DrillDist + 0.5f; GameSession.StartDrill(); }
+                    if (GBtn(new Rect(dr.x + 346, dr.y + 200, 150, 52), L("結束 (B)", "Exit (B)"), false) || Pad.Down(Pad.B)) { GameSession.Rematch(); }
+                }
             }
             // ---- 開局提醒(例如專案沒有模擬設定檔、改用內建行為)
             if (GameSession.Notice != "" && Time.time < GameSession.NoticeUntil)

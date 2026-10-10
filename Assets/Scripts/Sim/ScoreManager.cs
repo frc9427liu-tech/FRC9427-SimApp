@@ -95,6 +95,7 @@ namespace FrcSim
                 if (!inBlue && !inRed) continue;
 
                 bool active = inBlue ? BlueActive : RedActive;
+                if (active && inBlue && f.ShotDist >= 0f) { ShotLog.AddHit(f.ShotDist); f.ShotDist = -1f; }
                 if (active) { if (inBlue) BlueScore++; else RedScore++; }
                 // 吐回場上:朝中立區那一側的底部出口
                 Vector2 hub = inBlue ? blueHub : redHub;

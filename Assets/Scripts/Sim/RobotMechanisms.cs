@@ -26,7 +26,8 @@ namespace FrcSim
         public float CollectPerSec;      // >0:AI 難度用的吸球速率上限(顆/秒);玩家 0 = 不限
         float nextCollect;
         public float RollerRps;          // 滾輪轉速(真實程式模式,測試/除錯用)
-        public int TotalCollected;       // 本場吸進的球數(成績卡統計)
+        public int TotalCollected;
+        public float LastFireTime;       // 本場吸進的球數(成績卡統計)
         public float SpreadDeg;          // 出球散布(度,AI 難度用;玩家 0)
         public int ShotsFired;
         public float TargetDistance;
@@ -121,6 +122,7 @@ namespace FrcSim
 
         void FixedUpdate()
         {
+            if (GameSession.AutoDrillTest && GameSession.Drill && this == GameSession.Mech) { Shooting = Held > 0; IntakeDown = false; }   // 測試用
             if (Sim != null && Sim.Hal != null && Sim.Hal.Connected) { RealStep(); return; }
             float dt = Time.fixedDeltaTime;
 
@@ -303,7 +305,9 @@ namespace FrcSim
                 Mathf.Sin(elev) * speed,
                 Mathf.Sin(yaw) * Mathf.Cos(elev) * speed + tv.y);
             Vector3 p = new Vector3(pos.x + off.x, LaunchHeight, pos.y + off.y);
-            FuelManager.Spawn(p, v, RobotCollider);
+            var shotFuel = FuelManager.Spawn(p, v, RobotCollider);
+            LastFireTime = Time.time;
+            if (this == GameSession.Mech) { float sd = Vector2.Distance(pos, TargetHub); shotFuel.ShotDist = sd; ShotLog.AddShot(sd); }
             Held--;
             ShotsFired++;
         }

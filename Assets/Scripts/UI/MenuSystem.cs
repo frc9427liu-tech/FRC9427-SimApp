@@ -449,6 +449,8 @@ namespace FrcSim
                 new Item(() => Loc.T("pause.resume"),   Resume),
                 new Item(() => Loc.T("pause.reset"),    () => { GameSession.Drive?.ResetPose(); Resume(); }),
                 new Item(() => Z("再來一場(重置場地)", "Restart match (reset field)"), () => { Resume(); GameSession.Rematch(); }),
+                new Item(() => Z("投籃訓練:開始(10 顆)", "Shooting drill: start (10)"), () => { Resume(); GameSession.StartDrill(); }) { EnabledFn = () => GameSession.PracticeMode },
+                new Item(() => Z("訓練距離", "Drill distance") + ":  " + GameSession.DrillDist.ToString("0.0") + " m", () => { GameSession.DrillDist = GameSession.DrillDist >= 5.5f ? 2.0f : GameSession.DrillDist + 0.5f; }) { EnabledFn = () => GameSession.PracticeMode },
                 new Item(() => Loc.T("menu.settings"),  () => { settingsBack = ShowPause; ShowSettings(true); }),
                 new Item(() => Loc.T("pause.menu"),     BackToMain),
             }, Resume);

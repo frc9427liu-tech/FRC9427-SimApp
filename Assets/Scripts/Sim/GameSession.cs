@@ -20,9 +20,24 @@ namespace FrcSim
         public static CameraRig LastRig;
         public static int AiTestLevel = -1;   // 測試用:-vsai N(不寫入玩家設定)
 
+        // ---- 投籃訓練:把車擺在離藍方 HUB 指定距離、給 10 顆球、場上沒有其他球,射完看命中率
+        public static bool Drill;
+        public static readonly bool AutoDrillTest = System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-drilltest") >= 0;   // 測試:自動開始投籃訓練並自動射
+        public static float DrillDist = 3.0f;
+        public const int DrillBalls = 10;
+        public static void StartDrill()
+        {
+            if (!Active || Drive == null) return;
+            Rematch();
+            FuelManager.Clear(); FuelManager.Init();
+            Drive.SetPose(new Vector2(RobotMechanisms.BlueHub.x - DrillDist, SimConstants.FieldWidth / 2f), 0f);
+            Mech.Held = DrillBalls; Mech.ShotsFired = 0; ShotLog.Reset();
+            Drill = true;
+        }
         // 不重開機器人程式,直接把場地/比分/機器人位置重置成開賽狀態(「再來一場」「F5」)
         public static void Rematch()
         {
+            Drill = false; ShotLog.Reset();
             if (!Active || Drive == null) return;
             FuelManager.Clear(); FuelManager.Init(); FuelManager.SpawnStart();
             HumanPlayer.ResetMatch();
@@ -41,6 +56,7 @@ namespace FrcSim
 
         public static void Begin(CameraRig rig, bool selfTest = false, string projectOverride = null)
         {
+            Drill = false; ShotLog.Reset();
             BindingMap.Loaded = false; BindingMap.IntakeOnDriverRT = false; BindingMap.List.Clear();
             { var ca = System.Environment.GetCommandLineArgs(); int vi = System.Array.IndexOf(ca, "-vsai"); if (vi >= 0 && vi + 1 < ca.Length) { VsAi = true; int.TryParse(ca[vi + 1], out AiTestLevel); } }
             if (Active) return;
@@ -153,6 +169,7 @@ namespace FrcSim
             var input = robot.AddComponent<RobotInput>();
             input.Drive = Drive;
             input.Mech = Mech;
+            if (AutoDrillTest) { PracticeMode = true; StartDrill(); }
 
             if (selfTest)
             {
