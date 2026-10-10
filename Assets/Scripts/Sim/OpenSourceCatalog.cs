@@ -14,6 +14,7 @@ namespace FrcSim
         {
             public string Id, Team, Repo, Note, Status, Model;      // Status: ok / partial / untested
             public string PatchFile, PatchFind, PatchReplace;
+            public string Patch2File, Patch2Find, Patch2Replace;   // 第二個修補(例如把機器人程式內的起始位姿對齊模擬器)
             public string Dir => Path.Combine(Root, Id);
             public volatile string State = "";                // 下載中 / 失敗訊息
         }
@@ -35,7 +36,9 @@ namespace FrcSim
                 PatchFile = @"src\main\java\frc\robot\Constants.java",
                 PatchFind = @"Mode simMode = Mode\.SIM;", PatchReplace = "Mode simMode = Mode.REAL;" },
             new Entry { Id = "4915-Artemis", Model = "proc:0.70,0.74,0.60,#3DDC84", Team = "FRC 4915 Spartronics (MIT)", Repo = "https://github.com/Spartronics4915/2026-Rebuilt.git", Status = "partial",
-                Note = "能開車、操作手 LT 吸球;射擊靠自動瞄準的條件尚未對上" },
+                Note = "能開車(已把它預設的紅方起始位姿改成與模擬器一致)、操作手 LT 吸球;射擊的自動瞄準條件尚未對上",
+                PatchFile = @"src\main\java\com\spartronics4915\frc2026\subsystems\swerve\SwerveSubsystem.java",
+                PatchFind = @"new Translation2d\(14\.0, 5\.0\), Rotation2d\.fromDegrees\(180\)", PatchReplace = "new Translation2d(2.11, 4.04), Rotation2d.fromDegrees(0)" },
             new Entry { Id = "REV-ION-StarterBot", Team = "REV ION", Repo = "https://github.com/REVrobotics/2026-REV-ION-FRC-StarterBot.git", Status = "untested",
                 Model = "proc:0.70,0.70,0.50,#FF8A00",
                 Note = "官方入門機(BSD-3);用 SparkMax/Flex,模擬器目前只模擬 TalonFX,暫時無法驅動" },
@@ -65,6 +68,16 @@ namespace FrcSim
                             string t = File.ReadAllText(f);
                             string t2 = System.Text.RegularExpressions.Regex.Replace(t, e.PatchFind, e.PatchReplace);
                             if (t2 != t) File.WriteAllText(f, t2);
+                        }
+                    }
+                    if (e.Patch2File != null && e.Patch2Find != null)
+                    {
+                        string f2 = Path.Combine(e.Dir, e.Patch2File);
+                        if (File.Exists(f2))
+                        {
+                            string t = File.ReadAllText(f2);
+                            string t2 = new System.Text.RegularExpressions.Regex(e.Patch2Find).Replace(t, e.Patch2Replace, 1);
+                            if (t2 != t) File.WriteAllText(f2, t2);
                         }
                     }
                     // 第一次要連網把模擬用的函式庫(Phoenix sim 等)抓進 Gradle 快取;模擬器之後是離線啟動的
