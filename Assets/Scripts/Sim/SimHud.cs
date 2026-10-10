@@ -79,7 +79,7 @@ namespace FrcSim
             if (showDebug) ph += 22f * 3;
             var pr = new Rect(x0, y0, pw, ph);
             Panel(pr, 0.6f);
-            GUI.Label(new Rect(x0 + 14, y0 + 8, pw - 28, 24), $"{Drive.Speed:0.0} m/s    {L("朝向", "hdg")} {Mathf.DeltaAngle(0f, Drive.HeadingRad * Mathf.Rad2Deg):0}°    {fps:0} FPS", Style(15, dim));
+            GUI.Label(new Rect(x0 + 14, y0 + 8, pw - 28, 24), $"{Drive.Speed:0.0} m/s    {L("朝向", "hdg")} {Mathf.DeltaAngle(0f, Drive.HeadingRad * Mathf.Rad2Deg):0}°    {fps:0} FPS    {L("手把", "pads")} {Pad.Count}", Style(15, dim));
             if (Mech != null)
             {
                 float yy = y0 + 38f;
@@ -166,7 +166,7 @@ namespace FrcSim
             {
                 bool tank = PlayerPrefs.GetInt("tankMode", 1) == 1;
                 string t1 = tank
-                    ? L("手把:左/右搖桿 = 左/右側輪   A 放手臂   B 滾輪   RT 發射   RB 送球   十字鍵左右 砲塔   Start 暫停",
+                    ? L("手把:左/右搖桿 = 左/右側輪   A 放手臂   B 滾輪   RT 發射(到速自動送球)   RB 強制送球   十字鍵左右 砲塔   十字鍵上 收手臂   Start 暫停",
                         "Pad: L/R stick = left/right side   A arm   B roller   RT shoot   RB feed   D-pad L/R turret   Start pause")
                     : L("WASD 移動   Q/E 旋轉   Shift 慢速   I 吸球   空白/滑鼠 射擊   F 場地/車體座標", "WASD move   Q/E rotate   Shift slow   I intake   Space/Mouse shoot   F field/robot");
                 string t2 = L("H 人類球員放球   C 視角   R 重置   Esc 暫停   2P(紅):方向鍵移動  ,. 旋轉  / 吸球  右Ctrl 射擊", "H human-player chute   C camera   R reset   Esc pause   P2 (red): arrows move  ,. rotate  / intake  RCtrl shoot");

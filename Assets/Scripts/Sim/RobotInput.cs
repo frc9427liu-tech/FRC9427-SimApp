@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 namespace FrcSim
 {
@@ -78,6 +78,7 @@ namespace FrcSim
                 h.Buttons[0] = Pad.Held(Pad.A) || kA;
                 h.Buttons[1] = Pad.Held(Pad.B) || kB;
                 float turret = (Pad2.Held(Pad.DRight) || Input.GetKey(KeyCode.X) ? 1f : 0f) - (Pad2.Held(Pad.DLeft) || Input.GetKey(KeyCode.Z) ? 1f : 0f);
+                if (Pad2.Separate) turret = Mathf.Clamp(turret + Pad2.LX, -1f, 1f);   // 兩支手把:操作手左搖桿左右 = 砲塔(跟 LEO RobotContainer 一樣);一支時左搖桿是左輪,只能用十字鍵
                 h.Axes2[0] = turret;
                 h.Axes2[3] = Mathf.Max((Input.GetKey(KeyCode.Space) || Input.GetMouseButton(0)) ? 1f : 0f, Pad2.RT);
                 h.Axes2[2] = Pad2.LT;
