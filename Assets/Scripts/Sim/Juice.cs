@@ -141,7 +141,7 @@ namespace FrcSim
             if (GameSession.Drive != null)   // 過 BUMP:車身俯仰超過門檻的瞬間(上坡/下坡各一次)放「咚、咚」
             {
                 bool onBump = Mathf.Abs(GameSession.Drive.BumpPitchDeg) > 4f;
-                if (onBump != wasOnBump && GameSession.Drive.Speed > 0.6f) { SfxBus.Play("ramp", Mathf.Clamp01(0.3f + GameSession.Drive.Speed * 0.12f), 0.9f + Random.value * 0.2f); JuiceFX.AddTrauma(0.06f, 0.15f); }
+                if (onBump != wasOnBump && GameSession.Drive.Speed > 0.6f) { SfxBus.Play("ramp", Mathf.Clamp01(0.3f + GameSession.Drive.Speed * 0.12f), 0.9f + Random.value * 0.2f); JuiceFX.AddTrauma(0.06f, 0.15f); if (onBump && GameSession.Mech != null && GameSession.Mech.Held >= 10) GameSession.Mech.Spill(Mathf.Clamp(Mathf.RoundToInt(GameSession.Drive.Speed * 0.5f), 1, 4)); }   // 過 BUMP 顛簸時儲球倉的球會震出來
                 wasOnBump = onBump;
             }
             excitement = Mathf.MoveTowards(excitement, 0f, dt * 0.22f);

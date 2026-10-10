@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 namespace FrcSim
 {
@@ -34,7 +34,7 @@ namespace FrcSim
         void Update()
         {
             if (MenuSystem.Blocking) return;
-            Corral();
+            Corral(); AutoFeed();
             bool blue = Input.GetKey(KeyCode.H) || Pad2.Held(Pad.Y);
             bool red = Input.GetKey(KeyCode.RightShift);
             float L = SimConstants.FieldLength, W = SimConstants.FieldWidth;
@@ -47,6 +47,22 @@ namespace FrcSim
             {
                 nextRed = Time.time + 0.25f; RedChute--;
                 Release(new Vector3(L - 0.30f, 0.82f, W - 0.882f), -1f);
+            }
+        }
+
+        // 自動人類球員:有機器人靠近自己聯盟牆的 OUTPOST 時,CHUTE 會自己一顆一顆放球(約 1.1 秒一顆,有抖動),不用一直按 H
+        float autoBlue, autoRed;
+        void AutoFeed()
+        {
+            if (Prefs.GetInt("autoHP", 1) != 1 || GameSession.Drive == null) return;
+            float L = SimConstants.FieldLength, W = SimConstants.FieldWidth;
+            Vector2 p = GameSession.Drive.Pose2d;
+            if (BlueChute > 0 && p.x < 3.0f && Mathf.Abs(p.y - 0.882f) < 2.2f && Time.time >= autoBlue) { autoBlue = Time.time + Random.Range(0.8f, 1.5f); BlueChute--; Release(new Vector3(0.30f, 0.82f, 0.882f), 1f); }
+            var r2 = GameObject.Find("Robot2");
+            if (r2 != null && RedChute > 0 && Time.time >= autoRed)
+            {
+                Vector3 q = r2.transform.position;
+                if (q.x > L - 3.0f && Mathf.Abs(q.z - (W - 0.882f)) < 2.2f) { autoRed = Time.time + Random.Range(0.8f, 1.5f); RedChute--; Release(new Vector3(L - 0.30f, 0.82f, W - 0.882f), -1f); }
             }
         }
 

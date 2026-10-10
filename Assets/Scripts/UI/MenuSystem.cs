@@ -358,6 +358,7 @@ namespace FrcSim
         Item ItCtl() => new Item(() => Loc.T("setup.ctl") + ":  " + Loc.T(Prefs.GetInt("tankMode", 1) == 1 ? "ctl.tank" : "ctl.swerve"), () => { Prefs.SetInt("tankMode", Prefs.GetInt("tankMode", 1) == 1 ? 0 : 1); PlayerPrefs.Save(); });
         Item ItSpeed() => new Item(() => Loc.T("setup.speed") + ":  " + SettingsStore.MaxSpeedChoice.ToString("0.0") + " m/s", () => { SettingsStore.SpeedIndex = (SettingsStore.SpeedIndex + 1) % SettingsStore.SpeedOptions.Length; });
         Item ItAccel() => new Item(() => Loc.T("setup.accel") + ":  " + SettingsStore.AccelChoice.ToString("0") + " m/s²", () => { SettingsStore.AccelIndex = (SettingsStore.AccelIndex + 1) % SettingsStore.AccelOptions.Length; });
+        Item ItAutoHP() => new Item(() => Z("人類球員自動放球", "Auto human player") + ":  " + Loc.T(Prefs.GetInt("autoHP", 1) == 1 ? "on" : "off"), () => { Prefs.SetInt("autoHP", Prefs.GetInt("autoHP", 1) == 1 ? 0 : 1); PlayerPrefs.Save(); });
         Item ItSecond() => new Item(() => Loc.T("setup.second") + ":  " + Loc.T(Prefs.GetInt("secondRobot", 1) == 1 ? "on" : "off"), () => { Prefs.SetInt("secondRobot", Prefs.GetInt("secondRobot", 1) == 1 ? 0 : 1); PlayerPrefs.Save(); });
         Item ItLevel()
         {
@@ -385,7 +386,7 @@ namespace FrcSim
                 new Item(() => Z("外觀  ▸", "Appearance  ▸"), () => ShowSub(() => Z("外觀", "Appearance"), () => Z("機器人模型與方向", "Robot model & orientation"), new[] { ItModel(), ItImport(), ItYaw() })),
                 new Item(() => Z("機器人程式  ▸", "Robot code  ▸"), () => ShowSub(() => Z("機器人程式", "Robot code"), () => Z("專案、是否跑真實程式、操控方式", "Project, real code, controls"), new[] { ItProject(), ItReal(), ItCtl(), new Item(() => Z("內建機構(5 款)  ▸", "Built-in mechanisms (5)  ▸"), () => ShowSub(() => Z("內建機構", "Built-in mechanisms"), () => Z("不用機器人程式,直接用內建行為;各有外觀與手感", "No robot code needed — each has its own look and feel"), PresetItems())), new Item(() => Z("開源機器人模型庫(3D)  ▸", "Open-source robot models (3D)  ▸"), () => ShowSub(() => Z("開源機器人模型", "Open-source robot models"), () => Z("真實隊伍的 3D 機器人(AdvantageScope 公開資產),按一下下載並使用", "Real FRC team 3D robots (AdvantageScope public assets) — click to download & use"), ModelLibItems())), new Item(() => Z("開源機器人程式庫  ▸", "Open-source robot library  ▸"), () => ShowSub(() => Z("開源機器人程式庫", "Open-source robot library"), () => Z("別隊公開的 2026 程式:下載後直接在模擬器跑(來源 GitHub,未打包)", "Public 2026 team code: download and run (from GitHub, not bundled)"), CatalogItems())) })),
                 new Item(() => Z("手感  ▸", "Handling  ▸"), () => ShowSub(() => Z("手感", "Handling"), () => Z("最高車速與加速度(慣性)", "Top speed & acceleration"), new[] { ItSpeed(), ItAccel() })),
-                new Item(() => Z("比賽  ▸", "Match  ▸"), () => ShowSub(() => Z("比賽", "Match"), () => Z("對手機器人與難度", "Opponent robot & level"), new[] { ItSecond(), ItLevel() })),
+                new Item(() => Z("比賽  ▸", "Match  ▸"), () => ShowSub(() => Z("比賽", "Match"), () => Z("對手機器人與難度", "Opponent robot & level"), new[] { ItAutoHP(), ItSecond(), ItLevel() })),
                 new Item(() => Loc.T("setup.start"), StartGame),
                 new Item(() => Loc.T("menu.back"), ShowModes),
             }, ShowModes);

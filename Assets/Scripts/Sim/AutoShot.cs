@@ -29,6 +29,8 @@ namespace FrcSim
             if (System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-freeze") >= 0) { yield return new WaitForSecondsRealtime(1.5f); foreach (var ri in FindObjectsByType<RobotInput>(FindObjectsSortMode.None)) ri.enabled = false; }   // 測試:關掉手把輸入(接著的手把飄移會讓車亂動)
             yield return new WaitForSecondsRealtime(delay);
             if (System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-fxtest") >= 0) { for (int k = 0; k < 3; k++) Juice.OnScore(true, true, new Vector3(4.62f, 2.0f, SimConstants.FieldWidth / 2f)); yield return new WaitForSecondsRealtime(0.12f); }   // 測試:連續 4 次進球特效後截圖
+            if (System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-spilltest") >= 0 && GameSession.Mech != null) { GameSession.Mech.Held = 20; int before = FuelManager.All.Count; GameSession.Mech.Spill(4); UnityEngine.Debug.Log("[SpillTest] held=" + GameSession.Mech.Held + " fuel " + before + "->" + FuelManager.All.Count); yield return new WaitForSecondsRealtime(0.5f); }
+            if (System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-hptest") >= 0 && GameSession.Drive != null) { GameSession.Drive.SetPose(new Vector2(1.6f, 1.3f), 0f); int b0 = FuelManager.All.Count; yield return new WaitForSecondsRealtime(4f); UnityEngine.Debug.Log("[HpTest] fuel " + b0 + "->" + FuelManager.All.Count + " blueChute=" + HumanPlayer.BlueChute); }
             if (System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-showpause") >= 0) { MenuSystem.PauseNow(); yield return new WaitForSecondsRealtime(1.5f); }
             ScreenCapture.CaptureScreenshot(shot);
             yield return new WaitForSecondsRealtime(2f);

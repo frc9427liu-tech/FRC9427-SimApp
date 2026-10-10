@@ -234,6 +234,23 @@ namespace FrcSim
             }
         }
 
+        // 掉球:過 BUMP 顛簸/猛烈碰撞時,儲球倉的球會從車後與兩側震出來(球真的掉在場上、可以再撿)
+        float nextSpill;
+        public void Spill(int n)
+        {
+            if (Time.time < nextSpill || Held <= 0 || Drive == null) return;
+            nextSpill = Time.time + 0.6f;
+            n = Mathf.Min(n, Held); Held -= n;
+            Vector3 fwd = Drive.transform.right; fwd.y = 0f; fwd.Normalize(); Vector3 side = Vector3.Cross(Vector3.up, fwd);
+            for (int i = 0; i < n; i++)
+            {
+                Vector3 p = Drive.transform.position - fwd * (0.25f + 0.1f * i) + side * Random.Range(-0.3f, 0.3f) + Vector3.up * 0.45f;
+                Vector3 v = new Vector3(Drive.Velocity.x, 0f, Drive.Velocity.y) * 0.4f - fwd * Random.Range(0.8f, 2.0f) + side * Random.Range(-1.2f, 1.2f) + Vector3.up * Random.Range(1.2f, 2.4f);
+                FuelManager.Spawn(p, v, RobotCollider);
+            }
+            SfxBus.Play("ballhit", 0.6f, Random.Range(0.9f, 1.1f));
+        }
+
         // 吸球動畫:原球移除後留一顆純視覺球,0.18 秒飛進車內再消失
         void SpawnAbsorb(Vector3 from)
         {
