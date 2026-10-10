@@ -328,7 +328,7 @@ namespace FrcSim
                     string st = en2.State == "…" ? Z("下載中…", "Downloading…") : en2.State != "" ? en2.State
                         : OpenSourceCatalog.Installed(en2) ? (Prefs.GetString("robotProject", "") == en2.Dir ? Z("使用中 ✓", "In use ✓") : Z("已下載,按一下使用", "Installed — click to use")) : Z("按一下下載", "Click to download");
                     string tag = en2.Status == "ok" ? Z("可用", "Works") : en2.Status == "partial" ? Z("部分", "Partial") : Z("未測試", "Untested");
-                    return en2.Team + "  [" + tag + "]  " + st;
+                    return en2.Team + "  [" + tag + "]  " + st + (string.IsNullOrEmpty(en2.Note) ? "" : "  ·  " + en2.Note);
                 }, () =>
                 {
                     if (!OpenSourceCatalog.Installed(en2)) { OpenSourceCatalog.Install(en2); return; }

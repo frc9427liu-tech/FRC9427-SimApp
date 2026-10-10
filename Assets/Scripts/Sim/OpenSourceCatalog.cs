@@ -32,6 +32,9 @@ namespace FrcSim
                 Note = "swerve + 吸球/飛輪/送球可用(實測);自動把 simMode 改成 REAL",
                 PatchFile = @"src\main\java\frc\robot\Constants.java",
                 PatchFind = @"Mode simMode = Mode\.SIM;", PatchReplace = "Mode simMode = Mode.REAL;" },
+            new Entry { Id = "REV-ION-StarterBot", Team = "REV ION", Repo = "https://github.com/REVrobotics/2026-REV-ION-FRC-StarterBot.git", Status = "untested",
+                Model = "proc:0.70,0.70,0.50,#FF8A00",
+                Note = "官方入門機(BSD-3);用 SparkMax/Flex,模擬器目前只模擬 TalonFX,暫時無法驅動" },
         };
 
         public static bool Installed(Entry e) { return File.Exists(Path.Combine(e.Dir, "gradlew.bat")); }
