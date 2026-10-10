@@ -16,7 +16,7 @@ namespace FrcSim
 
         static readonly Dictionary<string, float> Lens = new Dictionary<string, float>
         {
-            {"ding",0.5f},{"thump",0.3f},{"shoot",0.14f},{"ballhit",0.09f},{"bump",0.35f},{"pluck",0.12f},{"beep",0.16f},
+            {"ding",0.5f},{"thump",0.3f},{"shoot",0.14f},{"ballhit",0.10f},{"bump",0.35f},{"ramp",0.4f},{"pluck",0.12f},{"beep",0.16f},
             {"buzzer",1.6f},{"tick",0.05f},{"uiclick",0.06f},{"stinger_start",1.0f},{"stinger_end",1.3f},{"stinger_win",1.7f},
             {"stinger_lose",1.7f},{"roar",2.4f},{"intake_loop",1f},{"fly_loop",1f},{"crowd_loop",4f},{"music_loop",8f}
         };
@@ -95,18 +95,26 @@ namespace FrcSim
                         d[i] = (lp * 2.2f * Mathf.Exp(-t * 38f) + Mathf.Sin(ph) * 0.9f * Mathf.Exp(-t * 22f)) * Atk(t, 0.001f); }
                     break;
                 }
-                case "ballhit": // plastic tick: bright noise burst + short 720 Hz ring
+                case "ballhit": // FUEL 是 15cm 高密度泡棉球:悶悶的「噗」——低通噪音 + 低頻短身(沒有亮的「叩」),衰減很快
                 {
-                    float a = Lp(3500f, sr);
+                    float a = Lp(900f, sr);
                     for (int i = 0; i < n; i++) { float t = i * dt; lp += a * (Nz() - lp);
-                        d[i] = (lp * 2.5f * Mathf.Exp(-t * 90f) + Mathf.Sin(TAU * 720f * t) * 0.5f * Mathf.Exp(-t * 70f)) * Atk(t, 0.0008f); }
+                        d[i] = (lp * 2.2f * Mathf.Exp(-t * 55f) + Mathf.Sin(TAU * (230f - 70f * Mathf.Min(1f, t * 20f)) * t) * 0.7f * Mathf.Exp(-t * 48f)) * Atk(t, 0.0012f); }
                     break;
                 }
-                case "bump":   // robot-on-robot/wall: deep thud + low rumble noise
+                case "bump":   // 機器人互撞/撞牆:保險桿布面的悶響(低頻 50~120Hz 的「咚」 + 低中頻布料拍擊),不是金屬聲
                 {
-                    float a = Lp(500f, sr);
-                    for (int i = 0; i < n; i++) { float t = i * dt; ph += TAU * (35f + 90f * Mathf.Exp(-t * 20f)) * dt; lp += a * (Nz() - lp);
-                        d[i] = (Mathf.Sin(ph) * Mathf.Exp(-t * 8f) + lp * 1.8f * Mathf.Exp(-t * 14f)) * Atk(t, 0.001f); }
+                    float a = Lp(380f, sr);
+                    for (int i = 0; i < n; i++) { float t = i * dt; ph += TAU * (40f + 80f * Mathf.Exp(-t * 22f)) * dt; lp += a * (Nz() - lp);
+                        d[i] = (Mathf.Sin(ph) * Mathf.Exp(-t * 9f) + lp * 1.6f * Mathf.Exp(-t * 16f)) * Atk(t, 0.0015f); }
+                    break;
+                }
+                case "ramp":   // 過 BUMP:前輪上坡「咚」+ 後輪跟著「咚」(兩段低頻 thud,間隔約 90ms),帶一點底盤共鳴
+                {
+                    float a = Lp(300f, sr);
+                    for (int i = 0; i < n; i++) { float t = i * dt; lp += a * (Nz() - lp);
+                        float e1 = Mathf.Exp(-t * 12f), t2 = Mathf.Max(0f, t - 0.09f), e2 = t > 0.09f ? 0.8f * Mathf.Exp(-t2 * 13f) : 0f;
+                        d[i] = (Mathf.Sin(TAU * (62f + 40f * Mathf.Exp(-t * 25f)) * t) * e1 + Mathf.Sin(TAU * (52f + 30f * Mathf.Exp(-t2 * 25f)) * t2) * e2 + lp * 1.1f * (Mathf.Exp(-t * 20f) + 0.7f * (t > 0.09f ? Mathf.Exp(-t2 * 22f) : 0f))) * Atk(t, 0.002f); }
                     break;
                 }
                 case "pluck":  // rising blip (collect)
@@ -120,12 +128,13 @@ namespace FrcSim
                         d[i] = (Mathf.Sin(TAU * 1000f * t) + 0.33f * Mathf.Sin(TAU * 3000f * t) + 0.2f * Mathf.Sin(TAU * 5000f * t)) * Atk(t, 0.004f) * Rel(t, len, 0.02f); }
                     break;
                 }
-                case "buzzer": // end-of-match horn: sawtooth stack 180 Hz with 28 Hz tremolo
+                case "buzzer": // 真實場地結束蜂鳴器(實拍 05:12):刺耳的方波/鋸齒,中心約 1.8~2.5kHz,約 1.5 秒,突然收掉
                 {
                     float len = n * dt;
                     for (int i = 0; i < n; i++) { float t = i * dt; float s = 0f;
-                        for (int k = 1; k <= 9; k++) s += Mathf.Sin(TAU * 180f * k * t) / k;
-                        d[i] = s * (0.75f + 0.25f * Mathf.Sin(TAU * 28f * t)) * Atk(t, 0.02f) * Rel(t, len, 0.12f); }
+                        for (int k = 1; k <= 7; k += 2) s += Mathf.Sin(TAU * 1500f * k * t) / k;
+                        s += 0.35f * Mathf.Sin(TAU * 2250f * t);
+                        d[i] = s * (0.9f + 0.1f * Mathf.Sin(TAU * 90f * t)) * Atk(t, 0.012f) * Rel(t, len, 0.03f); }
                     break;
                 }
                 case "tick":
@@ -138,10 +147,15 @@ namespace FrcSim
                         d[i] = (Mathf.Sin(TAU * 1400f * t) * Mathf.Exp(-t * 110f) + lp * 0.25f * Mathf.Exp(-t * 200f)) * Atk(t, 0.0005f); }
                     break;
                 }
-                case "stinger_start": // three rising chime notes + sparkle
-                    for (int i = 0; i < n; i++) { float t = i * dt;
-                        d[i] = Note(t, 0f, 523.25f, 3.5f) + Note(t, 0.11f, 659.25f, 3.5f) + Note(t, 0.22f, 783.99f, 3.5f) + 0.8f * Note(t, 0.33f, 1046.5f, 3.0f); }
+                case "stinger_start": // 真實開賽「charge」號角(實拍 05:32):約 400Hz 上升到 1kHz 的合成上行約 0.8 秒,再接一聲短蜂鳴
+                {
+                    float len = n * dt; float a = Lp(2600f, sr);
+                    for (int i = 0; i < n; i++) { float t = i * dt; float s = 0f;
+                        if (t < 0.8f) { float f = 400f + 600f * (t / 0.8f) * (t / 0.8f); ph += TAU * f * dt; s = Mathf.Sin(ph) + 0.5f * Mathf.Sin(2f * ph) + 0.25f * Mathf.Sin(3f * ph); s *= Atk(t, 0.02f); }
+                        else if (t < 1.0f) { s = (Mathf.Sin(TAU * 1500f * t) + 0.33f * Mathf.Sin(TAU * 4500f * t)) * Mathf.Exp(-(t - 0.8f) * 6f); }
+                        d[i] = s * Rel(t, len, 0.05f); }
                     break;
+                }
                 case "stinger_end":   // tension riser: noise + saw sweep, cut at 0.9 s
                 {
                     float a = Lp(3000f, sr);

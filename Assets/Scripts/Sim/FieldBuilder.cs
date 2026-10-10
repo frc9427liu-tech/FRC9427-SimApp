@@ -77,6 +77,7 @@ namespace FrcSim
             mesh.SetVertices(v); mesh.SetTriangles(t, 0); mesh.RecalculateNormals(); mesh.RecalculateBounds();
             g.AddComponent<MeshFilter>().sharedMesh = mesh;
             g.AddComponent<MeshRenderer>().sharedMaterial = MakeMat(c);
+            var mc = g.AddComponent<MeshCollider>(); mc.sharedMesh = mesh; mc.convex = true;   // BUMP 是實體:球會停在斜坡上/滾下來(機器人另外忽略它,高度由 BumpHeightAt 控制)
             return g;
         }
 

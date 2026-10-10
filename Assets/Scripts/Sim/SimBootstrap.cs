@@ -154,6 +154,7 @@ namespace FrcSim
             // 機器人不和地板碰撞(高度本來就由程式控制);球、牆、HUB 等其他碰撞不受影響。
             var floorGo = GameObject.Find("Field/Floor");
             if (floorGo != null) { var fc = floorGo.GetComponent<Collider>(); if (fc != null) Physics.IgnoreCollision(col, fc, true); }
+            var fieldGo = GameObject.Find("Field"); if (fieldGo != null) foreach (var bc in fieldGo.GetComponentsInChildren<MeshCollider>()) Physics.IgnoreCollision(col, bc, true);   // 機器人不和 BUMP 碰撞體碰撞(車身高度由 BumpHeightAt 強制)
 
             // 車身
             var body = GameObject.CreatePrimitive(PrimitiveType.Cube);

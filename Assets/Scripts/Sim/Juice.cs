@@ -134,8 +134,15 @@ namespace FrcSim
         public static void UiHover() { SfxBus.Play("tick", 0.25f, 1.1f); }
 
         // ---- per-frame ----
+        static bool wasOnBump;
         public static void Tick(float dt)
         {
+            if (GameSession.Drive != null)   // 過 BUMP:車身俯仰超過門檻的瞬間(上坡/下坡各一次)放「咚、咚」
+            {
+                bool onBump = Mathf.Abs(GameSession.Drive.BumpPitchDeg) > 4f;
+                if (onBump != wasOnBump && GameSession.Drive.Speed > 0.6f) { SfxBus.Play("ramp", Mathf.Clamp01(0.3f + GameSession.Drive.Speed * 0.12f), 0.9f + Random.value * 0.2f); JuiceFX.AddTrauma(0.06f, 0.15f); }
+                wasOnBump = onBump;
+            }
             excitement = Mathf.MoveTowards(excitement, 0f, dt * 0.22f);
             ScorePop = Mathf.MoveTowards(ScorePop, 0f, dt * 3.2f);
             BeepPulse = Mathf.MoveTowards(BeepPulse, 0f, dt * 2.5f);
