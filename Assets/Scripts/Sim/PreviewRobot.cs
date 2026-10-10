@@ -20,8 +20,24 @@ namespace FrcSim
             var go = new GameObject("PreviewRobot"); I = go.AddComponent<PreviewRobot>();
         }
 
+        public static float DragDeg;   // 滑鼠左鍵在右側空白處拖曳 = 轉動檢視角度
+        GUIStyle nameSt, subSt;
+        void OnGUI()
+        {
+            if (!Active || Event.current.type != EventType.Repaint) return;
+            if (nameSt == null) { nameSt = new GUIStyle(GUI.skin.label) { fontStyle = FontStyle.Bold, alignment = TextAnchor.LowerRight }; subSt = new GUIStyle(GUI.skin.label) { alignment = TextAnchor.LowerRight }; }
+            float sc = Mathf.Clamp(Screen.height / 900f, 0.8f, 1.8f); nameSt.fontSize = Mathf.RoundToInt(34 * sc); subSt.fontSize = Mathf.RoundToInt(16 * sc);
+            string proj = Prefs.GetString("robotProject", "");
+            string team = string.IsNullOrEmpty(proj) || Prefs.GetInt("useRealCode", 0) != 1 ? Loc.T("model.builtin") : System.IO.Path.GetFileName(proj.TrimEnd('\\', '/'));
+            string mdl = string.IsNullOrEmpty(RobotModels.Selected) ? "" : RobotModels.Display(RobotModels.Selected);
+            var r = new Rect(Screen.width * 0.45f, Screen.height - 130 * sc, Screen.width * 0.52f, 56 * sc);
+            GUI.color = new Color(0, 0, 0, 0.5f); GUI.Label(new Rect(r.x + 2, r.y + 2, r.width, r.height), team, nameSt); GUI.color = Color.white; GUI.Label(r, team, nameSt);
+            GUI.color = new Color(1, 1, 1, 0.75f); GUI.Label(new Rect(r.x, r.y + 40 * sc, r.width, 24 * sc), mdl + "   ·   " + Loc.T("hint.drag"), subSt); GUI.color = Color.white;
+        }
+
         void Update()
         {
+            if (Want && Input.GetMouseButton(0) && Input.mousePosition.x > Screen.width * 0.42f) DragDeg -= Input.GetAxis("Mouse X") * 4f;
             var rig = FindFirstObjectByType<CameraRig>();
             bool menuMode = rig != null && rig.Orbit && GameSession.Drive == null;
             if (!menuMode || !Want) { Clear(); return; }
@@ -49,7 +65,7 @@ namespace FrcSim
             restPos = Center + Vector3.up * 0.13f;
             car = new GameObject("PreviewCar"); car.transform.position = restPos + new Vector3(-9f, 0f, 1.5f);
             enterT = 0f;
-            float yaw = (file.StartsWith("proc:")) ? 0f : (file == "kepler.glb" || ModelLibrary.Is(file)) ? 90f : PlayerPrefs.GetFloat("modelYaw", 0f);
+            float yaw = (file.StartsWith("proc:")) ? 0f : ModelLibrary.Is(file) ? ModelLibrary.Yaw(file) : (file == "kepler.glb") ? 90f : PlayerPrefs.GetFloat("modelYaw", 0f);
             RobotModels.Attach(car.transform, file, yaw, ok => { if (my != token && car != null) { } }, false);
         }
 

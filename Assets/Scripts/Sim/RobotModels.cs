@@ -52,16 +52,18 @@ namespace FrcSim
         public static float YawDeg
         {
             // kepler.glb 的 intake 在模型 +z 側,車頭(+x)要轉 90° 才對;使用者沒調過時預設用這個
-            get => PlayerPrefs.GetFloat("modelYaw", (Selected == "kepler.glb" || ModelLibrary.Is(Selected)) ? 90f : 0f);
+            get => PlayerPrefs.GetFloat("modelYaw", ModelLibrary.Is(Selected) ? ModelLibrary.Yaw(Selected) : (Selected == "kepler.glb") ? 90f : 0f);
             set { PlayerPrefs.SetFloat("modelYaw", value); PlayerPrefs.Save(); }
         }
 
         public static string LastError = "";
+        static Quaternion fixPre = Quaternion.identity;   // 模型庫 Z-up 模型的先行俯仰修正(由 Attach 設定、Fix 使用)
 
         // 載入並掛到機器人底下,貼地置中。成功後隱藏內建方塊外觀。
         public static async void Attach(Transform robot, string file, float yawDeg, Action<bool> done, bool red = false)
         {
             bool ok = false;
+            { var lib = ModelLibrary.Find(file); if (lib != null) { yawDeg = ModelLibrary.Yaw(file); fixPre = Quaternion.Euler(lib.Pitch, 0f, 0f); } else fixPre = Quaternion.identity; }
             if (ProcRobot.Is(file))
             {
                 var pv = new GameObject("ModelPivot"); pv.transform.SetParent(robot, false); pv.transform.localPosition = new Vector3(0f, -(SimConstants.BumperHeight / 2f + 0.03f), 0f); pv.AddComponent<BodyLean>();
@@ -161,7 +163,7 @@ namespace FrcSim
             }
 
             Debug.Log($"[RobotModels] Fix: renderers={root.GetComponentsInChildren<Renderer>(true).Length} meshFilters={root.GetComponentsInChildren<MeshFilter>(true).Length} children={root.transform.childCount} active={root.activeInHierarchy}");
-            root.transform.localRotation = Quaternion.Euler(0f, yawDeg, 0f);
+            root.transform.localRotation = Quaternion.Euler(0f, yawDeg, 0f) * fixPre;
             // 貼地置中:底部對齊車底,XZ 置中於機器人中心
             Bounds b = default; bool first = true;
             foreach (var r in root.GetComponentsInChildren<Renderer>(true))

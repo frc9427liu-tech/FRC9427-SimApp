@@ -70,6 +70,7 @@ namespace FrcSim
             { "pause.reset",   new[]{ "重置位置", "Reset Pose" } },
             { "pause.menu",    new[]{ "回到主畫面", "Main Menu" } },
             { "hint.nav",      new[]{ "↑↓ 選擇    Enter / A 確認    Esc / B 返回", "↑↓ Select    Enter / A Confirm    Esc / B Back" } },
+            { "hint.drag",     new[]{ "按住滑鼠左鍵拖曳旋轉", "Drag with left mouse to rotate" } },
             { "splash.made",   new[]{ "MADE IN UNITY", "MADE IN UNITY" } },
         };
 
