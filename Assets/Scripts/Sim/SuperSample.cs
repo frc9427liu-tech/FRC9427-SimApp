@@ -24,7 +24,7 @@ namespace FrcSim
         public static bool IsTestRun()
         {
             foreach (var a in System.Environment.GetCommandLineArgs())
-                switch (a) { case "-batchmode": case "-autostart": case "-shot": case "-menu": case "-padtest": case "-fieldtest": case "-walltest": case "-balltest": case "-soaktest": case "-leotest": case "-leoauto": case "-realtest": case "-projtest": case "-model": case "-installtest": case "-halsimtest": case "-selftest": case "-settletest": case "-aitest": case "-bindtest": case "-drilltest": case "-aitestsec": case "-clockstart": case "-vsai": return true; }
+                switch (a) { case "-batchmode": case "-autostart": case "-shot": case "-menu": case "-padtest": case "-fieldtest": case "-walltest": case "-balltest": case "-soaktest": case "-leotest": case "-leoauto": case "-realtest": case "-projtest": case "-cmttest": case "-model": case "-installtest": case "-halsimtest": case "-selftest": case "-settletest": case "-aitest": case "-bindtest": case "-drilltest": case "-aitestsec": case "-clockstart": case "-vsai": return true; }
             return false;
         }   // 自動測試不要去改使用者存的畫質設定
         void AutoQuality()

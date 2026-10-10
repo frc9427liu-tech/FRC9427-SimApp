@@ -24,7 +24,7 @@ namespace FrcSim
             for (int b = 0; b < 8; b++)
             {
                 if (b < 6) { h.Buttons[b] = true; h.Buttons2[b] = true; } else { h.Axes[b == 6 ? 2 : 3] = 1f; h.Axes2[b == 6 ? 2 : 3] = 1f; }
-                yield return new WaitForSeconds(2.5f);
+                yield return new WaitForSeconds(System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-longhold") >= 0 ? 7f : 2.5f);
                 var sbm = new StringBuilder();
                 foreach (var kv in h.Devices) if (kv.Key.StartsWith("CANMotor/")) { double v = kv.Value["<motorVoltage"] != null ? (double)kv.Value["<motorVoltage"] : 0; if (System.Math.Abs(v) > 0.3) sbm.Append(kv.Key.Substring(9) + "=" + v.ToString("0.0") + " "); }
                 var mm = GameSession.Mech;

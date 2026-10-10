@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Diagnostics;
 using UnityEngine;
 
@@ -54,6 +55,7 @@ namespace FrcSim
             float t = Time.unscaledTime; if (t < nextOk && cooldown < 2f && t - lastGoal > 1f) return;
             line = s; lineT = t; quiet = t; nextOk = t + cooldown;
             Stop();
+            if (EdgeOk == 1) { EdgeSpeak(s, rate); return; }
             try
             {
                 string cmd = "Add-Type -AssemblyName System.Speech; $s=New-Object System.Speech.Synthesis.SpeechSynthesizer; try{$s.SelectVoiceByHints('NotSet','NotSet',0,[Globalization.CultureInfo]'" + Cul + "')}catch{}; $s.Rate=" + rate + "; $s.Volume=" + vol + "; $s.Speak('" + s.Replace("'", "") + "')";
@@ -62,7 +64,60 @@ namespace FrcSim
             }
             catch { }
         }
-        void Stop() { try { if (speaking != null && !speaking.HasExited) speaking.Kill(); } catch { } speaking = null; }
+        // ---- 自然語音(可選):有裝 Python 的 edge-tts(pip install edge-tts)且能連網時,用微軟神經語音(zh-TW-YunJheNeural / en-US-GuyNeural);否則退回 Windows 內建語音
+        static int EdgeOk = -1;   // -1 未檢查 0 不可用 1 可用
+        AudioSource asrc; int speakId;
+        void Start()
+        {
+            asrc = gameObject.AddComponent<AudioSource>(); asrc.spatialBlend = 0f; asrc.volume = 1f;
+            if (System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-cmttest") >= 0) StartCoroutine(CmtTest());
+            new System.Threading.Thread(() =>
+            {
+                try
+                {
+                    var psi = new ProcessStartInfo("python", "-c \"import edge_tts\"") { CreateNoWindow = true, UseShellExecute = false };
+                    using (var p = Process.Start(psi)) { p.WaitForExit(15000); EdgeOk = p.ExitCode == 0 ? 1 : 0; }
+                }
+                catch { EdgeOk = 0; }
+            }) { IsBackground = true }.Start();
+        }
+        void EdgeSpeak(string s, int rate)
+        {
+            int id = ++speakId; string file = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "frcsim_cmt_" + id + ".mp3"); bool zh = Zh;
+            new System.Threading.Thread(() =>
+            {
+                try
+                {
+                    string voice = zh ? "zh-TW-YunJheNeural" : "en-US-GuyNeural";
+                    string r = "+" + (10 + rate * 8) + "%", pitch = "+" + (rate * 2) + "Hz";
+                    string text = s.Replace("\"", "").Replace("'", "");
+                    var psi = new ProcessStartInfo("python", "-m edge_tts --voice " + voice + " --rate=" + r + " --pitch=" + pitch + " --text \"" + text + "\" --write-media \"" + file + "\"") { CreateNoWindow = true, UseShellExecute = false };
+                    using (var p = Process.Start(psi)) { if (!p.WaitForExit(12000)) { try { p.Kill(); } catch { } return; } if (p.ExitCode != 0) { EdgeOk = 0; return; } }
+                    pending = new KeyValuePair<int, string>(id, file);
+                }
+                catch { EdgeOk = 0; }
+            }) { IsBackground = true }.Start();
+        }
+        KeyValuePair<int, string>? pending;
+        System.Collections.IEnumerator CmtTest()
+        {
+            yield return new WaitForSecondsRealtime(5f);
+            Say(Zh ? "藍隊進球了!漂亮!" : "Blue scores! Beautiful!", 1f, 2, 100);
+            yield return new WaitForSecondsRealtime(9f);
+            System.IO.File.WriteAllText(System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Application.dataPath), "cmttest.txt"), "edge=" + EdgeOk + " clip=" + (asrc.clip != null ? asrc.clip.length.ToString("0.00") + "s" : "none") + " playing=" + asrc.isPlaying);
+            Application.Quit();
+        }
+        System.Collections.IEnumerator PlayFile(int id, string file)
+        {
+            using (var req = UnityEngine.Networking.UnityWebRequestMultimedia.GetAudioClip("file:///" + file.Replace('\\', '/'), AudioType.MPEG))
+            {
+                yield return req.SendWebRequest();
+                if (req.result == UnityEngine.Networking.UnityWebRequest.Result.Success && id == speakId) { var c = UnityEngine.Networking.DownloadHandlerAudioClip.GetContent(req); asrc.Stop(); asrc.clip = c; asrc.Play(); }
+            }
+            try { System.IO.File.Delete(file); } catch { }
+        }
+        void LateUpdate() { if (pending.HasValue) { var p = pending.Value; pending = null; if (p.Key == speakId) StartCoroutine(PlayFile(p.Key, p.Value)); } }
+        void Stop() { try { if (speaking != null && !speaking.HasExited) speaking.Kill(); } catch { } speaking = null; if (asrc != null) asrc.Stop(); speakId++; }
         void OnDestroy() { Stop(); }
         void OnApplicationQuit() { Stop(); }
 
