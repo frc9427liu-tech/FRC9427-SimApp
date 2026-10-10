@@ -30,7 +30,7 @@ namespace FrcSim
             score = new GameObject("Score");
             score.AddComponent<HumanPlayer>();
             score.AddComponent<ScoreManager>();
-            Drive.ResetPose(); Mech.Held = 8; Mech.ShotsFired = 0; Mech.IntakeDown = false; Mech.Shooting = false; Mech.FlywheelRps = 0f;
+            Drive.ResetPose(); Mech.Held = 8; Mech.ShotsFired = 0; Mech.TotalCollected = 0; Mech.IntakeDown = false; Mech.Shooting = false; Mech.FlywheelRps = 0f;
             if (robot2 != null)
             {
                 var d2 = robot2.GetComponent<SwerveDrive>(); d2.ResetPose();

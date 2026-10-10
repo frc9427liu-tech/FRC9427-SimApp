@@ -25,6 +25,7 @@ namespace FrcSim
         public float FireInterval;       // >0:AI 難度用的發射間隔(秒);玩家 0 = 預設 1/8 秒
         public float CollectPerSec;      // >0:AI 難度用的吸球速率上限(顆/秒);玩家 0 = 不限
         float nextCollect;
+        public int TotalCollected;       // 本場吸進的球數(成績卡統計)
         public float SpreadDeg;          // 出球散布(度,AI 難度用;玩家 0)
         public int ShotsFired;
         public float TargetDistance;
@@ -176,7 +177,7 @@ namespace FrcSim
                 if (Held >= Capacity) break;
                 var f = h.GetComponent<Fuel>();
                 if (f == null) continue;
-                Held++;
+                Held++; TotalCollected++;
                 if (CollectPerSec > 0f) nextCollect = Time.time + 1f / CollectPerSec;
                 SpawnAbsorb(f.transform.position);
                 FuelManager.Remove(f);

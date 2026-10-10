@@ -463,6 +463,7 @@ namespace FrcSim
         }
 
         // ---------------------------------------------------------------- 流程
+        public static void PauseNow() { if (I != null && !I.menuVisible) I.ShowPause(); }
         public static void GoMain() { if (I != null) I.BackToMain(); }
 
         void StartGame()

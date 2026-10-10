@@ -31,6 +31,7 @@ namespace FrcSim
             }
         }
 
+        bool wasPadOk = true; float padLostUntil;
         void Start() { born = Time.unscaledTime; }
 
         void Update()
@@ -38,6 +39,9 @@ namespace FrcSim
             fps = Mathf.Lerp(fps, 1f / Mathf.Max(Time.unscaledDeltaTime, 1e-4f), 0.05f);
             if (Input.GetKeyDown(KeyCode.F3)) showDebug = !showDebug;
             if (Input.GetKeyDown(KeyCode.F5) && !MenuSystem.Blocking) GameSession.Rematch();
+            bool padOk = Pad.Mode != 2 || (Pad.DriverOnline && (Pad.OperatorOnline || Pad.OperatorKeyboard));
+            if (wasPadOk && !padOk && GameSession.Active && !MenuSystem.Blocking) { padLostUntil = Time.unscaledTime + 8f; MenuSystem.PauseNow(); }   // 手把掉線:自動暫停並提示
+            wasPadOk = padOk;
             if (Input.GetKeyDown(KeyCode.F1)) { showHelp = !showHelp; born = showHelp ? Time.unscaledTime - 9999f : Time.unscaledTime - 9999f; }
         }
 
@@ -155,10 +159,12 @@ namespace FrcSim
                 GUI.Label(new Rect(cx - 220, 56, 440, 24), $"{tl / 60}:{tl % 60:00}   {PhaseName(ScoreManager.Phase)}{hubs}", Style(15, dim, TextAnchor.UpperCenter, FontStyle.Bold));
             }
 
+            if (Time.unscaledTime < padLostUntil) { var tr = new Rect(cx - 250, H - 130, 500, 44); Panel(tr, 0.9f); GUI.Label(tr, L("⚠ 手把掉線了,已暫停。請重新插上 USB", "⚠ Controller lost - paused. Re-plug USB"), Style(18, new Color(1f, 0.8f, 0.3f), TextAnchor.MiddleCenter, FontStyle.Bold)); }
+
             // ---- 比賽結束:成績卡 + 再來一場 / 回主選單(手把 A / B,Enter 再來一場)
             if (ScoreManager.ClockOn && ScoreManager.Ended)
             {
-                float cw = 560, ch = 330;
+                float cw = 560, ch = 372;
                 var cr = new Rect(cx - cw / 2f, H / 2f - ch / 2f, cw, ch);
                 Panel(cr, 0.95f);
                 int bs = ScoreManager.BlueScore, rs = ScoreManager.RedScore;
@@ -167,8 +173,9 @@ namespace FrcSim
                 GUI.Label(new Rect(cr.x, cr.y + 22, cw, 30), L("比賽結束", "MATCH OVER"), Style(18, dim, TextAnchor.UpperCenter, FontStyle.Bold));
                 GUI.Label(new Rect(cr.x, cr.y + 54, cw, 70), res, Style(54, rc2, TextAnchor.UpperCenter, FontStyle.Bold));
                 GUI.Label(new Rect(cr.x, cr.y + 132, cw, 50), $"{L("藍", "BLUE")} {bs}  :  {rs} {L("紅", "RED")}", Style(34, Color.white, TextAnchor.UpperCenter, FontStyle.Bold));
-                if (GBtn(new Rect(cr.x + 40, cr.y + 214, 230, 56), L("再來一場  (A)", "Rematch  (A)"), true) || Pad.Down(Pad.A) || Input.GetKeyDown(KeyCode.Return)) GameSession.Rematch();
-                if (GBtn(new Rect(cr.x + cw - 270, cr.y + 214, 230, 56), L("回主選單  (B)", "Main menu  (B)"), false) || Pad.Down(Pad.B)) MenuSystem.GoMain();
+                if (Mech != null) { int sh = Mech.ShotsFired; GUI.Label(new Rect(cr.x, cr.y + 182, cw, 28), $"{L("你發射", "Shots")} {sh}    {L("進球", "Scored")} {bs}    {L("命中率", "Accuracy")} {(sh > 0 ? Mathf.Min(100, bs * 100 / sh) : 0)}%    {L("吸球", "Collected")} {Mech.TotalCollected}", Style(16, dim, TextAnchor.UpperCenter)); }
+                if (GBtn(new Rect(cr.x + 40, cr.y + 256, 230, 56), L("再來一場  (A)", "Rematch  (A)"), true) || Pad.Down(Pad.A) || Input.GetKeyDown(KeyCode.Return)) GameSession.Rematch();
+                if (GBtn(new Rect(cr.x + cw - 270, cr.y + 256, 230, 56), L("回主選單  (B)", "Main menu  (B)"), false) || Pad.Down(Pad.B)) MenuSystem.GoMain();
             }
             // ---- 開局提醒(例如專案沒有模擬設定檔、改用內建行為)
             if (GameSession.Notice != "" && Time.time < GameSession.NoticeUntil)
