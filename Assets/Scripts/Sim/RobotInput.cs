@@ -116,6 +116,16 @@ namespace FrcSim
             }
             else Drive.Drive(fwd * scale, -strafeRight * scale, rot * scale);
 
+            // 自動階段(AUTO)手把無效:真實比賽裡機器人程式自己跑。DS 其實照樣送搖桿值,而指令式程式在「沒有自動指令佔用底盤」的空檔(等待/只射擊)
+            // 預設的坦克駕駛指令會吃到搖桿,看起來就像「自動中還能開」——所以 AUTO 期間直接把虛擬搖桿歸零(按 N 可跳過 AUTO)
+            if (halLive && GameSession.Hal != null && GameSession.Hal.Autonomous)
+            {
+                var ha = GameSession.Hal;
+                for (int q = 0; q < 6; q++) { ha.Axes[q] = 0f; ha.Axes2[q] = 0f; }
+                for (int q = 0; q < ha.Buttons.Length; q++) { ha.Buttons[q] = false; ha.Buttons2[q] = false; }
+                ha.Pov2 = -1;
+            }
+
             if (Mech != null && !(halLive && tank))
             {
                 if (tank) { if (Input.GetKeyDown(KeyCode.I)) intakeLatch = !intakeLatch; Mech.IntakeDown = intakeLatch || Pad.Held(Pad.A); }
