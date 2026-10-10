@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace FrcSim
@@ -51,12 +51,16 @@ namespace FrcSim
         public void Init(Transform robot, Vector3 localTarget) { target = robot; local = localTarget; start = transform.position; }
         void Update()
         {
-            t += Time.deltaTime / 0.18f;
+            t += Time.deltaTime / 0.30f;
             if (target == null || t >= 1f) { Destroy(gameObject); return; }
-            transform.position = Vector3.Lerp(start, target.TransformPoint(local), t * t);
+            float e = 1f - (1f - t) * (1f - t);   // ease-out
+            Vector3 end = target.TransformPoint(local);
+            Vector3 p = Vector3.Lerp(start, end, e);
+            p.y += Mathf.Sin(t * Mathf.PI) * 0.22f;   // 拋物線彈進去
+            transform.position = p;
+            transform.localScale = Vector3.one * (Fuel.Radius * 2f * Mathf.Lerp(1f, 0.9f, t));
         }
     }
-
     public static class FuelManager
     {
         public static readonly List<Fuel> All = new List<Fuel>();

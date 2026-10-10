@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 namespace FrcSim
 {
@@ -20,7 +20,7 @@ namespace FrcSim
 
             var light = new GameObject("Sun").AddComponent<Light>();
             light.type = LightType.Directional;
-            light.intensity = 1.15f;
+            light.intensity = 0.95f;
             light.color = new Color(1f, 0.97f, 0.92f);
             light.transform.rotation = Quaternion.Euler(52f, -35f, 0f);
             light.shadows = LightShadows.Soft;
@@ -35,7 +35,7 @@ namespace FrcSim
             var camObj = Camera.main != null ? Camera.main.gameObject : new GameObject("Main Camera", typeof(Camera), typeof(AudioListener));
             camObj.tag = "MainCamera";
             var cam = camObj.GetComponent<Camera>();
-            cam.backgroundColor = new Color(0.10f, 0.12f, 0.16f);
+            cam.backgroundColor = new Color(0.07f, 0.09f, 0.14f);
             cam.allowMSAA = true;
             cam.clearFlags = CameraClearFlags.SolidColor;
             cam.nearClipPlane = 0.1f;

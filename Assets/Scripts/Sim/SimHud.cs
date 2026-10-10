@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 namespace FrcSim
 {
@@ -47,16 +47,22 @@ namespace FrcSim
             return s;
         }
 
-        static void Panel(Rect r, float alpha = 0.55f)
+        static void Rounded(Rect r, Color c, float rad = 10f)
         {
-            var old = GUI.color;
-            GUI.color = new Color(0.04f, 0.06f, 0.10f, alpha);
-            GUI.DrawTexture(r, Texture2D.whiteTexture);
-            GUI.color = new Color(0.30f, 0.50f, 0.75f, 0.45f);
-            GUI.DrawTexture(new Rect(r.x, r.y, 3f, r.height), Texture2D.whiteTexture);   // 左側細強調條
-            GUI.color = old;
+            GUI.DrawTexture(r, Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0f, c, Vector4.zero, new Vector4(rad, rad, rad, rad));
         }
 
+        static void Panel(Rect r, float alpha = 0.55f)
+        {
+            Rounded(r, new Color(0.05f, 0.07f, 0.12f, Mathf.Clamp01(alpha + 0.12f)), 10f);
+            Rounded(new Rect(r.x, r.y, r.width, 2f), new Color(0.35f, 0.62f, 1f, 0.8f), 1f);   // 上緣細亮線
+        }
+
+        static void Bar(Rect r, float frac, Color fill)
+        {
+            Rounded(r, new Color(1f, 1f, 1f, 0.12f), 5f);
+            if (frac > 0.01f) Rounded(new Rect(r.x, r.y, Mathf.Max(8f, r.width * Mathf.Clamp01(frac)), r.height), fill, 5f);
+        }
         void OnGUI()
         {
             if (Drive == null) return;
@@ -67,29 +73,39 @@ namespace FrcSim
             float W = Screen.width / sc, H = Screen.height / sc;
             var dim = new Color(0.78f, 0.84f, 0.92f);
 
-            // ---- 左上小面板
-            var lines = new System.Collections.Generic.List<string>();
-            lines.Add($"{Drive.Speed:0.0} m/s   {L("朝向", "hdg")} {Drive.HeadingRad * Mathf.Rad2Deg:0}°   FPS {fps:0}");
+            // ---- 左上面板:車速 / 持球條 / 飛輪條 / 射擊預測
+            float x0 = 12f, y0 = 12f, pw = 330f;
+            float ph = Mech != null ? 150f : 44f;
+            if (showDebug) ph += 22f * 3;
+            var pr = new Rect(x0, y0, pw, ph);
+            Panel(pr, 0.6f);
+            GUI.Label(new Rect(x0 + 14, y0 + 8, pw - 28, 24), $"{Drive.Speed:0.0} m/s    {L("朝向", "hdg")} {Mathf.DeltaAngle(0f, Drive.HeadingRad * Mathf.Rad2Deg):0}°    {fps:0} FPS", Style(15, dim));
             if (Mech != null)
             {
-                lines.Add($"{L("持球", "Fuel")} {Mech.Held}/{RobotMechanisms.Capacity}   {L("吸球器", "intake")} {(Mech.IntakeDown ? L("放下", "DOWN") : L("收起", "up"))}   {L("球道", "chute")} {HumanPlayer.BlueChute}(H)");
-                lines.Add($"{L("飛輪", "flywheel")} {Mech.FlywheelRps:0} rps   {(Mech.Shooting ? (Mech.Ready ? L("發射中", "firing") : L("加速中…", "spinning up…")) : L("待機", "idle"))}   {L("已射", "shots")} {Mech.ShotsFired}");
+                float yy = y0 + 38f;
+                GUI.Label(new Rect(x0 + 14, yy, 120, 22), L("儲球", "Fuel"), Style(14, dim));
+                GUI.Label(new Rect(x0 + pw - 114, yy, 100, 22), $"{Mech.Held} / {RobotMechanisms.Capacity}", Style(16, Color.white, TextAnchor.UpperRight, FontStyle.Bold));
+                Bar(new Rect(x0 + 14, yy + 24, pw - 28, 8), Mech.Held / (float)RobotMechanisms.Capacity, new Color(1f, 0.85f, 0.1f));
+                yy += 42f;
+                bool spun = Mech.FlywheelRps > 8f;
+                GUI.Label(new Rect(x0 + 14, yy, 150, 22), L("飛輪", "Flywheel") + $" {Mech.FlywheelRps:0} rps", Style(14, dim));
+                string st2 = Mech.Shooting ? L("發射中", "FIRING") : (spun ? L("轉速中", "SPINNING") : L("待機", "IDLE"));
+                GUI.Label(new Rect(x0 + pw - 134, yy, 120, 22), st2, Style(14, Mech.Shooting ? new Color(0.4f, 1f, 0.5f) : dim, TextAnchor.UpperRight, FontStyle.Bold));
+                Bar(new Rect(x0 + 14, yy + 24, pw - 28, 8), Mech.FlywheelRps / 40f, Mech.ShotWillScore ? new Color(0.3f, 1f, 0.4f) : new Color(0.4f, 0.7f, 1f));
+                yy += 42f;
+                string hint = Mech.ShotHint != "" ? Mech.ShotHint : L("開飛輪後顯示預測落點", "spin flywheel to preview shot");
+                Color hc = Mech.ShotHint == "" ? new Color(1f, 1f, 1f, 0.45f) : (Mech.ShotWillScore ? new Color(0.4f, 1f, 0.5f) : new Color(1f, 0.7f, 0.25f));
+                GUI.Label(new Rect(x0 + 14, yy, pw - 28, 22), hint + $"      {L("吸球器", "intake")} " + (Mech.IntakeDown ? L("放下", "DOWN") : L("收起", "up")), Style(14, hc, TextAnchor.UpperLeft, FontStyle.Bold));
             }
             if (showDebug)
             {
                 Vector2 p = Drive.Pose2d;
-                lines.Add($"x {p.x:0.00}  y {p.y:0.00} m   ω {Drive.Omega:0.0} rad/s   {(Drive.FieldCentric ? L("場地座標", "field") : L("車體座標", "robot"))}  {Rig.ModeName}");
-                if (Mech != null) lines.Add($"{L("仰角板", "hood")} {Mech.HoodDeg:0.0}°   {L("距 HUB", "hub dist")} {Mech.TargetDistance:0.00} m");
-                if (GameSession.Hal != null) lines.Add(L("機器人程式: ", "ROBOT CODE: ") + GameSession.Hal.Status + L("  訊息 ", "  msgs ") + GameSession.Hal.MessagesIn);
+                float dy = y0 + ph - 66f;
+                GUI.Label(new Rect(x0 + 14, dy, pw - 20, 20), $"x {p.x:0.00}  y {p.y:0.00} m   ω {Drive.Omega:0.0} rad/s  {(Drive.FieldCentric ? L("場地座標", "field") : L("車體座標", "robot"))}", Style(12, dim));
+                if (Mech != null) GUI.Label(new Rect(x0 + 14, dy + 20, pw - 20, 20), $"{L("仰角板", "hood")} {Mech.HoodDeg:0.0}°   {L("距 HUB", "hub dist")} {Mech.TargetDistance:0.00} m   {L("已射", "shots")} {Mech.ShotsFired}", Style(12, dim));
+                if (GameSession.Hal != null) GUI.Label(new Rect(x0 + 14, dy + 40, pw - 20, 20), L("機器人程式: ", "ROBOT CODE: ") + GameSession.Hal.Status + L("  訊息 ", "  msgs ") + GameSession.Hal.MessagesIn, Style(12, dim));
             }
-            float lh = 22f;
-            var pr = new Rect(10, 10, 420, 14 + lines.Count * lh);
-            Panel(pr);
-            var st = Style(15, Color.white);
-            for (int i = 0; i < lines.Count; i++)
-                GUI.Label(new Rect(pr.x + 12, pr.y + 7 + i * lh, pr.width - 16, lh), lines[i], st);
-            GUI.Label(new Rect(pr.x + 12, pr.yMax + 2, 300, 20), L("F1 按鍵說明   F3 詳細數據", "F1 help   F3 details"), Style(12, new Color(1f, 1f, 1f, 0.45f)));
-
+            GUI.Label(new Rect(pr.x + 6, pr.yMax + 2, 300, 20), L("F1 按鍵說明   F3 詳細數據", "F1 help   F3 details"), Style(12, new Color(1f, 1f, 1f, 0.45f)));
             // ---- 頂部中央:比分 + 計時
             float cx = W / 2f;
             Panel(new Rect(cx - 150, 10, 300, 40), 0.6f);

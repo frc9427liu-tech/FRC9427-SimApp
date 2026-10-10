@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using GLTFast;
 using UnityEngine;
@@ -84,6 +84,21 @@ namespace FrcSim
                     r.sharedMaterials = mats;
                     r.shadowCastingMode = r.bounds.size.magnitude < 0.3f ? UnityEngine.Rendering.ShadowCastingMode.Off : UnityEngine.Rendering.ShadowCastingMode.On;   // 小零件不投影,省陰影運算
                     r.receiveShadows = true;
+                }
+
+                // 美化:大面積貼地的平面 = 地毯,改成深藍灰(官方地毯是深色),場地才不會一片白
+                {
+                    var carpet = FieldBuilder.MakeMat(new Color(0.16f, 0.185f, 0.23f));
+                    foreach (var r in root.GetComponentsInChildren<Renderer>(true))
+                    {
+                        var bb = r.bounds;
+                        if (bb.size.y < 0.08f && bb.max.y < 0.12f && bb.size.x > 5f && bb.size.z > 3f)
+                        {
+                            var ms = r.sharedMaterials;
+                            for (int i = 0; i < ms.Length; i++) ms[i] = carpet;
+                            r.sharedMaterials = ms;
+                        }
+                    }
                 }
 
                 // 靜態合批:把同材質的 mesh 合併,大幅減少 draw call

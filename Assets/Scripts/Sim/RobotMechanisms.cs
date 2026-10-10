@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 namespace FrcSim
 {
@@ -185,10 +185,11 @@ namespace FrcSim
             g.transform.position = from;
             g.transform.localScale = Vector3.one * (Fuel.Radius * 2f);
             g.GetComponent<Renderer>().sharedMaterial = FuelManager.BallMat;
-            g.AddComponent<AbsorbAnim>().Init(transform, new Vector3(0f, 0.35f, 0f));
+            g.AddComponent<AbsorbAnim>().Init(transform, SlotPos(Mathf.Min(Held - 1, 23)));
         }
 
         // 車內球數顯示:Held 顆小球疊在車內(最多 24 顆),球數變多肉眼看得到
+        static Vector3 SlotPos(int i) { int col = i % 4, row = (i / 4) % 3, layer = i / 12; return new Vector3(-0.18f + col * 0.12f, 0.30f + layer * 0.14f, -0.12f + row * 0.12f); }
         readonly System.Collections.Generic.List<Transform> heldViz = new System.Collections.Generic.List<Transform>();
         void LateUpdate()
         {
@@ -202,11 +203,79 @@ namespace FrcSim
                 g.GetComponent<Renderer>().sharedMaterial = FuelManager.BallMat;
                 int i = heldViz.Count;
                 int col = i % 4, row = (i / 4) % 3, layer = i / 12;
-                g.transform.localPosition = new Vector3(-0.18f + col * 0.12f, 0.30f + layer * 0.14f, -0.12f + row * 0.12f);
+                g.transform.localPosition = SlotPos(i);
                 heldViz.Add(g.transform);
             }
             for (int i = 0; i < heldViz.Count; i++) heldViz[i].gameObject.SetActive(i < n);
         }
+
+        // ---- 預測彈道:用「現在的飛輪轉速」算球會落哪,畫在場上(進 = 綠、沒進 = 橘),並給 HUD 顯示太短/太長
+        public string ShotHint = "";
+        public bool ShotWillScore;
+        LineRenderer arc;
+        Material matOk, matNo;
+        readonly System.Collections.Generic.List<Vector3> arcPts = new System.Collections.Generic.List<Vector3>();
+
+        void UpdatePrediction()
+        {
+            if (arc == null)
+            {
+                var go = new GameObject("ShotArc");
+                arc = go.AddComponent<LineRenderer>();
+                arc.widthMultiplier = 0.035f;
+                arc.numCapVertices = 4;
+                arc.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                arc.receiveShadows = false;
+            }
+            if (FlywheelRps < 8f || Drive == null) { arc.enabled = false; ShotHint = ""; return; }
+            Vector2 pos = Drive.Pose2d; float heading = Drive.HeadingRad;
+            float yaw = heading + TurretRad;
+            float elev = (ShotElevDeg > 0f ? ShotElevDeg : 71f - 0.75f * HoodDeg) * Mathf.Deg2Rad;
+            float speed = ShotSpeedPerRps * FlywheelRps + ShotSpeedBase;
+            float c = Mathf.Cos(heading), s = Mathf.Sin(heading);
+            Vector2 off = new Vector2(ShooterCalc.TurretOffset.x * c, ShooterCalc.TurretOffset.x * s);
+            Vector3 p = new Vector3(pos.x + off.x, LaunchHeight, pos.y + off.y);
+            Vector3 v = new Vector3(Mathf.Cos(yaw) * Mathf.Cos(elev) * speed + Drive.Velocity.x,
+                                    Mathf.Sin(elev) * speed,
+                                    Mathf.Sin(yaw) * Mathf.Cos(elev) * speed + Drive.Velocity.y);
+            float W = SimConstants.FieldWidth, L = SimConstants.FieldLength;
+            float hd = SimConstants.AllianceZoneDepth + SimConstants.HubSize / 2f;
+            Vector2 hubB = new Vector2(hd, W / 2f), hubR = new Vector2(L - hd, W / 2f);
+            Vector2 hub = (new Vector2(p.x, p.z) - hubB).sqrMagnitude < (new Vector2(p.x, p.z) - hubR).sqrMagnitude ? hubB : hubR;
+            arcPts.Clear(); arcPts.Add(p);
+            bool crossed = false, inside = false; float along = 0f;
+            const float dt = 0.02f, rim = SimConstants.HubRimHeight;
+            for (int i = 0; i < 150; i++)
+            {
+                Vector3 pn = p + v * dt;
+                v.y -= 9.81f * dt;
+                v /= (1f + 0.375f * dt);
+                if (!crossed && v.y < 0f && p.y >= rim && pn.y < rim)
+                {
+                    float f = (p.y - rim) / Mathf.Max(p.y - pn.y, 1e-4f);
+                    Vector3 cp = Vector3.Lerp(p, pn, f);
+                    crossed = true;
+                    inside = Mathf.Abs(cp.x - hub.x) < 0.5f && Mathf.Abs(cp.z - hub.y) < 0.5f;
+                    Vector2 dir = new Vector2(Mathf.Cos(yaw), Mathf.Sin(yaw));
+                    along = Vector2.Dot(new Vector2(cp.x, cp.z) - hub, dir);   // 負 = 還沒到 HUB 中心(太短)
+                    arcPts.Add(cp);
+                    break;
+                }
+                p = pn; arcPts.Add(p);
+                if (p.y < 0.05f) break;
+            }
+            ShotWillScore = crossed && inside;
+            if (!crossed) ShotHint = "球飛不到 HUB 高度";
+            else if (inside) ShotHint = "預測進球";
+            else ShotHint = along < 0f ? $"太短 {Mathf.Abs(along):0.0} m" : $"太長 {along:0.0} m";
+            arc.enabled = true;
+            arc.positionCount = arcPts.Count;
+            arc.SetPositions(arcPts.ToArray());
+            if (matOk == null) { matOk = FieldBuilder.MakeMat(new Color(0.3f, 1f, 0.4f)); matNo = FieldBuilder.MakeMat(new Color(1f, 0.6f, 0.15f)); }
+            arc.sharedMaterial = ShotWillScore ? matOk : matNo;
+        }
+
+        void Update() { UpdatePrediction(); }
 
         void Fire(Vector2 pos, float heading)
         {
