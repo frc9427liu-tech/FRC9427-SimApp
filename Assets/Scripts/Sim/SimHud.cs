@@ -56,6 +56,7 @@ namespace FrcSim
             fps = Mathf.Lerp(fps, 1f / Mathf.Max(Time.unscaledDeltaTime, 1e-4f), 0.05f);
             if (Input.GetKeyDown(KeyCode.F3)) showDebug = !showDebug;
             if (Input.GetKeyDown(KeyCode.F12)) StartCoroutine(SaveShot());
+            if (Input.GetKeyDown(KeyCode.G) && !MenuSystem.Blocking) Prefs.SetInt("minimap", Prefs.GetInt("minimap", 1) == 1 ? 0 : 1);
             if (Input.GetKeyDown(KeyCode.F5) && !MenuSystem.Blocking) GameSession.Rematch();
             { bool loading = GameSession.Hal != null && !GameSession.Hal.Connected && !GameSession.Hal.Failed; if (loading) { Time.timeScale = 0f; wasLoading = true; } else if (wasLoading) { wasLoading = false; Time.timeScale = 1f; if (GameSession.Hal != null && GameSession.Hal.LoadedSecs > 5f) { PlayerPrefs.SetFloat("robotLoadSecs", GameSession.Hal.LoadedSecs); PlayerPrefs.Save(); } } }
             if (GameSession.AutoDrillTest && GameSession.Drill && Mech != null) Mech.Shooting = Mech.Held > 0;
@@ -141,6 +142,31 @@ namespace FrcSim
             Rounded(r, new Color(1f, 1f, 1f, 0.12f), 5f);
             if (frac > 0.01f) Rounded(new Rect(r.x, r.y, Mathf.Max(8f, r.width * Mathf.Clamp01(frac)), r.height), fill, 5f);
         }
+        // 小地圖(右上角):場地、球、機器人與朝向。G 開關。
+        void DrawMinimap(float W)
+        {
+            if (Prefs.GetInt("minimap", 1) != 1 || GameSession.Drive == null || MenuSystem.Blocking) return;
+            float L = SimConstants.FieldLength, Wf = SimConstants.FieldWidth;
+            float mw = 210f, mh = mw * Wf / L, mx = W - mw - 16f, my = 14f;
+            Panel(new Rect(mx - 6, my - 6, mw + 12, mh + 12), 0.55f);
+            Rounded(new Rect(mx, my, mw / 2f, mh), new Color(0.12f, 0.36f, 1f, 0.28f), 6f);
+            Rounded(new Rect(mx + mw / 2f, my, mw / 2f, mh), new Color(0.95f, 0.2f, 0.22f, 0.28f), 6f);
+            var wt = Texture2D.whiteTexture; GUI.color = new Color(1f, 1f, 1f, 0.35f); GUI.DrawTexture(new Rect(mx + mw / 2f - 0.5f, my, 1f, mh), wt);
+            int n = 0;
+            foreach (var f in FuelManager.All)
+            {
+                if (f == null || !f.gameObject.activeInHierarchy) continue;
+                if ((++n & 1) == 0 && FuelManager.All.Count > 160) continue;   // 球太多時抽樣畫,保持乾淨
+                var fp = f.transform.position; GUI.color = new Color(1f, 0.85f, 0.1f, 0.9f);
+                GUI.DrawTexture(new Rect(mx + fp.x / L * mw - 1f, my + (1f - fp.z / Wf) * mh - 1f, 2.5f, 2.5f), wt);
+            }
+            var rp = GameSession.Drive.Pose2d; float h = GameSession.Drive.HeadingRad;
+            float rx = mx + rp.x / L * mw, ry = my + (1f - rp.y / Wf) * mh;
+            GUI.color = Color.white; GUI.DrawTexture(new Rect(rx - 3.5f, ry - 3.5f, 7f, 7f), wt);
+            for (int k = 1; k <= 4; k++) GUI.DrawTexture(new Rect(rx + Mathf.Cos(h) * k * 3f - 1f, ry - Mathf.Sin(h) * k * 3f - 1f, 2.2f, 2.2f), wt);   // 車頭方向
+            GUI.color = Color.white;
+        }
+
         void OnGUI()
         {
             if (Drive == null) return;
@@ -216,6 +242,7 @@ namespace FrcSim
                 }
             }
             GUI.Label(new Rect(16, H - 74, 300, 20), L("F1 按鍵說明   F3 詳細數據", "F1 help   F3 details"), Style(12, new Color(1f, 1f, 1f, 0.55f)));
+            DrawMinimap(W);
             // ---- 頂部中央:比分 + 計時(運動轉播風格:藍/紅色塊 + 中央大計時)
             {
                 float sw = 460f, sh = 62f, sx = cx - sw / 2f, sy = 10f;
@@ -360,6 +387,8 @@ namespace FrcSim
         }
     }
 }
+
+
 
 
 
