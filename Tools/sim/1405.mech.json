@@ -16,9 +16,9 @@
     "[28]": { "inertia": 0.0002, "friction": 0.01, "minRot": -1.0, "maxRot": 63.0 },
     "[25]": { "inertia": 0.00045, "friction": 0.005 },
     "[40]": { "inertia": 0.00045, "friction": 0.005 },
-    "[41]": { "inertia": 0.00155, "friction": 0.005 },
-    "[42]": { "inertia": 0.00155, "friction": 0.005 },
-    "[43]": { "inertia": 0.00155, "friction": 0.005 }
+    "[41]": { "inertia": 0.0008, "friction": 0.0005 },
+    "[42]": { "inertia": 0.0008, "friction": 0.0005 },
+    "[43]": { "inertia": 0.0008, "friction": 0.0005 }
   },
   "chassis": {
     "type": "swerve",
