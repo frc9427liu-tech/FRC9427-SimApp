@@ -9,7 +9,7 @@ namespace FrcSim
         public bool Orbit;
         public int Mode = 1;
         Vector3 velPos;
-        float chaseYaw; bool chaseInit;
+        float chaseYaw; bool chaseInit; Vector3 pivotBase; bool pivotBaseSet;
         public static int ActiveMode; bool slowApplied; float orbitT; int dirScore; float dirHold, dirHub;
 
         public string ModeName => Mode == 0 ? "overview" : Mode == 1 ? "chase" : Mode == 7 ? "operator" : Mode == 8 ? "broadcast" : "top-down";
@@ -44,7 +44,7 @@ namespace FrcSim
                 string proj = Prefs.GetString("robotProject", ""); string nm = string.IsNullOrEmpty(proj) ? "FRC 9427" : System.IO.Path.GetFileName(proj.TrimEnd('\\', '/'));
                 if (gBig == null) { gBig = new GUIStyle(GUI.skin.label) { fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleLeft }; gSmall = new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleLeft }; }
                 gBig.fontSize = Mathf.RoundToInt(Screen.height * 0.07f); gSmall.fontSize = Mathf.RoundToInt(Screen.height * 0.028f);
-                float x = Screen.width * 0.07f + (1f - a) * -80f, y = Screen.height * 0.70f;
+                float x = Screen.width * 0.07f + (1f - a) * -80f, y = Screen.height * 0.36f;
                 GUI.color = new Color(0.25f, 0.55f, 1f, a); GUI.DrawTexture(new Rect(x - 18f, y, 6f, Screen.height * 0.13f), Texture2D.whiteTexture);
                 GUI.color = new Color(1f, 1f, 1f, a); GUI.Label(new Rect(x, y - 4f, Screen.width * 0.7f, Screen.height * 0.08f), nm, gBig);
                 GUI.color = new Color(1f, 1f, 1f, a * 0.75f); GUI.Label(new Rect(x, y + Screen.height * 0.08f, Screen.width * 0.7f, Screen.height * 0.05f), Loc.Lang == "en" ? "REBUILT 2026  ·  Match starting" : "REBUILT 2026  ·  比賽即將開始", gSmall);
@@ -56,6 +56,18 @@ namespace FrcSim
         {
             TickIntroPending();
             if (IntroOn) introT += Mathf.Min(Time.unscaledDeltaTime, 0.033f);   // 載入卡頓的大幀不能把進場動畫一次吃掉
+            // 車子「開進場」:外觀(ModelPivot)從車尾方向 7 m 外滑進來,前 1.7 秒緩動到位(只動外觀,物理車一直在出生點)
+            if (Target != null)
+            {
+                var piv = Target.Find("ModelPivot");
+                if (piv != null)
+                {
+                    if (!pivotBaseSet) { pivotBase = piv.localPosition; pivotBaseSet = true; }
+                    if (introPending) piv.localPosition = pivotBase + new Vector3(-7f, 0f, 0f);   // 等載入時先藏在場外,不要先閃一下
+                    else if (introT < 1.7f) { float k2 = 1f - Mathf.Pow(1f - Mathf.Clamp01(introT / 1.7f), 3f); piv.localPosition = pivotBase + new Vector3(-7f * (1f - k2), 0f, 0f); }
+                    else if (piv.localPosition != pivotBase) piv.localPosition = pivotBase;
+                }
+            }
             if (!Orbit && !MenuSystem.Blocking && Input.GetKeyDown(KeyCode.C)) Mode = Mode == 1 ? 2 : Mode == 2 ? 0 : Mode == 0 ? 7 : Mode == 7 ? 8 : 1;
         }
 
