@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace FrcSim
 {
@@ -20,6 +20,7 @@ namespace FrcSim
             var go = new GameObject("PreviewRobot"); I = go.AddComponent<PreviewRobot>();
         }
 
+        public static float Dist = 2.7f;   // 滾輪縮放:鏡頭距離(公尺)
         public static float DragDeg;   // 滑鼠左鍵在右側空白處拖曳 = 轉動檢視角度
         GUIStyle nameSt, subSt;
         void OnGUI()
@@ -38,6 +39,7 @@ namespace FrcSim
         void Update()
         {
             if (Want && Input.GetMouseButton(0) && Input.mousePosition.x > Screen.width * 0.42f) DragDeg -= Input.GetAxis("Mouse X") * 4f;
+            if (Want) Dist = Mathf.Clamp(Dist - Input.mouseScrollDelta.y * 0.25f, 1.8f, 4.5f);
             var rig = FindFirstObjectByType<CameraRig>();
             bool menuMode = rig != null && rig.Orbit && GameSession.Drive == null;
             if (!menuMode || !Want) { Clear(); return; }

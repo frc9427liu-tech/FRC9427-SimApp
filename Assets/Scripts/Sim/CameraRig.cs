@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace FrcSim
 {
@@ -83,7 +83,7 @@ namespace FrcSim
                     // 機器人預覽:貼近車子慢慢繞一圈;注視點往旁邊偏,讓車出現在左側選單面板的右邊
                     Vector3 pc = PreviewRobot.Center + Vector3.up * 0.35f;
                     float ang = Mathf.Deg2Rad * (105f + PreviewRobot.DragDeg + Mathf.Sin(Time.unscaledTime * 0.35f) * 25f);   // 站在 +z 側看,背景是對面看台(不是 HUB)
-                    Vector3 pp = pc + new Vector3(Mathf.Cos(ang) * 2.7f, 1.0f, Mathf.Sin(ang) * 2.7f);
+                    Vector3 pp = pc + new Vector3(Mathf.Cos(ang) * PreviewRobot.Dist, 1.0f * PreviewRobot.Dist / 2.7f, Mathf.Sin(ang) * PreviewRobot.Dist);
                     Vector3 fwd = (pc - pp); Vector3 right = Vector3.Cross(Vector3.up, fwd).normalized;
                     Vector3 look = pc - right * 0.95f;
                     transform.position = Vector3.Lerp(transform.position, pp, 1f - Mathf.Exp(-4f * Time.unscaledDeltaTime));
@@ -203,3 +203,4 @@ namespace FrcSim
         }
     }
 }
+
