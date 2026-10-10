@@ -15,6 +15,7 @@ namespace FrcSim
 
             new GameObject("UpdateCheck").AddComponent<UpdateCheck>();
             FieldBuilder.Build();
+            if (System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-noarena") < 0) ArenaBuilder.Build();   // 場館環境(看台/後牆/天花板燈)
             if (System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-boxfield") < 0) FieldModel.Load();   // 官方場地模型(-boxfield 可退回方塊外觀)
 
             var light = new GameObject("Sun").AddComponent<Light>();
