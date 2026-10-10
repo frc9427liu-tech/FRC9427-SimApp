@@ -59,6 +59,12 @@ namespace FrcSim
                 if (nearest < dCam) pos = org + toCam / dCam * Mathf.Max(0.9f, nearest - 0.15f) + Vector3.up * 0.8f;
                 rot = Quaternion.LookRotation(Target.position + fwdC * 0.9f - pos, Vector3.up);
             }
+            else if (Mode == 6)
+            {
+                // 觀眾席視角(-camera 6):站在場內低處看對面看台,檢查觀眾外觀
+                pos = new Vector3(L * 0.5f, 1.7f, 0.8f);
+                rot = Quaternion.LookRotation(new Vector3(L * 0.25f, 3.2f, W + 3f) - pos, Vector3.up);
+            }
             else if (Mode == 5)
             {
                 pos = Target.position + new Vector3(0f, 2.4f, 0f);

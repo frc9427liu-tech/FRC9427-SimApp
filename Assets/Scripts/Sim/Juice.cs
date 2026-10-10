@@ -14,7 +14,7 @@ namespace FrcSim
         // ---- values the HUD can read ----
         public static float ScorePop;      // 1 -> 0 after the player's alliance scores (scale the score label)
         public static float BeepPulse;     // 1 -> 0 after each countdown beep (tint/scale the timer label)
-        static float excitement;           // crowd energy 0..1.2
+        static float excitement; public static float Excitement => excitement;           // crowd energy 0..1.2
 
         static bool booted; static Camera cam;
         static readonly int[] streak = new int[2]; static readonly float[] lastScoreT = new float[2];

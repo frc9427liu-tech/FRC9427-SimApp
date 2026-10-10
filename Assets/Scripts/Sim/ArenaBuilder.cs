@@ -62,6 +62,7 @@ namespace FrcSim
                 Box($"Banner{end}", new Vector3(x - end * 0.3f, 3.6f, W / 2f), new Vector3(0.1f, 1.6f, W * 0.7f), banner, false);
             }
 
+            Crowd.Build(root, L, W);   // 真正的觀眾(約 800 人,GPU instancing)
             Box("Ceiling", new Vector3(L / 2f, 18.5f, W / 2f), new Vector3(L + 40f, 0.5f, W + 40f), ceilMat);
             for (int i = 0; i < 6; i++)
                 for (int j = 0; j < 3; j++)
