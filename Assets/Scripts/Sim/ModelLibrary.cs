@@ -29,8 +29,18 @@ namespace FrcSim
             new M { Id = "as_presto", ZhName = "Presto(6328)", EnName = "Presto (6328)", Tag = "frc-6328-assets-v2", Zip = "Robot_PrestoV3.zip", Credit = "FRC 6328 / AdvantageScope assets" },
         };
 
+        // 使用者匯入的隊伍車模(C:\FRC\models\team_*.glb,由 convert.py 轉出:Y 向上、車頭 +Z)
+        public static M[] Customs()
+        {
+            try { var l = new System.Collections.Generic.List<M>(); foreach (var f in Directory.GetFiles(LibDir, "team_*.glb")) { string n = System.IO.Path.GetFileNameWithoutExtension(f).Substring(5); l.Add(new M { Id = System.IO.Path.GetFileNameWithoutExtension(f), ZhName = n.Replace("_", " ") + "(匯入)", EnName = n.Replace("_", " ") + " (imported)", Credit = "imported" }); } return l.ToArray(); }
+            catch { return new M[0]; }
+        }
+        public static void ImportIncoming(System.Action done = null)
+        {
+            new Thread(() => { try { Directory.CreateDirectory(System.IO.Path.Combine(LibDir, "incoming")); string src = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(UnityEngine.Application.dataPath), "Sim", "convert.py"); if (File.Exists(src)) File.Copy(src, System.IO.Path.Combine(LibDir, "convert.py"), true); var pip = new ProcessStartInfo("python", "-m pip install --quiet trimesh cascadio fast-simplification numpy") { UseShellExecute = false, CreateNoWindow = true }; using (var pp = Process.Start(pip)) pp.WaitForExit(600000); var psi = new ProcessStartInfo("python", "\"" + System.IO.Path.Combine(LibDir, "convert.py") + "\"") { UseShellExecute = false, CreateNoWindow = true }; using (var p = Process.Start(psi)) p.WaitForExit(600000); } catch { } done?.Invoke(); }) { IsBackground = true }.Start();
+        }
         public static float Yaw(string file) { var x = Find(file); return x == null ? 0f : 90f + x.YawAdd; }
-        public static M Find(string file) { foreach (var m in All) if (m.File == file || m.Id == file) return m; return null; }
+        public static M Find(string file) { foreach (var m in All) if (m.File == file || m.Id == file) return m; foreach (var m in Customs()) if (m.File == file || m.Id == file) return m; return null; }
         public static bool Is(string file) { return Find(file) != null; }
         public static bool Installed(M m) { return System.IO.File.Exists(m.Path); }
         public static string Name(M m) { return Loc.Lang == "en" ? m.EnName : m.ZhName; }

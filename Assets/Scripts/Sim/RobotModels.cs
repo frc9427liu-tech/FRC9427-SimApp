@@ -18,7 +18,7 @@ namespace FrcSim
             try
             {
                 var l = Directory.Exists(Dir) ? Directory.GetFiles(Dir, "*.glb").Select(Path.GetFileName).ToList() : new List<string>();
-                foreach (var m in ModelLibrary.All) if (ModelLibrary.Installed(m)) l.Add(m.File);   // 開源模型庫下載到 C:\FRC\models 的也算
+                foreach (var m in ModelLibrary.All) if (ModelLibrary.Installed(m)) l.Add(m.File); foreach (var m in ModelLibrary.Customs()) l.Add(m.File);   // 開源模型庫下載到 C:\FRC\models 的也算
                 return l.OrderBy(x => x).ToArray();
             }
             catch { return new string[0]; }

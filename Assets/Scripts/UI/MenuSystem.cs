@@ -337,7 +337,8 @@ namespace FrcSim
         }        Item[] ModelLibItems()
         {
             var l = new List<Item>();
-            foreach (var mm in ModelLibrary.All)
+            var allM = new List<ModelLibrary.M>(ModelLibrary.All); allM.AddRange(ModelLibrary.Customs());
+            foreach (var mm in allM)
             {
                 var m2 = mm;
                 l.Add(new Item(() =>
@@ -350,8 +351,11 @@ namespace FrcSim
                     RobotModels.Selected = m2.File; PlayerPrefs.DeleteKey("modelYaw");
                 }));
             }
+            l.Add(new Item(() => importing ? Z("匯入中…(轉檔)", "Importing…") : Z("匯入 CAD(STEP/GLB):放進 C:\\FRC\\models\\incoming", "Import CAD (STEP/GLB) from C:\\FRC\\models\\incoming"), () => { if (importing) return; importing = true; ModelLibrary.ImportIncoming(() => importing = false); }));
             return l.ToArray();
-        }        Item[] CatalogItems()
+        }
+        bool importing;
+        Item[] CatalogItems()
         {
             var l = new List<Item>();
             foreach (var en in OpenSourceCatalog.All)
