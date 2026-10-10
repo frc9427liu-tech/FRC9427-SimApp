@@ -284,7 +284,10 @@ namespace FrcSim
                 if (hal.Failed)
                 {
                     GUI.Label(new Rect(lr.x, lr.y + 28, lw, 36), L("機器人程式啟動失敗", "Robot code failed to start"), Style(24, new Color(1f, 0.6f, 0.4f), TextAnchor.UpperCenter, FontStyle.Bold));
-                    GUI.Label(new Rect(lr.x + 20, lr.y + 74, lw - 40, 80), hal.Status, Style(14, dim, TextAnchor.UpperCenter));
+                    var ws = new GUIStyle(Style(14, dim, TextAnchor.UpperCenter)) { wordWrap = true };   // 長錯誤訊息要換行,不然兩側被裁掉
+                    string st = hal.Status ?? "";
+                    if (st.Contains("Sharing violation") || st.Contains("being used by another process")) st = L("可能已經開了另一個模擬器(或舊的機器人程式還在跑),請先關掉它再試。\n", "Another simulator (or an old robot process) may still be running — close it and retry.\n") + st;
+                    GUI.Label(new Rect(lr.x + 20, lr.y + 74, lw - 40, 100), st, ws);
                 }
                 else
                 {

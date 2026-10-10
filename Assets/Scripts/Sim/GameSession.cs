@@ -75,7 +75,7 @@ namespace FrcSim
             score.AddComponent<HumanPlayer>();
             score.AddComponent<ScoreManager>();
 
-            robot = SimBootstrap.BuildRobot(out var turretVis, out var armVis);
+            robot = SimBootstrap.BuildRobot(out var turretVis, out var armVis); robot.AddComponent<BlobShadow>();
             Drive = robot.GetComponent<SwerveDrive>();
             Mech = robot.AddComponent<RobotMechanisms>();
             MechPresets.Apply(Mech);
@@ -87,7 +87,7 @@ namespace FrcSim
             // 第二台機器人(紅方,內建行為,方向鍵操控)
             if (Prefs.GetInt("secondRobot", 1) == 1)
             {
-                robot2 = SimBootstrap.BuildRobot(out var t2, out var a2, "Robot2", new Color(0.9f, 0.2f, 0.2f));
+                robot2 = SimBootstrap.BuildRobot(out var t2, out var a2, "Robot2", new Color(0.9f, 0.2f, 0.2f)); robot2.AddComponent<BlobShadow>();
                 var d2 = robot2.GetComponent<SwerveDrive>();
                 d2.ResetPose();
                 d2.SetPose(new Vector2(SimConstants.FieldLength - 2.0f, SimConstants.FieldWidth / 2f), 180f);
