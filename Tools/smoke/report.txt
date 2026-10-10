@@ -5,9 +5,10 @@ menu-controls  PASS  ok
 menu-catalog   PASS  ok
 menu-models    PASS  ok
 menu-presets   PASS  ok
+menu-about     PASS  ok
 game-chase     PASS  ok
 game-overview  PASS  ok
 game-end       PASS  ok
 game-en        PASS  ok
 ---
-失敗 0 / 11
+失敗 0 / 12

@@ -96,6 +96,7 @@ namespace FrcSim
             splashing = false;
             if (startMenu == "setup") { ShowRobotSetup(); yield break; } if (startMenu == "pad") { ShowPadSetup(ShowRobotSetup, ShowMain); yield break; }
             if (startMenu == "controls") { ShowControls(); yield break; }
+            if (startMenu == "about") { ShowAbout(); yield break; }
             if (startMenu == "settings") { settingsBack = ShowMain; ShowSettings(false); yield break; }
             if (startMenu == "modes") { ShowModes(); yield break; }
             if (startMenu == "catalog") { ShowSub(() => Z("開源機器人程式庫", "Open-source robot library"), () => Z("別隊公開的 2026 程式:下載後直接在模擬器跑", "Public 2026 team code: download and run"), CatalogItems()); yield break; }
@@ -525,6 +526,25 @@ namespace FrcSim
         }
         Action lastControls;
 
+        void ShowAbout()
+        { PreviewRobot.Want = false;
+            string Body() => Z(
+                "FRC 9427 模擬器  v" + UpdateCheck.Current + "   ·   MADE IN UNITY\n\n本軟體為非官方的學生專案,與 FIRST 無關。比賽規則依 2026 REBUILT 官方文件。\n\n機器人 3D 模型\n  • AdvantageScope 公開資產(Mechanical Advantage 6328,BSD-3-Clause)\n  • 2026 真機 CAD:971 / 604 / 967 / 3928 / 48 / 1678 / 2910(各隊在 Onshape 公開釋出,僅供個人學習使用)\n\n開源機器人程式(各隊 GitHub 公開,下載後在本機執行)\n  • FRC 6901、1710、1405、364、4915、REV ION StarterBot\n\n向以上所有團隊致謝。",
+                "FRC 9427 Simulator  v" + UpdateCheck.Current + "   ·   MADE IN UNITY\n\nUnofficial student project, not affiliated with FIRST. Rules follow the official 2026 REBUILT documents.\n\nRobot 3D models\n  • AdvantageScope public assets (Mechanical Advantage 6328, BSD-3-Clause)\n  • 2026 real CAD: 971 / 604 / 967 / 3928 / 48 / 1678 / 2910 (publicly released on Onshape; personal study use only)\n\nOpen-source robot code (public on each team's GitHub, run locally after download)\n  • FRC 6901, 1710, 1405, 364, 4915, REV ION StarterBot\n\nThank you to all of these teams.");
+            var s = Build(() => Z("關於 / 致謝", "About / Credits"), null, new[]
+            {
+                new Item(() => Loc.T("menu.back"), ShowMain),
+            }, ShowMain, content =>
+            {
+                var tx = UiKit.Label("About", content, Body(), 19, UiTheme.Text, TextAnchor.UpperLeft);
+                tx.lineSpacing = 1.15f; tx.horizontalOverflow = HorizontalWrapMode.Wrap; tx.verticalOverflow = VerticalWrapMode.Overflow;
+                UiKit.PlaceTL(tx.rectTransform, 90, 320, 640, 600);
+                lastControls = () => { tx.text = Body(); };
+            }, 940f);
+            s.Refreshers.Add(() => lastControls?.Invoke());
+            Show(s, false);
+        }
+
         void ShowPause()
         {
             var s = Build(() => Loc.T("pause.title"), null, new[]
@@ -656,5 +676,9 @@ namespace FrcSim
         }
     }
 }
+
+
+
+
 
 

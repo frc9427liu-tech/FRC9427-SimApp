@@ -16,6 +16,7 @@ $cases = @(
     @{ n = 'menu-catalog';  a = @('-menu','catalog') },
     @{ n = 'menu-models';   a = @('-menu','models') },
     @{ n = 'menu-presets';  a = @('-menu','presets') },
+    @{ n = 'menu-about';    a = @('-menu','about') },
     @{ n = 'game-chase';    a = @('-autostart','-freeze','-camera','1') },
     @{ n = 'game-overview'; a = @('-autostart','-freeze','-camera','0') },
     @{ n = 'game-end';      a = @('-autostart','-clockstart','157','-camera','1') },
@@ -42,4 +43,5 @@ foreach ($c in $cases) {
 $lines += "---`n失敗 $fail / $($cases.Count)"
 $lines | Set-Content (Join-Path $out 'report.txt') -Encoding utf8
 $lines
+
 
