@@ -352,7 +352,7 @@ namespace FrcSim
                     RobotModels.Selected = m2.File; PlayerPrefs.DeleteKey("modelYaw");
                 }));
             }
-            l.Add(new Item(() => importing ? Z("匯入中…(轉檔)", "Importing…") : Z("匯入 CAD(STEP/GLB):放進 C:\\FRC\\models\\incoming", "Import CAD (STEP/GLB) from C:\\FRC\\models\\incoming"), () => { if (importing) return; importing = true; ModelLibrary.ImportIncoming(() => importing = false); }));
+            l.Add(new Item(() => importing ? Z("匯入中…(轉檔)", "Importing…") : Z("匯入 CAD…(incoming 資料夾)", "Import CAD… (incoming folder)"), () => { if (importing) return; importing = true; ModelLibrary.ImportIncoming(() => importing = false); }));
             return l.ToArray();
         }
         bool importing;
@@ -656,4 +656,5 @@ namespace FrcSim
         }
     }
 }
+
 
