@@ -1,0 +1,13 @@
+﻿menu-setup     PASS  ok
+menu-settings  PASS  ok
+menu-modes     PASS  ok
+menu-controls  PASS  ok
+menu-catalog   PASS  ok
+menu-models    PASS  ok
+menu-presets   PASS  ok
+game-chase     PASS  ok
+game-overview  PASS  ok
+game-end       PASS  ok
+game-en        PASS  ok
+---
+失敗 0 / 11

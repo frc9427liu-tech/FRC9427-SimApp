@@ -67,14 +67,15 @@ namespace FrcSim
                         "Invoke-WebRequest '" + Base + m.Tag + "/" + m.Zip + "' -OutFile '" + tmp + "\\m.zip' -UseBasicParsing; " +
                         "Expand-Archive '" + tmp + "\\m.zip' '" + tmp + "\\x' -Force; Copy-Item '" + tmp + "\\x\\model.glb' '" + m.Path + "' -Force; Remove-Item '" + tmp + "' -Recurse -Force";
                     var psi = new ProcessStartInfo("powershell", "-NoProfile -EncodedCommand " + Convert.ToBase64String(System.Text.Encoding.Unicode.GetBytes(script))) { UseShellExecute = false, CreateNoWindow = true };
-                    using (var p = Process.Start(psi)) { if (!p.WaitForExit(300000)) { try { p.Kill(); } catch { } m.State = "下載逾時"; return; } if (p.ExitCode != 0) { m.State = "下載失敗(要連網)"; return; } }
-                    m.State = Installed(m) ? "" : "下載失敗";
+                    using (var p = Process.Start(psi)) { if (!p.WaitForExit(300000)) { try { p.Kill(); } catch { } m.State = Loc.Lang == "en" ? "Download timed out" : "下載逾時"; return; } if (p.ExitCode != 0) { m.State = Loc.Lang == "en" ? "Download failed (needs internet)" : "下載失敗(要連網)"; return; } }
+                    m.State = Installed(m) ? "" : (Loc.Lang == "en" ? "Download failed" : "下載失敗");
                 }
-                catch (Exception ex) { m.State = "失敗:" + ex.Message; }
+                catch (Exception ex) { m.State = (Loc.Lang == "en" ? "Failed: " : "失敗:") + ex.Message; }
                 if (m.State == "") done?.Invoke();
             }) { IsBackground = true }.Start();
         }
     }
 }
+
 
 
