@@ -134,7 +134,7 @@ namespace FrcSim
             {
                 aiTestT += Time.deltaTime;
                 if (aiTestT > Mathf.Floor(aiTestT - Time.deltaTime) && Mathf.Floor(aiTestT) != Mathf.Floor(aiTestT - Time.deltaTime))
-                    log.AppendLine($"t={aiTestT:0} st={st} pos=({p.x:0.0},{p.y:0.0}) hd={Drive.HeadingRad * Mathf.Rad2Deg:0} held={Mech.Held} shots={Mech.ShotsFired} red={ScoreManager.RedScore} blue={ScoreManager.BlueScore} spd={Drive.Speed:0.0} fuelMinY={FuelMinY():0.000} sunk={FuelSunk()} tgt=({target.x:0.0},{target.y:0.0}){(hasTarget ? "" : "!")} want=({want.x:0.0},{want.y:0.0}) esc={escapeT:0.0}");
+                    log.AppendLine($"t={aiTestT:0} st={st} pos=({p.x:0.0},{p.y:0.0}) hd={Drive.HeadingRad * Mathf.Rad2Deg:0} held={Mech.Held} shots={Mech.ShotsFired} red={ScoreManager.RedScore} blue={ScoreManager.BlueScore} spd={Drive.Speed:0.0} fuelMinY={FuelMinY():0.000} sunk={FuelSunk()} out={FuelOut()} tgt=({target.x:0.0},{target.y:0.0}){(hasTarget ? "" : "!")} want=({want.x:0.0},{want.y:0.0}) esc={escapeT:0.0}");
                 if (aiTestT > aiEnd)
                 {
                     System.IO.File.WriteAllText(System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Application.dataPath), "aitest-L" + Level + ".txt"), log.ToString());
@@ -162,6 +162,7 @@ namespace FrcSim
         }
 
         static float FuelMinY() { float m = 9f; foreach (var f in FuelManager.All) if (f != null) m = Mathf.Min(m, f.transform.position.y); return m; }
+        static int FuelOut() { int c = 0; float L = SimConstants.FieldLength, W = SimConstants.FieldWidth; foreach (var f in FuelManager.All) { if (f == null) continue; var p = f.transform.position; if (p.x < -0.3f || p.x > L + 0.3f || p.z < -0.3f || p.z > W + 0.3f || p.y < -0.05f) c++; } return c; }
         static int FuelSunk() { int c = 0; foreach (var f in FuelManager.All) if (f != null && f.transform.position.y < Fuel.Radius - 0.03f) c++; return c; }
 
         bool TargetGone()

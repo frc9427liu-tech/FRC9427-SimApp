@@ -65,6 +65,7 @@ namespace FrcSim
         }
         public static void HitStop(float seconds)   // internal-physics mode only (HALSim runs against wall-clock)
         {
+            return;   // hit-stop 已停用:把 timeScale 拉到 0.09 會和剛體物理/插值互相干擾(球穿透嫌疑),手感改用鏡頭震動+粒子
             if (GameSession.Hal != null || Time.timeScale == 0f || JuiceSettings.Shake <= 0f) return;
             hitT = Mathf.Max(hitT, seconds); Time.timeScale = HitScale;
         }

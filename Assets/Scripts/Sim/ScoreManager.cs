@@ -86,7 +86,13 @@ namespace FrcSim
             {
                 var f = FuelManager.All[i];
                 var p = f.transform.position;
-                if (p.y > ScoreBandTop || p.y < ScoreBandBottom) continue;
+                if (p.y > ScoreBandTop)
+                {
+                    // 在 HUB 開口上方(含一點邊距):記下時間,之後穿過計分帶才算數
+                    if ((Mathf.Abs(p.x - blueHub.x) < Half + 0.15f && Mathf.Abs(p.z - blueHub.y) < Half + 0.15f) || (Mathf.Abs(p.x - redHub.x) < Half + 0.15f && Mathf.Abs(p.z - redHub.y) < Half + 0.15f)) f.RimT = Time.time;
+                    continue;
+                }
+                if (p.y < ScoreBandBottom) continue;
                 var rb = f.GetComponent<Rigidbody>();
                 if (rb.linearVelocity.y >= 0f) continue;
                 if (traced.Add(f) && Trace.Count < 40) Trace.Add($"fuel@band x={p.x:0.00} z={p.z:0.00} y={p.y:0.00} blueHub=({blueHub.x:0.00},{blueHub.y:0.00})");
@@ -94,6 +100,7 @@ namespace FrcSim
                 bool inBlue = Mathf.Abs(p.x - blueHub.x) < Half && Mathf.Abs(p.z - blueHub.y) < Half;
                 bool inRed = Mathf.Abs(p.x - redHub.x) < Half && Mathf.Abs(p.z - redHub.y) < Half;
                 if (!inBlue && !inRed) continue;
+                if (Time.time - f.RimT > 1.2f) continue;   // 沒從上方進來(側面穿牆/地上滾進來)不算分
 
                 bool active = inBlue ? BlueActive : RedActive;
                 if (active && inBlue && f.ShotDist >= 0f) { ShotLog.AddHit(f.ShotDist); f.ShotDist = -1f; }
