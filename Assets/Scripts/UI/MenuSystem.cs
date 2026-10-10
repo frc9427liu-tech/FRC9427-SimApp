@@ -333,7 +333,7 @@ namespace FrcSim
             for (int i = 0; i < MechPresets.All.Length; i++)
             {
                 int i2 = i; var p = MechPresets.All[i];
-                l.Add(new Item(() => (PlayerPrefs.HasKey("mechPreset") && Prefs.GetInt("useRealCode", 0) == 0 && MechPresets.Index == i2 ? "✓ " : "") + Z(p.ZhName, p.EnName) + "  —  " + Z(p.ZhDesc, p.EnDesc), () => MechPresets.Choose(i2)));
+                l.Add(new Item(() => (PlayerPrefs.HasKey("mechPreset") && Prefs.GetInt("useRealCode", 0) == 0 && MechPresets.Index == i2 ? "✓ " : "") + Z(p.ZhName, p.EnName), () => MechPresets.Choose(i2)) { Sub = () => Z(p.ZhDesc, p.EnDesc) });
             }
             return l.ToArray();
         }        Item[] ModelLibItems()
@@ -676,6 +676,7 @@ namespace FrcSim
         }
     }
 }
+
 
 
 
