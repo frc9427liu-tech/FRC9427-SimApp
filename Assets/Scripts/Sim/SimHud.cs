@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace FrcSim
 {
@@ -32,12 +32,30 @@ namespace FrcSim
         }
 
         bool wasPadOk = true, wasLoading; float padLostUntil;
-        void Start() { born = Time.unscaledTime; }
+        void Start() { born = Time.unscaledTime; if (System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-f12test") >= 0) Invoke(nameof(TestShot), 8f); }
+        void TestShot() { StartCoroutine(SaveShot()); }
+
+        string shotMsg = ""; float shotUntil;
+        System.Collections.IEnumerator SaveShot()
+        {
+            yield return new WaitForEndOfFrame();
+            try
+            {
+                string dir = System.IO.Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.DesktopDirectory), "FRC9427-Screenshots");
+                System.IO.Directory.CreateDirectory(dir);
+                string f = System.IO.Path.Combine(dir, "FRC9427-" + System.DateTime.Now.ToString("yyyyMMdd-HHmmss") + ".png");
+                var tex = ScreenCapture.CaptureScreenshotAsTexture(); System.IO.File.WriteAllBytes(f, tex.EncodeToPNG()); Destroy(tex);
+                shotMsg = L("已存截圖到桌面 FRC9427-Screenshots", "Screenshot saved to Desktop/FRC9427-Screenshots");
+            }
+            catch (System.Exception e) { shotMsg = L("截圖失敗:", "Screenshot failed: ") + e.Message; }
+            shotUntil = Time.unscaledTime + 3f;
+        }
 
         void Update()
         {
             fps = Mathf.Lerp(fps, 1f / Mathf.Max(Time.unscaledDeltaTime, 1e-4f), 0.05f);
             if (Input.GetKeyDown(KeyCode.F3)) showDebug = !showDebug;
+            if (Input.GetKeyDown(KeyCode.F12)) StartCoroutine(SaveShot());
             if (Input.GetKeyDown(KeyCode.F5) && !MenuSystem.Blocking) GameSession.Rematch();
             { bool loading = GameSession.Hal != null && !GameSession.Hal.Connected && !GameSession.Hal.Failed; if (loading) { Time.timeScale = 0f; wasLoading = true; } else if (wasLoading) { wasLoading = false; Time.timeScale = 1f; if (GameSession.Hal != null && GameSession.Hal.LoadedSecs > 5f) { PlayerPrefs.SetFloat("robotLoadSecs", GameSession.Hal.LoadedSecs); PlayerPrefs.Save(); } } }
             if (GameSession.AutoDrillTest && GameSession.Drill && Mech != null) Mech.Shooting = Mech.Held > 0;
@@ -216,6 +234,7 @@ namespace FrcSim
                     GUI.Label(new Rect(cx - 90, sy + 38, 180, 20), PhaseName(ScoreManager.Phase) + hubs, Style(12, dim, TextAnchor.UpperCenter, FontStyle.Bold));
                 }
             }
+            if (Time.unscaledTime < shotUntil) { var sr = new Rect(cx - 220, H - 190, 440, 36); Panel(sr, 0.85f); GUI.Label(sr, shotMsg, Style(15, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold)); }
             if (Time.unscaledTime < padLostUntil) { var tr = new Rect(cx - 250, H - 130, 500, 44); Panel(tr, 0.9f); GUI.Label(tr, L("⚠ 手把掉線了,已暫停。請重新插上 USB", "⚠ Controller lost - paused. Re-plug USB"), Style(18, new Color(1f, 0.8f, 0.3f), TextAnchor.MiddleCenter, FontStyle.Bold)); }
 
             // ---- 比賽結束:成績卡(含各距離命中率) + 再來一場 / 回主選單(手把 A / B,Enter 再來一場)
@@ -341,3 +360,6 @@ namespace FrcSim
         }
     }
 }
+
+
+
