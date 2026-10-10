@@ -52,12 +52,20 @@ namespace FrcSim
             GUI.DrawTexture(r, Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0f, c, Vector4.zero, new Vector4(rad, rad, rad, rad));
         }
 
-        static void Panel(Rect r, float alpha = 0.55f)
+        static void Outline(Rect r, Color c, float rad, float w)
         {
-            Rounded(r, new Color(0.05f, 0.07f, 0.12f, Mathf.Clamp01(alpha + 0.12f)), 10f);
-            Rounded(new Rect(r.x, r.y, r.width, 2f), new Color(0.35f, 0.62f, 1f, 0.8f), 1f);   // 上緣細亮線
+            GUI.DrawTexture(r, Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0f, c, new Vector4(w, w, w, w), new Vector4(rad, rad, rad, rad));
         }
 
+        // 液態玻璃風:半透明深色底(確保字看得清)+ 淡藍白漸層高光 + 亮邊框 + 大圓角
+        static void Panel(Rect r, float alpha = 0.55f)
+        {
+            float rad = Mathf.Min(18f, r.height * 0.5f);
+            Rounded(new Rect(r.x - 1, r.y + 3, r.width + 2, r.height + 2), new Color(0f, 0f, 0f, 0.18f), rad + 2f);   // 柔陰影
+            Rounded(r, new Color(0.05f, 0.09f, 0.16f, Mathf.Clamp01(alpha * 0.55f + 0.18f)), rad);               // 玻璃底
+            Rounded(new Rect(r.x + 2, r.y + 2, r.width - 4, r.height * 0.5f), new Color(0.75f, 0.88f, 1f, 0.10f), rad - 2f);   // 上半部高光
+            Outline(r, new Color(0.85f, 0.93f, 1f, 0.42f), rad, 1.5f);                                           // 亮邊
+        }
         static void Bar(Rect r, float frac, Color fill)
         {
             Rounded(r, new Color(1f, 1f, 1f, 0.12f), 5f);
@@ -72,6 +80,23 @@ namespace FrcSim
             GUI.matrix = Matrix4x4.Scale(new Vector3(sc, sc, 1f));
             float W = Screen.width / sc, H = Screen.height / sc;
             var dim = new Color(0.78f, 0.84f, 0.92f);
+
+            // ---- 在自己的機器人上方標「你」
+            if (hudCam == null) hudCam = Camera.main != null ? Camera.main : FindFirstObjectByType<Camera>();
+            var cam = hudCam;
+            if (cam != null)
+            {
+                Vector3 sp = cam.WorldToScreenPoint(Drive.transform.position + Vector3.up * 1.3f);
+                if (SuperSample.Scale > 1.01f) { sp.x /= SuperSample.Scale; sp.y /= SuperSample.Scale; }   // 超取樣時相機像素是螢幕的 Scale 倍
+                if (sp.z > 0f)
+                {
+                    var ys = Style(16, new Color(1f, 0.92f, 0.2f), TextAnchor.MiddleCenter, FontStyle.Bold);
+                    var shadow = Style(16, Color.black, TextAnchor.MiddleCenter, FontStyle.Bold);
+                    var rc = new Rect(sp.x / sc - 40, (Screen.height - sp.y) / sc - 14 - 30, 80, 28);
+                    GUI.Label(new Rect(rc.x + 1.2f, rc.y + 1.2f, rc.width, rc.height), L("▼ 你", "▼ YOU"), shadow);
+                    GUI.Label(rc, L("▼ 你", "▼ YOU"), ys);
+                }
+            }
 
             // ---- 左上面板:車速 / 持球條 / 飛輪條 / 射擊預測
             float x0 = 12f, y0 = 12f, pw = 330f;
@@ -141,23 +166,6 @@ namespace FrcSim
                 Panel(new Rect(cx - 260, H * 0.42f, 520, 54), 0.75f);
                 GUI.Label(new Rect(cx - 260, H * 0.42f + 6, 520, 24), L("機器人程式啟動中…", "Starting robot code…"), Style(20, Color.white, TextAnchor.UpperCenter, FontStyle.Bold));
                 GUI.Label(new Rect(cx - 260, H * 0.42f + 30, 520, 22), L("第一次約 20~60 秒;期間先用內建操控,連上後自動交給你的程式", "First start takes 20–60 s; built-in controls until it connects"), Style(13, dim, TextAnchor.UpperCenter));
-            }
-
-            // ---- 在自己的機器人上方標「你」
-            if (hudCam == null) hudCam = Camera.main != null ? Camera.main : FindFirstObjectByType<Camera>();
-            var cam = hudCam;
-            if (cam != null)
-            {
-                Vector3 sp = cam.WorldToScreenPoint(Drive.transform.position + Vector3.up * 1.3f);
-                if (SuperSample.Scale > 1.01f) { sp.x /= SuperSample.Scale; sp.y /= SuperSample.Scale; }   // 超取樣時相機像素是螢幕的 Scale 倍
-                if (sp.z > 0f)
-                {
-                    var ys = Style(16, new Color(1f, 0.92f, 0.2f), TextAnchor.MiddleCenter, FontStyle.Bold);
-                    var shadow = Style(16, Color.black, TextAnchor.MiddleCenter, FontStyle.Bold);
-                    var rc = new Rect(sp.x / sc - 40, (Screen.height - sp.y) / sc - 14 - 30, 80, 28);
-                    GUI.Label(new Rect(rc.x + 1.2f, rc.y + 1.2f, rc.width, rc.height), L("▼ 你", "▼ YOU"), shadow);
-                    GUI.Label(rc, L("▼ 你", "▼ YOU"), ys);
-                }
             }
 
             // ---- 按鍵說明:開場 15 秒顯示,之後 F1 切換
