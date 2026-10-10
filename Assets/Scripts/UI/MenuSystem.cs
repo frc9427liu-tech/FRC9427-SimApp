@@ -308,7 +308,16 @@ namespace FrcSim
             Prefs.SetString("robotProject", FindGradleRoot(p));
             PlayerPrefs.Save();
         });
-        Item[] CatalogItems()
+        Item[] PresetItems()
+        {
+            var l = new List<Item>();
+            for (int i = 0; i < MechPresets.All.Length; i++)
+            {
+                int i2 = i; var p = MechPresets.All[i];
+                l.Add(new Item(() => (PlayerPrefs.HasKey("mechPreset") && Prefs.GetInt("useRealCode", 0) == 0 && MechPresets.Index == i2 ? "✓ " : "") + Z(p.ZhName, p.EnName) + "  —  " + Z(p.ZhDesc, p.EnDesc), () => MechPresets.Choose(i2)));
+            }
+            return l.ToArray();
+        }        Item[] CatalogItems()
         {
             var l = new List<Item>();
             foreach (var en in OpenSourceCatalog.All)
@@ -356,7 +365,7 @@ namespace FrcSim
             var s = Build(() => Loc.T("setup.title"), Sum, new[]
             {
                 new Item(() => Z("外觀  ▸", "Appearance  ▸"), () => ShowSub(() => Z("外觀", "Appearance"), () => Z("機器人模型與方向", "Robot model & orientation"), new[] { ItModel(), ItImport(), ItYaw() })),
-                new Item(() => Z("機器人程式  ▸", "Robot code  ▸"), () => ShowSub(() => Z("機器人程式", "Robot code"), () => Z("專案、是否跑真實程式、操控方式", "Project, real code, controls"), new[] { ItProject(), ItReal(), ItCtl(), new Item(() => Z("開源機器人程式庫  ▸", "Open-source robot library  ▸"), () => ShowSub(() => Z("開源機器人程式庫", "Open-source robot library"), () => Z("別隊公開的 2026 程式:下載後直接在模擬器跑(來源 GitHub,未打包)", "Public 2026 team code: download and run (from GitHub, not bundled)"), CatalogItems())) })),
+                new Item(() => Z("機器人程式  ▸", "Robot code  ▸"), () => ShowSub(() => Z("機器人程式", "Robot code"), () => Z("專案、是否跑真實程式、操控方式", "Project, real code, controls"), new[] { ItProject(), ItReal(), ItCtl(), new Item(() => Z("內建機構(5 款)  ▸", "Built-in mechanisms (5)  ▸"), () => ShowSub(() => Z("內建機構", "Built-in mechanisms"), () => Z("不用機器人程式,直接用內建行為;各有外觀與手感", "No robot code needed — each has its own look and feel"), PresetItems())), new Item(() => Z("開源機器人程式庫  ▸", "Open-source robot library  ▸"), () => ShowSub(() => Z("開源機器人程式庫", "Open-source robot library"), () => Z("別隊公開的 2026 程式:下載後直接在模擬器跑(來源 GitHub,未打包)", "Public 2026 team code: download and run (from GitHub, not bundled)"), CatalogItems())) })),
                 new Item(() => Z("手感  ▸", "Handling  ▸"), () => ShowSub(() => Z("手感", "Handling"), () => Z("最高車速與加速度(慣性)", "Top speed & acceleration"), new[] { ItSpeed(), ItAccel() })),
                 new Item(() => Z("比賽  ▸", "Match  ▸"), () => ShowSub(() => Z("比賽", "Match"), () => Z("對手機器人與難度", "Opponent robot & level"), new[] { ItSecond(), ItLevel() })),
                 new Item(() => Loc.T("setup.start"), StartGame),

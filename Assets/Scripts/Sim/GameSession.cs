@@ -78,6 +78,7 @@ namespace FrcSim
             robot = SimBootstrap.BuildRobot(out var turretVis, out var armVis);
             Drive = robot.GetComponent<SwerveDrive>();
             Mech = robot.AddComponent<RobotMechanisms>();
+            MechPresets.Apply(Mech);
             Mech.Drive = Drive;
             Mech.RobotCollider = robot.GetComponent<Collider>();
             Mech.TurretVisual = turretVis;
