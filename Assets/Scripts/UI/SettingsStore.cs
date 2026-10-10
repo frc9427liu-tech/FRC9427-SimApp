@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 namespace FrcSim
 {
@@ -79,10 +79,7 @@ namespace FrcSim
             QualitySettings.vSyncCount = VSync ? 1 : 0;
             // 畫質:4x 抗鋸齒、高解析柔和陰影、各向異性過濾
             QualitySettings.antiAliasing = Msaa;
-            QualitySettings.shadows = Shadows ? ShadowQuality.All : ShadowQuality.Disable;
-            QualitySettings.shadowResolution = ShadowResolution.High;
-            QualitySettings.shadowDistance = 35f;
-            QualitySettings.shadowCascades = 2;
+            Look.ApplyShadowQuality(Shadows);
             QualitySettings.anisotropicFiltering = AnisotropicFiltering.ForceEnable;
             QualitySettings.pixelLightCount = 4;
             int f = FpsOptions[FpsIndex];

@@ -112,15 +112,9 @@ namespace FrcSim
             var rt = go.transform;
 
             // 左側面板
-            // 液態玻璃面板:陰影 + 半透明深色玻璃 + 上半高光 + 亮邊
-            var shadow = UiKit.Glass("Shadow", rt, new Color(0, 0, 0, 0.28f), 52f);
-            UiKit.PlaceTL(shadow.rectTransform, 36, 52, 730, 990);
-            var panel = UiKit.Glass("Panel", rt, new Color(0.06f, 0.10f, 0.17f, 0.74f), 48f);
-            UiKit.PlaceTL(panel.rectTransform, 40, 40, 722, 1000);
-            var shine = UiKit.Glass("Shine", rt, new Color(0.75f, 0.88f, 1f, 0.09f), 46f);
-            UiKit.PlaceTL(shine.rectTransform, 44, 44, 714, 420);
-            var edge = UiKit.Glass("Edge", rt, new Color(0.9f, 0.96f, 1f, 0.40f), 48f, true);
-            UiKit.PlaceTL(edge.rectTransform, 40, 40, 722, 1000);
+            // 液態玻璃面板(真的背景模糊 + 邊緣折射 + 高光邊,見 UiGlass.cs)
+            var card = GlassPanel.Make(rt, "Card", 40, 40, 722, 1000, 64f, GlassStyle.Card());
+            card.Opacity = 1f;
 
             // 標題區
             var small = UiKit.Label("Tag", rt, "FRC 9427", 26, UiTheme.Accent, TextAnchor.UpperLeft);
@@ -128,7 +122,7 @@ namespace FrcSim
             s.Title = UiKit.Label("Title", rt, titleFn(), 64, UiTheme.Text, TextAnchor.UpperLeft);
             s.Title.fontStyle = FontStyle.Bold;
             UiKit.PlaceTL(s.Title.rectTransform, 90, 130, 640, 90);
-            var sub = UiKit.Label("Sub", rt, subFn != null ? subFn() : "", 28, UiTheme.TextDim, TextAnchor.UpperLeft);
+            var sub = UiKit.Label("Sub", rt, subFn != null ? subFn() : "", 28, new Color(0.79f, 0.83f, 0.90f), TextAnchor.UpperLeft);
             UiKit.PlaceTL(sub.rectTransform, 92, 225, 640, 40);
             if (subFn != null) s.Refreshers.Add(() => sub.text = subFn());
             var hr = UiKit.Img("Hr", rt, UiTheme.Line);
@@ -142,21 +136,18 @@ namespace FrcSim
             {
                 var b = new UiButton { TextFn = it.Text, OnClick = it.Click, Enabled = it.Enabled };
                 if (it.EnabledFn != null) { var itc = it; var bc = b; s.Refreshers.Add(() => bc.Enabled = itc.EnabledFn()); }
-                b.Bg = UiKit.Glass("Btn", rt, new Color(1, 1, 1, 0.07f), bh / 2f);
-                b.Rt = b.Bg.rectTransform;
-                UiKit.PlaceTL(b.Rt, 90, y, 580, bh);
-                b.Bar = UiKit.Glass("Ring", b.Rt, new Color(1, 1, 1, 0.22f), bh / 2f, true);
-                UiKit.Stretch(b.Bar.rectTransform);
+                var gp = GlassPanel.Make(rt, "Btn", 72, y, 658, bh, bh / 2f, GlassStyle.Pill());
+                b.Glass = gp; b.Rt = gp.Root;
                 b.Label = UiKit.Label("Text", b.Rt, it.Text(), 34, UiTheme.TextDim, TextAnchor.MiddleLeft);
                 b.Label.resizeTextForBestFit = true;   // 長標籤(例如比賽計時)自動縮小,不超出按鈕
                 b.Label.resizeTextMinSize = 18; b.Label.resizeTextMaxSize = 34;
-                UiKit.PlaceTL(b.Label.rectTransform, 34, 0, 540, bh);
+                UiKit.PlaceTL(b.Label.rectTransform, 30, 0, 598, bh);
                 s.Buttons.Add(b);
                 y += step;
             }
 
             // 提示列
-            var hint = UiKit.Label("Hint", rt, Loc.T("hint.nav"), 22, UiTheme.TextDim, TextAnchor.UpperLeft);
+            var hint = UiKit.Label("Hint", rt, Loc.T("hint.nav"), 26, new Color(0.79f, 0.83f, 0.90f), TextAnchor.UpperLeft);
             UiKit.PlaceTL(hint.rectTransform, 90, firstY > 330f ? 1046 : 1010, 640, 30);
             s.Refreshers.Add(() => hint.text = Loc.T("hint.nav"));
 
@@ -175,8 +166,8 @@ namespace FrcSim
             if (cur != null) cur.Go.SetActive(false);
             cur = s;
             inGameMenu = game;
-            dim.color = game ? new Color(0, 0, 0, 0.45f) : new Color(0.02f, 0.04f, 0.08f, 0.35f);
-            s.Go.SetActive(true);
+            dim.color = game ? new Color(0, 0, 0, 0.35f) : new Color(0.02f, 0.04f, 0.08f, 0.22f);
+            s.Go.SetActive(true); { var cg = s.Go.GetComponent<CanvasGroup>(); if (cg == null) cg = s.Go.AddComponent<CanvasGroup>(); StartCoroutine(Intro(s.Go.GetComponent<RectTransform>(), cg)); }
             menuVisible = true;
             justOpened = true;
             s.Sel = 0;
@@ -414,6 +405,8 @@ namespace FrcSim
                     RefreshScreen();
                 }),
                 new Item(() => Z("手把設定", "Controllers"), () => ShowPadSetup(() => ShowSettings(game), () => ShowSettings(game))),
+                new Item(() => Z("後製特效", "Post effects") + ":  " + (PostFX.Quality == 0 ? Z("關", "Off") : PostFX.Quality == 1 ? Z("基本", "Basic") : PostFX.Quality == 2 ? Z("泛光", "Bloom") : "AO"), () => { PostFX.Quality = (PostFX.Quality + 1) % 3; }),
+                new Item(() => Z("液態玻璃(毛玻璃)", "Liquid glass") + ":  " + (UiGlass.Disabled ? Z("關", "Off") : Z("開", "On")), () => { UiGlass.Disabled = !UiGlass.Disabled; if (UiGlass.Disabled) UiGlass.Ready = false; PlayerPrefs.SetInt("noGlass", UiGlass.Disabled ? 1 : 0); PlayerPrefs.Save(); }),
                 new Item(() => Loc.T("menu.back"), () => settingsBack?.Invoke()),
             }, () => settingsBack?.Invoke());
             Show(s, game);
@@ -551,8 +544,27 @@ namespace FrcSim
                 cur?.OnBack?.Invoke();
         }
 
-        void Activate(UiButton b)
+        System.Collections.IEnumerator Intro(RectTransform r, CanvasGroup cg)
         {
+            var sp = new Spring(0) { target = 1 };
+            while (sp.Step(Time.unscaledDeltaTime, .40f, .85f) || sp.x < .999f)
+            {
+                if (r == null) yield break;
+                cg.alpha = Mathf.Clamp01(sp.x * 1.4f);
+                r.anchoredPosition = new Vector2(-28f * (1f - sp.x), 0f);
+                yield return null;
+            }
+            if (r != null) { cg.alpha = 1f; r.anchoredPosition = Vector2.zero; }
+        }
+
+        System.Collections.IEnumerator PressPulse(GlassPanel g)
+        {
+            g.PressT = 1f; float t = Time.unscaledTime + 0.12f;
+            while (Time.unscaledTime < t) yield return null;
+            if (g != null) g.PressT = 0f;
+        }
+        void Activate(UiButton b)
+        { if (b.Enabled && b.Glass != null) StartCoroutine(PressPulse(b.Glass));
             if (!b.Enabled) return;
             b.OnClick?.Invoke();
             RefreshScreen();

@@ -19,28 +19,19 @@ namespace FrcSim
             if (System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-boxfield") < 0) FieldModel.Load();   // 官方場地模型(-boxfield 可退回方塊外觀)
 
             var light = new GameObject("Sun").AddComponent<Light>();
-            light.type = LightType.Directional;
-            light.intensity = 0.95f;
-            light.color = new Color(1f, 0.97f, 0.92f);
             light.transform.rotation = Quaternion.Euler(52f, -35f, 0f);
-            light.shadows = LightShadows.Soft;
-            light.shadowStrength = 0.7f;
-            light.shadowNormalBias = 0.5f;
-            // 三色環境光(天空/地平/地面)讓方塊側面有層次,不會一片平
-            RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Trilight;
-            RenderSettings.ambientSkyColor = new Color(0.55f, 0.62f, 0.75f);
-            RenderSettings.ambientEquatorColor = new Color(0.42f, 0.44f, 0.50f);
-            RenderSettings.ambientGroundColor = new Color(0.18f, 0.19f, 0.22f);
-            RenderSettings.fog = true; RenderSettings.fogMode = FogMode.Linear; RenderSettings.fogColor = new Color(0.07f, 0.09f, 0.14f); RenderSettings.fogStartDistance = 22f; RenderSettings.fogEndDistance = 75f;   // 遠處漸入深藍,場館更有層次
+            Look.SetupLighting(light);   // 太陽/三色環境光/霧(數值見 Look.cs)
 
             var camObj = Camera.main != null ? Camera.main.gameObject : new GameObject("Main Camera", typeof(Camera), typeof(AudioListener));
             camObj.tag = "MainCamera";
             var cam = camObj.GetComponent<Camera>();
-            cam.backgroundColor = new Color(0.07f, 0.09f, 0.14f);
+            cam.backgroundColor = new Color(0.045f, 0.06f, 0.10f);
+            cam.allowHDR = true;
             cam.allowMSAA = true;
             cam.clearFlags = CameraClearFlags.SolidColor;
             cam.nearClipPlane = 0.1f;
             cam.farClipPlane = 80f;
+            camObj.AddComponent<PostFX>();   // 先加 PostFX,SuperSample 重建時 PostFX.Active 才會是 true
             camObj.AddComponent<SuperSample>();
             var rig = camObj.AddComponent<CameraRig>();
             rig.Orbit = true;

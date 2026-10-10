@@ -9,7 +9,8 @@ namespace FrcSim
     {
         public static float Scale = 1f;   // 目前實際使用的比例(給 HUD 換算螢幕座標用)
         Camera cam;
-        RenderTexture rt;
+        RenderTexture rt, ldr;
+        bool post;
         GameObject blitGo;
         Material blitMat;
         int w, h;
@@ -52,7 +53,7 @@ namespace FrcSim
             if (Application.targetFrameRate != wantFps) Application.targetFrameRate = wantFps;   // 選單時 30、遊戲中用設定值(預設 60)
             if (!MenuSystem.Blocking) AutoQuality();
             float s = SettingsStore.RenderScale;
-            if (curScale == s && w == Screen.width && h == Screen.height) return;
+            if (curScale == s && w == Screen.width && h == Screen.height && post == PostFX.Active) return;
             Rebuild(s);
         }
 
@@ -62,15 +63,17 @@ namespace FrcSim
             if (blitGo != null) Destroy(blitGo);
             blitGo = null;
             if (rt != null) { rt.Release(); Destroy(rt); rt = null; }
+            if (ldr != null) { ldr.Release(); Destroy(ldr); ldr = null; }
         }
 
         void Rebuild(float s)
         {
             Teardown();
             w = Screen.width; h = Screen.height; curScale = s;
-            if (s <= 1.01f || w < 16 || h < 16) { Scale = 1f; return; }
+            post = PostFX.Active;
+            if ((s <= 1.01f && !post) || w < 16 || h < 16) { Scale = 1f; return; }
 
-            rt = new RenderTexture(Mathf.RoundToInt(w * s), Mathf.RoundToInt(h * s), 24, RenderTextureFormat.ARGB32)
+            rt = new RenderTexture(Mathf.RoundToInt(w * s), Mathf.RoundToInt(h * s), 24, post ? RenderTextureFormat.DefaultHDR : RenderTextureFormat.ARGB32)
             { antiAliasing = 4, filterMode = FilterMode.Bilinear, useMipMap = false, name = "SuperSampleRT" };
             rt.Create();
             cam.targetTexture = rt;
@@ -90,9 +93,23 @@ namespace FrcSim
             q.transform.localPosition = new Vector3(0f, 0f, 5f);
             q.transform.localScale = new Vector3((float)w / h, 1f, 1f);
             blitMat = new Material(Shader.Find("Sprites/Default")) { mainTexture = rt };
+            if (post)   // 後製:相機畫進 HDR RT,OnPostRender 做色調映射/調色/泛光後存進 LDR,貼圖四邊形顯示 LDR
+            {
+                ldr = new RenderTexture(rt.width, rt.height, 0, RenderTextureFormat.ARGB32) { filterMode = FilterMode.Bilinear, useMipMap = false, name = "SuperSampleLDR" };
+                ldr.Create();
+                blitMat.mainTexture = ldr;
+            }
             q.GetComponent<Renderer>().sharedMaterial = blitMat;
             q.GetComponent<Renderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             q.GetComponent<Renderer>().receiveShadows = false;
+        }
+
+        void OnPostRender()
+        {
+            if (post && rt != null && ldr != null && PostFX.Instance != null)
+            {                PostFX.Instance.Process(rt, ldr);
+                if (GlassBackdrop.I != null) GlassBackdrop.I.CaptureFrom(ldr);   // 玻璃的模糊底圖取「後製後」的畫面,顏色才跟看到的一致
+            }
         }
 
         void OnDestroy() { Teardown(); Scale = 1f; }

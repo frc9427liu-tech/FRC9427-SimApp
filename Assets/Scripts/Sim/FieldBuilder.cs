@@ -10,12 +10,13 @@ namespace FrcSim
         static readonly Color Floor = new Color(0.22f, 0.24f, 0.27f);
         static readonly Color Gray = new Color(0.55f, 0.57f, 0.6f);
 
-        public static Material MakeMat(Color c)
+        public static Material MakeMat(Color c, float smooth = -1f, float metal = -1f)
         {
-            var sh = Shader.Find("Standard");
-            var m = new Material(sh);
+            var m = new Material(Shader.Find("Standard"));
             m.color = c;
-            m.SetFloat("_Glossiness", 0.15f);
+            Look.Classify(c, out float s, out float mt);
+            m.SetFloat("_Glossiness", smooth >= 0f ? smooth : s);
+            m.SetFloat("_Metallic", metal >= 0f ? metal : mt);
             return m;
         }
 

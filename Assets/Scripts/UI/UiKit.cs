@@ -113,7 +113,7 @@ namespace FrcSim
     public class UiButton
     {
         public RectTransform Rt;
-        public Image Bg, Bar;
+        public Image Bg, Bar; public GlassPanel Glass;
         public Text Label;
         public Func<string> TextFn;
         public Action OnClick;
@@ -122,10 +122,14 @@ namespace FrcSim
         public void Refresh(bool selected)
         {
             Label.text = TextFn();
-            Bg.color = selected && Enabled ? new Color(0.45f, 0.72f, 1f, 0.30f)
-                                           : new Color(1f, 1f, 1f, Enabled ? 0.07f : 0.03f);
-            Bar.color = selected && Enabled ? new Color(1f, 1f, 1f, 0.85f) : new Color(1f, 1f, 1f, Enabled ? 0.22f : 0.10f);
-            Label.color = !Enabled ? UiTheme.Disabled : selected ? UiTheme.Text : UiTheme.TextDim;
+            bool sel = selected && Enabled;
+            if (Glass != null) { Glass.SelectedT = sel ? 1f : 0f; Glass.MarkDirty(); }
+            else if (Bg != null)
+            {
+                Bg.color = sel ? new Color(0.45f, 0.72f, 1f, 0.30f) : new Color(1f, 1f, 1f, Enabled ? 0.07f : 0.03f);
+                if (Bar != null) Bar.color = sel ? new Color(1f, 1f, 1f, 0.85f) : new Color(1f, 1f, 1f, Enabled ? 0.22f : 0.10f);
+            }
+            Label.color = !Enabled ? new Color(1, 1, 1, .66f) : sel ? Color.white : new Color(1, 1, 1, .72f);
         }
     }
 }

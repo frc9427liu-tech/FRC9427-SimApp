@@ -35,7 +35,7 @@ namespace FrcSim
             var concrete = new Color(0.30f, 0.31f, 0.34f);
 
             // 外圍大地板(場地地毯之外的場館地面)
-            Box("ArenaFloor", new Vector3(L / 2f, -0.12f, W / 2f), new Vector3(L + 60f, 0.2f, W + 60f), new Color(0.20f, 0.21f, 0.24f));
+            Box("ArenaFloor", new Vector3(L / 2f, -0.12f, W / 2f), new Vector3(L + 60f, 0.2f, W + 60f), new Color(0.04f, 0.045f, 0.055f));
 
             // 兩側看台:離護欄 3.5m 起,10 階往外升高
             foreach (int side in new[] { -1, 1 })

@@ -72,9 +72,7 @@ namespace FrcSim
         public static void Init()
         {
             root = new GameObject("Fuel").transform;
-            mat = FieldBuilder.MakeMat(new Color(0.96f, 0.92f, 0.0f));
-            mat.enableInstancing = true;
-            mat.SetFloat("_Glossiness", 0.55f);   // 球有塑膠亮面,反光比方塊場地明顯
+            mat = Look.FuelMaterial();   // FrcFuel:黃色塑膠球,rim,GPU instancing
             pm = new PhysicsMaterial("Fuel") { bounciness = 0.35f, dynamicFriction = 0.6f, staticFriction = 0.7f,
                 bounceCombine = PhysicsMaterialCombine.Average };
         }

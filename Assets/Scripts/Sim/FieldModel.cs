@@ -86,9 +86,11 @@ namespace FrcSim
                     r.receiveShadows = true;
                 }
 
-                // 美化:大面積貼地的平面 = 地毯,改成深藍灰(官方地毯是深色),場地才不會一片白
+                // 地毯:程序化絨毛地毯(FrcCarpet:纖維、髒汙、天花板燈光池、邊緣壓暗);glTF 沒有切線時關掉法線貼圖
                 {
-                    var carpet = FieldBuilder.MakeMat(new Color(0.16f, 0.185f, 0.23f));
+                    bool tangentsOk = true;
+                    var carpet = Look.CarpetMaterial(false);
+                    int nCarpet = 0;
                     foreach (var r in root.GetComponentsInChildren<Renderer>(true))
                     {
                         var bb = r.bounds;
@@ -97,8 +99,13 @@ namespace FrcSim
                             var ms = r.sharedMaterials;
                             for (int i = 0; i < ms.Length; i++) ms[i] = carpet;
                             r.sharedMaterials = ms;
+                            r.receiveShadows = true;
+                            nCarpet++;
+                            tangentsOk &= Look.EnsureTangents(r);
                         }
                     }
+                    if (tangentsOk && nCarpet > 0) carpet.EnableKeyword("_NORMALON");
+                    Debug.Log($"[FieldModel] carpet renderers={nCarpet} normalMap={(tangentsOk && nCarpet > 0)}");
                 }
 
                 // 靜態合批:把同材質的 mesh 合併,大幅減少 draw call
@@ -179,6 +186,7 @@ namespace FrcSim
                 Debug.Log("[FieldModel] textures=" + texCount + " colors: " + top);
                 LastLog = $"field model loaded: shown={shown} hiddenFuel={hidden} bounds center={b.center} size={b.size}";
                 Debug.Log("[FieldModel] " + LastLog);
+                Look.BakeProbe();   // 靜態合批與材質都定案後,烘一次反射探針
                 // 遊戲在模型載入完成前就開始了:用官方擺法換掉暫用的格狀擺法
                 if (GameSession.Active && Time.time - GameSession.StartTime < 20f) FuelManager.ReplaceStartLayout();
             }

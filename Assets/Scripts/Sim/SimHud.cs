@@ -64,32 +64,61 @@ namespace FrcSim
         }
 
         // 液態玻璃風:半透明深色底(確保字看得清)+ 淡藍白漸層高光 + 亮邊框 + 大圓角
+        static readonly GlassStyle stHud = GlassStyle.HudPanel(), stCard = GlassStyle.HudCard(), stPill = GlassStyle.Pill(), stPrim = GlassStyle.PillPrimary(), stTrack = GlassStyle.BarTrack();
         static void Panel(Rect r, float alpha = 0.55f)
         {
+            if (UiGlass.Ready) { GlassGL.Draw(r, Mathf.Min(alpha >= 0.9f ? 44f : 22f, r.height * 0.5f), alpha >= 0.9f ? stCard : stHud); return; }
             float rad = Mathf.Min(18f, r.height * 0.5f);
-            Rounded(new Rect(r.x - 1, r.y + 3, r.width + 2, r.height + 2), new Color(0f, 0f, 0f, 0.18f), rad + 2f);   // 柔陰影
-            Rounded(r, new Color(0.05f, 0.09f, 0.16f, Mathf.Clamp01(alpha * 0.55f + 0.18f)), rad);               // 玻璃底
-            Rounded(new Rect(r.x + 2, r.y + 2, r.width - 4, r.height * 0.5f), new Color(0.75f, 0.88f, 1f, 0.10f), rad - 2f);   // 上半部高光
-            Outline(r, new Color(0.85f, 0.93f, 1f, 0.42f), rad, 1.5f);                                           // 亮邊
+            Rounded(new Rect(r.x - 1, r.y + 3, r.width + 2, r.height + 2), new Color(0f, 0f, 0f, 0.18f), rad + 2f);
+            Rounded(r, new Color(0.05f, 0.09f, 0.16f, Mathf.Clamp01(alpha * 0.55f + 0.18f)), rad);
+            Rounded(new Rect(r.x + 2, r.y + 2, r.width - 4, r.height * 0.5f), new Color(0.75f, 0.88f, 1f, 0.10f), rad - 2f);
+            Outline(r, new Color(0.85f, 0.93f, 1f, 0.42f), rad, 1.5f);
         }
         // 玻璃按鈕:膠囊、滑過變亮;回傳是否被點擊
+        class BtnAnim { public Spring hov = new Spring(0), prs = new Spring(0); }
+        static readonly System.Collections.Generic.Dictionary<string, BtnAnim> anims = new System.Collections.Generic.Dictionary<string, BtnAnim>();
+        // 玻璃按鈕:膠囊 + 彈簧(滑過微微放大、按下縮);回傳是否被點擊
         static bool GBtn(Rect r, string text, bool primary)
         {
             bool hover = r.Contains(Event.current.mousePosition);
-            Color fill = primary ? new Color(0.35f, 0.65f, 1f, hover ? 0.75f : 0.55f) : new Color(1f, 1f, 1f, hover ? 0.22f : 0.12f);
-            Rounded(r, fill, r.height / 2f);
-            Outline(r, new Color(1f, 1f, 1f, hover ? 0.8f : 0.4f), r.height / 2f, 1.5f);
-            GUI.Label(r, text, Style(20, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold));
+            if (!UiGlass.Ready)
+            {
+                Color fill = primary ? new Color(0.35f, 0.65f, 1f, hover ? 0.75f : 0.55f) : new Color(1f, 1f, 1f, hover ? 0.22f : 0.12f);
+                Rounded(r, fill, r.height / 2f);
+                Outline(r, new Color(1f, 1f, 1f, hover ? 0.8f : 0.4f), r.height / 2f, 1.5f);
+                GUI.Label(r, text, Style(20, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold));
+                return GUI.Button(r, GUIContent.none, GUIStyle.none);
+            }
+            if (!anims.TryGetValue(text, out var a)) anims[text] = a = new BtnAnim();
+            bool down = hover && Input.GetMouseButton(0);
+            if (Event.current.type == EventType.Repaint)
+            { a.hov.target = hover ? 1 : 0; a.prs.target = down ? 1 : 0; a.hov.Step(Time.unscaledDeltaTime, .22f, .8f); a.prs.Step(Time.unscaledDeltaTime, .18f, .7f); }
+            float sc = 1f + 0.02f * a.hov.x - 0.04f * a.prs.x;
+            var rr = new Rect(r.center.x - r.width * sc / 2f, r.center.y - r.height * sc / 2f, r.width * sc, r.height * sc);
+            GlassGL.Draw(rr, rr.height / 2f, primary ? stPrim : stPill, a.hov.x, a.prs.x, 1f, 0f);
+            GUI.Label(rr, text, Style(20, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold));
             return GUI.Button(r, GUIContent.none, GUIStyle.none);
         }
+        static readonly System.Collections.Generic.Dictionary<Color, GlassStyle> fillStyles = new System.Collections.Generic.Dictionary<Color, GlassStyle>();
         static void Bar(Rect r, float frac, Color fill)
         {
+            if (UiGlass.Ready)
+            {
+                GlassGL.Draw(r, r.height / 2f, stTrack);
+                if (frac > 0.01f)
+                {
+                    if (!fillStyles.TryGetValue(fill, out var fs)) fillStyles[fill] = fs = GlassStyle.BarFill(fill);
+                    GlassGL.Draw(new Rect(r.x, r.y, Mathf.Max(r.height, r.width * Mathf.Clamp01(frac)), r.height), r.height / 2f, fs);
+                }
+                return;
+            }
             Rounded(r, new Color(1f, 1f, 1f, 0.12f), 5f);
             if (frac > 0.01f) Rounded(new Rect(r.x, r.y, Mathf.Max(8f, r.width * Mathf.Clamp01(frac)), r.height), fill, 5f);
         }
         void OnGUI()
         {
             if (Drive == null) return;
+            if (Event.current.type == EventType.Repaint) UiGlass.HudFrame = Time.frameCount;
             GUI.depth = -100;   // HUD 畫在最上層(超取樣貼圖在 depth 1000,畫在最底)
             // 依螢幕高度縮放(高解析度螢幕上字不會太小/面板不會太擠)
             float sc = Mathf.Clamp(Screen.height / 900f, 0.8f, 1.8f);
@@ -146,7 +175,7 @@ namespace FrcSim
                 if (Mech != null) GUI.Label(new Rect(x0 + 14, dy + 20, pw - 20, 20), $"{L("仰角板", "hood")} {Mech.HoodDeg:0.0}°   {L("距 HUB", "hub dist")} {Mech.TargetDistance:0.00} m   {L("已射", "shots")} {Mech.ShotsFired}", Style(12, dim));
                 if (GameSession.Hal != null) GUI.Label(new Rect(x0 + 14, dy + 40, pw - 20, 20), L("機器人程式: ", "ROBOT CODE: ") + GameSession.Hal.Status + L("  訊息 ", "  msgs ") + GameSession.Hal.MessagesIn, Style(12, dim));
             }
-            GUI.Label(new Rect(pr.x + 6, pr.yMax + 2, 300, 20), L("F1 按鍵說明   F3 詳細數據", "F1 help   F3 details"), Style(12, new Color(1f, 1f, 1f, 0.45f)));
+            GUI.Label(new Rect(pr.x + 6, pr.yMax + 2, 300, 20), L("F1 按鍵說明   F3 詳細數據", "F1 help   F3 details"), Style(13, new Color(1f, 1f, 1f, 0.75f)));
             // ---- 頂部中央:比分 + 計時
             float cx = W / 2f;
             Panel(new Rect(cx - 150, 10, 300, 40), 0.6f);
