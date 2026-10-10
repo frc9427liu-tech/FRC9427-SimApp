@@ -276,7 +276,7 @@ namespace FrcSim
         }
         // 進遊戲前:選機器人模型、匯入 .glb、選機器人程式專案
         // ---- 機器人設定:分成「外觀 / 機器人程式 / 手感 / 比賽」四個分類,主頁只留入口與「開始」
-        Item ItModel() => new Item(() => Loc.T("set.model") + ":  " + (RobotModels.Selected == "" ? Loc.T("model.builtin") : RobotModels.Selected), () =>
+        Item ItModel() => new Item(() => Loc.T("set.model") + ":  " + (RobotModels.Selected == "" ? Loc.T("model.builtin") : RobotModels.Display(RobotModels.Selected)), () =>
         {
             var list = new List<string> { "" };
             list.AddRange(RobotModels.List());
@@ -357,7 +357,7 @@ namespace FrcSim
         {
             string Sum()
             {
-                string m = RobotModels.Selected == "" ? Loc.T("model.builtin") : RobotModels.Selected;
+                string m = RobotModels.Selected == "" ? Loc.T("model.builtin") : RobotModels.Display(RobotModels.Selected);
                 string c = Prefs.GetString("robotProject", "");
                 string cc = c == "" ? Loc.T("setup.none") : System.IO.Path.GetFileName(c.TrimEnd('\\', '/'));
                 return m + "  ·  " + cc;
@@ -430,7 +430,7 @@ namespace FrcSim
                 {
                     SettingsStore.Fullscreen = !SettingsStore.Fullscreen; SettingsStore.Apply(); RefreshScreen();
                 }),
-                new Item(() => Loc.T("set.model") + ":  " + (RobotModels.Selected == "" ? Loc.T("model.builtin") : RobotModels.Selected), () =>
+                new Item(() => Loc.T("set.model") + ":  " + (RobotModels.Selected == "" ? Loc.T("model.builtin") : RobotModels.Display(RobotModels.Selected)), () =>
                 {
                     var list = new List<string> { "" };
                     list.AddRange(RobotModels.List());

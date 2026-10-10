@@ -9,7 +9,7 @@ namespace FrcSim
         public static readonly P[] All =
         {
             new P { ZhName = "平衡型", EnName = "Balanced", ZhDesc = "吸球 7 顆/秒、發射 8 發/秒,各項均衡", EnDesc = "7 intake/s, 8 shots/s — all-rounder",
-                Model = "proc:0.72,0.74,0.55,#1E8CFF", FireInt = 0f, Collect = 7f, Spread = 0f },
+                Model = "proc:0.72,0.74,0.55,#28B0FF", FireInt = 0f, Collect = 7f, Spread = 0f },
             new P { ZhName = "速射型", EnName = "Rapid fire", ZhDesc = "發射 14 發/秒但散布大,適合近距離洗分", EnDesc = "14 shots/s but wide spread — close-range spam",
                 Model = "proc:0.70,0.70,0.55,#FF3B30", FireInt = 0.07f, Collect = 7f, Spread = 4.5f },
             new P { ZhName = "狙擊手", EnName = "Sniper", ZhDesc = "發射 3 發/秒、幾乎零散布,遠距離穩穩進", EnDesc = "3 shots/s, near-zero spread — long-range accuracy",

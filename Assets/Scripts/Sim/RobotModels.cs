@@ -39,6 +39,14 @@ namespace FrcSim
             set { Prefs.SetString("robotModel", value); PlayerPrefs.Save(); }
         }
 
+        // 選單顯示用的友善名稱:程序化機器人("proc:..." 規格字串)顯示成內建機構名稱/開源隊名,不要露出規格字串
+        public static string Display(string file)
+        {
+            if (!ProcRobot.Is(file)) return file;
+            foreach (var p in MechPresets.All) if (p.Model == file) return Loc.Lang == "en" ? p.EnName : p.ZhName;
+            foreach (var c in OpenSourceCatalog.All) if (c.Model == file) return c.Team;
+            return Loc.Lang == "en" ? "Generic robot" : "通用機器人";
+        }
         public static float YawDeg
         {
             // kepler.glb 的 intake 在模型 +z 側,車頭(+x)要轉 90° 才對;使用者沒調過時預設用這個
