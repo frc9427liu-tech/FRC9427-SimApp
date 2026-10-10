@@ -25,7 +25,7 @@ namespace FrcSim
         static readonly string[] HotEn = { "{0} again! Who can stop this rhythm?!", "{0} is on a run, the crowd is on its feet!", "They can't be stopped! {0} one after another!" };
         static readonly string[] IdleEn = { "Both alliances fighting for the neutral zone, the pace is fast.", "Watch the cycle time here, matches are won in these details.", "The intake rollers are working overtime, lovely driving.", "Crossing the bump is the key moment, the chassis has to stay composed.", "Defense is coming in, the shooter needs a new angle." };
         static string who(bool blue) { return blue ? T("藍隊", "Blue") : T("紅隊", "Red"); }
-        int streakB, streakR; float lastGoal;
+        int streakB, streakR, lastLead; float lastGoal;
 
         void Update()
         {
@@ -41,8 +41,13 @@ namespace FrcSim
                 bool blue = b > lb; if (blue) { streakB++; streakR = 0; } else { streakR++; streakB = 0; }
                 int sk = blue ? streakB : streakR; 
                 string[] pool = Zh ? (sk >= 3 ? Hot : Goal) : (sk >= 3 ? HotEn : GoalEn);
-                Say(string.Format(pool[Random.Range(0, pool.Length)], who(blue)), 1.2f, sk >= 3 ? 4 : 2, 100); lastGoal = t;
+                int newLead = (int)Mathf.Sign(b - r) * (b == r ? 0 : 1); bool flip = newLead != 0 && lastLead != 0 && newLead != lastLead; lastLead = newLead != 0 ? newLead : lastLead;
+                if (flip) Say(T(who(blue) + "反超比分!局勢逆轉!", who(blue) + " takes the lead! What a swing!"), 1.2f, 4, 100);
+                else if (b == r && b > 0) Say(T("追平了!比分又拉回平手!", "All square again! We are tied!"), 1.2f, 3, 100);
+                else Say(string.Format(pool[Random.Range(0, pool.Length)], who(blue)), 1.2f, sk >= 3 ? 4 : 2, 100);
+                lastGoal = t;
             }
+            else if (sec <= 60 && lsec > 60 && lsec != 999) Say(b == r ? T("還剩一分鐘,雙方難分難解。", "One minute left and nothing between them.") : T("還剩一分鐘," + who(b > r) + "暫時領先 " + Mathf.Abs(b - r) + " 分。", "One minute to go. " + who(b > r) + " leads by " + Mathf.Abs(b - r) + "."), 2.5f, 2, 100);
             else if (sec <= 30 && lsec > 30 && lsec != 999) Say(T("剩下三十秒,終盤衝刺!", "Thirty seconds left, the final push!"), 2.5f, 3, 100);
             else if (sec <= 10 && lsec > 10 && lsec != 999) Say(b == r ? T("最後十秒,雙方平手!誰能搶下最後一分?!", "Ten seconds and it is tied! Who takes the last point?!") : T("最後十秒," + who(b > r) + "暫時領先!", "Ten seconds, " + who(b > r) + " leads!"), 2.5f, 4, 100);
             else if (sec <= 0 && lsec > 0 && lsec != 999) Say(b == r ? T("比賽結束,平手!太驚險了!", "Final buzzer, a tie! What a finish!") : T("比賽結束!" + who(b > r) + "拿下勝利!", "That is the match! " + who(b > r) + " takes the win!"), 3f, 4, 100);
