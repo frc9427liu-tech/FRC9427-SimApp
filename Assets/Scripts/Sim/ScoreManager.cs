@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 namespace FrcSim
 {
@@ -99,7 +99,7 @@ namespace FrcSim
                 Vector2 hub = inBlue ? blueHub : redHub;
                 float dir = inBlue ? 1f : -1f;
                 f.transform.position = new Vector3(hub.x + dir * 0.78f, 0.25f, hub.y + Random.Range(-0.3f, 0.3f));
-                rb.linearVelocity = new Vector3(dir * Random.Range(1.2f, 2.0f), 0f, Random.Range(-0.8f, 0.8f));
+                rb.linearVelocity = new Vector3(dir * Random.Range(0.4f, 0.9f), 0f, Random.Range(-0.4f, 0.4f));   // 輕輕吐出,不會滾到老遠
                 rb.angularVelocity = Vector3.zero;
             }
         }

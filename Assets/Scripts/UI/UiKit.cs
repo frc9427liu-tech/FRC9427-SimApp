@@ -46,6 +46,38 @@ namespace FrcSim
             return im;
         }
 
+        // ---- 液態玻璃用的圓角精靈(9-slice):實心圓角 / 細邊框環;radius 用 Image.pixelsPerUnitMultiplier 縮放
+        static Sprite solidSprite, ringSprite;
+        const int GN = 64, GR = 28;
+        static Sprite MakeRound(bool ring)
+        {
+            var tex = new Texture2D(GN, GN, TextureFormat.RGBA32, false) { filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp };
+            var px = new Color32[GN * GN];
+            for (int y = 0; y < GN; y++)
+                for (int x = 0; x < GN; x++)
+                {
+                    float dx = Mathf.Max(GR - x - 0.5f, x + 0.5f - (GN - GR), 0f);
+                    float dy = Mathf.Max(GR - y - 0.5f, y + 0.5f - (GN - GR), 0f);
+                    float d = Mathf.Sqrt(dx * dx + dy * dy);
+                    float a = Mathf.Clamp01(GR + 0.5f - d);
+                    if (ring) a = Mathf.Min(a, Mathf.Clamp01(d - (GR - 3f) + 0.5f)) * (d >= GR - 3f ? 1f : 0f);
+                    // 直邊上的環:距邊 < 3px
+                    if (ring && d <= 0f) { float e = Mathf.Min(Mathf.Min(x + 0.5f, GN - x - 0.5f), Mathf.Min(y + 0.5f, GN - y - 0.5f)); a = Mathf.Clamp01(3f - e + 0.5f); }
+                    px[y * GN + x] = new Color(1f, 1f, 1f, a);
+                }
+            tex.SetPixels32(px); tex.Apply();
+            return Sprite.Create(tex, new Rect(0, 0, GN, GN), new Vector2(0.5f, 0.5f), 100f, 0, SpriteMeshType.FullRect, new Vector4(GR, GR, GR, GR));
+        }
+        public static Image Glass(string name, Transform parent, Color c, float radius, bool ring = false)
+        {
+            if (solidSprite == null) { solidSprite = MakeRound(false); ringSprite = MakeRound(true); }
+            var im = Img(name, parent, c);
+            im.sprite = ring ? ringSprite : solidSprite;
+            im.type = Image.Type.Sliced;
+            im.pixelsPerUnitMultiplier = GR / Mathf.Max(4f, radius);
+            return im;
+        }
+
         public static Text Label(string name, Transform parent, string s, int size, Color c, TextAnchor a)
         {
             var rt = Rect(name, parent);
@@ -90,9 +122,9 @@ namespace FrcSim
         public void Refresh(bool selected)
         {
             Label.text = TextFn();
-            Bg.color = selected && Enabled ? new Color(UiTheme.Accent.r, UiTheme.Accent.g, UiTheme.Accent.b, 0.20f)
-                                           : new Color(1f, 1f, 1f, 0.04f);
-            Bar.color = selected && Enabled ? UiTheme.Accent : new Color(0, 0, 0, 0);
+            Bg.color = selected && Enabled ? new Color(0.45f, 0.72f, 1f, 0.30f)
+                                           : new Color(1f, 1f, 1f, Enabled ? 0.07f : 0.03f);
+            Bar.color = selected && Enabled ? new Color(1f, 1f, 1f, 0.85f) : new Color(1f, 1f, 1f, Enabled ? 0.22f : 0.10f);
             Label.color = !Enabled ? UiTheme.Disabled : selected ? UiTheme.Text : UiTheme.TextDim;
         }
     }

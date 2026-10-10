@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -28,7 +28,7 @@ namespace FrcSim
 
         class Item
         {
-            public Func<string> Text; public Action Click; public bool Enabled = true;
+            public Func<string> Text; public Action Click; public bool Enabled = true; public Func<bool> EnabledFn;
             public Item(Func<string> t, Action c, bool e = true) { Text = t; Click = c; Enabled = e; }
         }
 
@@ -92,7 +92,7 @@ namespace FrcSim
             }
             Destroy(bg.gameObject);
             splashing = false;
-            if (startMenu == "setup") { ShowRobotSetup(); yield break; }
+            if (startMenu == "setup") { ShowRobotSetup(); yield break; } if (startMenu == "pad") { ShowPadSetup(ShowRobotSetup, ShowMain); yield break; }
             if (startMenu == "controls") { ShowControls(); yield break; }
             if (startMenu == "settings") { settingsBack = ShowMain; ShowSettings(false); yield break; }
             if (startMenu == "modes") { ShowModes(); yield break; }
@@ -112,10 +112,15 @@ namespace FrcSim
             var rt = go.transform;
 
             // 左側面板
-            var panel = UiKit.Img("Panel", rt, UiTheme.Panel);
-            UiKit.PlaceTL(panel.rectTransform, 0, 0, 760, 1080);
-            var edge = UiKit.Img("Edge", rt, UiTheme.Line);
-            UiKit.PlaceTL(edge.rectTransform, 760, 0, 2, 1080);
+            // 液態玻璃面板:陰影 + 半透明深色玻璃 + 上半高光 + 亮邊
+            var shadow = UiKit.Glass("Shadow", rt, new Color(0, 0, 0, 0.28f), 52f);
+            UiKit.PlaceTL(shadow.rectTransform, 36, 52, 730, 990);
+            var panel = UiKit.Glass("Panel", rt, new Color(0.06f, 0.10f, 0.17f, 0.74f), 48f);
+            UiKit.PlaceTL(panel.rectTransform, 40, 40, 722, 1000);
+            var shine = UiKit.Glass("Shine", rt, new Color(0.75f, 0.88f, 1f, 0.09f), 46f);
+            UiKit.PlaceTL(shine.rectTransform, 44, 44, 714, 420);
+            var edge = UiKit.Glass("Edge", rt, new Color(0.9f, 0.96f, 1f, 0.40f), 48f, true);
+            UiKit.PlaceTL(edge.rectTransform, 40, 40, 722, 1000);
 
             // 標題區
             var small = UiKit.Label("Tag", rt, "FRC 9427", 26, UiTheme.Accent, TextAnchor.UpperLeft);
@@ -136,11 +141,12 @@ namespace FrcSim
             foreach (var it in items)
             {
                 var b = new UiButton { TextFn = it.Text, OnClick = it.Click, Enabled = it.Enabled };
-                b.Bg = UiKit.Img("Btn", rt, new Color(1, 1, 1, 0.04f));
+                if (it.EnabledFn != null) { var itc = it; var bc = b; s.Refreshers.Add(() => bc.Enabled = itc.EnabledFn()); }
+                b.Bg = UiKit.Glass("Btn", rt, new Color(1, 1, 1, 0.07f), bh / 2f);
                 b.Rt = b.Bg.rectTransform;
                 UiKit.PlaceTL(b.Rt, 90, y, 580, bh);
-                b.Bar = UiKit.Img("Bar", b.Rt, UiTheme.Accent);
-                UiKit.PlaceTL(b.Bar.rectTransform, 0, 0, 6, bh);
+                b.Bar = UiKit.Glass("Ring", b.Rt, new Color(1, 1, 1, 0.22f), bh / 2f, true);
+                UiKit.Stretch(b.Bar.rectTransform);
                 b.Label = UiKit.Label("Text", b.Rt, it.Text(), 34, UiTheme.TextDim, TextAnchor.MiddleLeft);
                 b.Label.resizeTextForBestFit = true;   // 長標籤(例如比賽計時)自動縮小,不超出按鈕
                 b.Label.resizeTextMinSize = 18; b.Label.resizeTextMaxSize = 34;
@@ -165,10 +171,11 @@ namespace FrcSim
 
         void Show(MenuScreen s, bool game)
         {
+            padScreen = false;
             if (cur != null) cur.Go.SetActive(false);
             cur = s;
             inGameMenu = game;
-            dim.color = game ? new Color(0, 0, 0, 0.55f) : new Color(0, 0, 0, 0);
+            dim.color = game ? new Color(0, 0, 0, 0.45f) : new Color(0.02f, 0.04f, 0.08f, 0.35f);
             s.Go.SetActive(true);
             menuVisible = true;
             justOpened = true;
@@ -216,11 +223,47 @@ namespace FrcSim
             Show(s, false);
         }
 
+        static string Z(string zh, string en) => Loc.Lang == "zh" ? zh : en;
+        bool padScreen; float nextLive;
+
+        string PadStatus(bool driver)
+        {
+            bool on = driver ? Pad.DriverOnline : Pad.OperatorOnline;
+            if (Pad.Mode == 1 && !driver) return Z("(單手把:同一支)", "(single pad)");
+            if (!on) return Z("✗ 未偵測(請接上手把)", "✗ not detected");
+            int idx = driver ? Pad.DriverIndex : Pad.OperatorIndex;
+            return Z("✓ 已連線(第 ", "✓ connected (#") + (idx + 1) + Z(" 槽)", ")");
+        }
+
+        // 進遊戲前先選「單手把 / 雙手把」,雙手把再依序按 A 指派駕駛與操作手;狀態即時更新(掉線一眼看得出來)
+        void ShowPadSetup(Action next, Action back)
+        {
+            MenuScreen s = null;
+            s = Build(
+                () => Pad.AssignStage == 1 ? Z("按「駕駛」手把 A", "Press A: DRIVER") : Pad.AssignStage == 2 ? Z("按「操作手」手把 A", "Press A: OPERATOR") : Z("手把設定", "Controllers"),
+                () => Pad.AssignStage > 0 ? Z("在要當這個角色的那支手把上按 A 鍵", "On the pad you want for this role") : Z("先選要用幾支,再開始;沒手把也能用鍵盤", "Choose pad count first; keyboard works too"),
+                new[]
+                {
+                    new Item(() => Z("手把數量", "Pads") + ":  " + (Pad.Mode == 2 ? Z("2 支(駕駛+操作手)", "2 (driver+operator)") : Pad.Mode == 1 ? Z("1 支(一人全包)", "1 (all-in-one)") : Z("請選擇 ▸", "choose ▸")), () =>
+                    {
+                        Pad.Mode = Pad.Mode == 2 ? 1 : 2;
+                        if (Pad.Mode == 2) Pad.BeginAssign(); else Pad.AssignStage = 0;
+                    }),
+                    new Item(() => Z("駕駛", "Driver") + ":  " + PadStatus(true), null, false),
+                    new Item(() => Z("操作手", "Operator") + ":  " + PadStatus(false), null, false),
+                    new Item(() => Z("重新指派(各按一次 A)", "Re-assign (press A on each)"), () => { Pad.Mode = 2; Pad.BeginAssign(); }) { EnabledFn = () => Pad.Mode == 2 },
+                    new Item(() => Pad.Mode == 2 && !(Pad.DriverOnline && Pad.OperatorOnline) ? Z("下一步(需兩支都連線)", "Next (needs both pads)") : Z("下一步", "Next"), () => next()) { EnabledFn = () => Pad.Mode == 1 || (Pad.Mode == 2 && Pad.DriverOnline && Pad.OperatorOnline && Pad.AssignStage == 0) },
+                    new Item(() => Loc.T("menu.back"), () => back()),
+                }, () => back());
+            padScreen = true;
+            Show(s, inGameMenu);
+        }
+
         void ShowModes()
         {
             var s = Build(() => Loc.T("mode.title"), null, new[]
             {
-                new Item(() => Loc.T("mode.free"),  ShowRobotSetup),
+                new Item(() => Loc.T("mode.free"),  () => ShowPadSetup(ShowRobotSetup, ShowModes)),
                 // 「比賽模式/自動階段練習」還沒做,先不顯示避免新手點不動(比賽計時在機器人設定頁開關)
                 new Item(() => Loc.T("menu.back"),  ShowMain),
             }, ShowMain);
@@ -356,6 +399,7 @@ namespace FrcSim
                     RobotModels.Selected = list[(i + 1) % list.Count];
                     RefreshScreen();
                 }),
+                new Item(() => Z("手把設定", "Controllers"), () => ShowPadSetup(() => ShowSettings(game), () => ShowSettings(game))),
                 new Item(() => Loc.T("menu.back"), () => settingsBack?.Invoke()),
             }, () => settingsBack?.Invoke());
             Show(s, game);
@@ -428,6 +472,13 @@ namespace FrcSim
         void Update()
         {
             if (splashing) return;
+            // 手把設定畫面:即時刷新連線狀態;指派中只吃「按 A 指派」,不讓手把去操作選單
+            if (padScreen && cur != null && menuVisible)
+            {
+                Pad.Poll();
+                if (Time.unscaledTime >= nextLive) { nextLive = Time.unscaledTime + 0.2f; RefreshScreen(); }
+                if (Pad.AssignStage > 0) { if (Input.GetKeyDown(KeyCode.Escape)) Pad.AssignStage = 0; return; }
+            }
 
             // 遊戲中按 Esc / 手把 Back 開暫停選單
             if (!menuVisible && GameSession.Active)

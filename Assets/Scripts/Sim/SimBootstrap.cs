@@ -31,6 +31,7 @@ namespace FrcSim
             RenderSettings.ambientSkyColor = new Color(0.55f, 0.62f, 0.75f);
             RenderSettings.ambientEquatorColor = new Color(0.42f, 0.44f, 0.50f);
             RenderSettings.ambientGroundColor = new Color(0.18f, 0.19f, 0.22f);
+            RenderSettings.fog = true; RenderSettings.fogMode = FogMode.Linear; RenderSettings.fogColor = new Color(0.07f, 0.09f, 0.14f); RenderSettings.fogStartDistance = 22f; RenderSettings.fogEndDistance = 75f;   // 遠處漸入深藍,場館更有層次
 
             var camObj = Camera.main != null ? Camera.main.gameObject : new GameObject("Main Camera", typeof(Camera), typeof(AudioListener));
             camObj.tag = "MainCamera";
