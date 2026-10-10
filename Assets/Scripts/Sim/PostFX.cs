@@ -37,7 +37,7 @@ namespace FrcSim
         [Header("Bloom")]
         public float Threshold = 1.4f;
         [Range(0.01f, 1)] public float Knee = 0.5f;
-        public float BloomIntensity = 0.22f;
+        public float BloomIntensity = 0.12f;
         [Range(0, 1)] public float Scatter = 0.65f;
         [Range(2, 6)] public int Iterations = 5;
 

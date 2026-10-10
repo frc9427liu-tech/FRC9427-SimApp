@@ -36,7 +36,8 @@ namespace FrcSim
             var rig = camObj.AddComponent<CameraRig>();
             rig.Orbit = true;
             Juice.Boot(camObj);
-            new GameObject("PerfOverlay").AddComponent<PerfOverlay>();   // F3:幀時間圖與 1% low   // 音效/粒子/鏡頭回饋(Juice 套件)
+            new GameObject("Commentary").AddComponent<Commentary>();
+                new GameObject("PerfOverlay").AddComponent<PerfOverlay>();   // F3:幀時間圖與 1% low   // 音效/粒子/鏡頭回饋(Juice 套件)
 
             bool selfTest = System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-selftest") >= 0;
             if (selfTest)

@@ -10,13 +10,13 @@ namespace FrcSim
         public int Mode = 1;
         Vector3 velPos;
         float chaseYaw; bool chaseInit;
-        float orbitT;
+        float orbitT; int dirScore; float dirHold, dirHub;
 
-        public string ModeName => Mode == 0 ? "overview" : Mode == 1 ? "chase" : "top-down";
+        public string ModeName => Mode == 0 ? "overview" : Mode == 1 ? "chase" : Mode == 7 ? "operator" : Mode == 8 ? "broadcast" : "top-down";
 
         void Update()
         {
-            if (!Orbit && !MenuSystem.Blocking && Input.GetKeyDown(KeyCode.C)) Mode = (Mode + 1) % 3;
+            if (!Orbit && !MenuSystem.Blocking && Input.GetKeyDown(KeyCode.C)) Mode = Mode == 1 ? 2 : Mode == 2 ? 0 : Mode == 0 ? 7 : Mode == 7 ? 8 : 1;
         }
 
         void LateUpdate()
@@ -59,7 +59,32 @@ namespace FrcSim
                 if (nearest < dCam) pos = org + toCam / dCam * Mathf.Max(0.9f, nearest - 0.15f) + Vector3.up * 0.8f;
                 rot = Quaternion.LookRotation(Target.position + fwdC * 0.9f - pos, Vector3.up);
             }
-            else if (Mode == 6)
+            else if (Mode == 7)
+            {
+                // 操作者視角:站在己方聯盟牆後的駕駛台,抬高一點看向場中央(真實比賽駕駛員的位置)
+                bool nearBlue = Target.position.x < L / 2f;
+                pos = new Vector3(nearBlue ? -2.4f : L + 2.4f, 3.5f, Mathf.Clamp(Target.position.z, 1.5f, W - 1.5f) * 0.6f + W * 0.2f);
+                Vector3 look = Vector3.Lerp(new Vector3(L / 2f, 0.6f, W / 2f), Target.position, 0.45f);
+                rot = Quaternion.LookRotation(look - pos, Vector3.up);
+            }
+            else if (Mode == 8)
+            {
+                // 導播視角:自動切鏡。進球 -> 籃框特寫;平時在側面高機位 / 追車低機位 / 全景輪流,每 7 秒換鏡
+                int sc = ScoreManager.BlueScore + ScoreManager.RedScore;
+                if (sc != dirScore) { dirScore = sc; dirHold = Time.unscaledTime + 3.5f; dirHub = Target.position.x < L / 2f ? 4.62f : L - 4.62f; if (ScoreManager.RedScore != 0 || ScoreManager.BlueScore != 0) dirHub = (Random.value < 0.5f) ? 4.62f : L - 4.62f; }
+                if (Time.unscaledTime < dirHold)
+                {
+                    pos = new Vector3(dirHub + (dirHub < L / 2f ? 4.5f : -4.5f), 3.4f, W / 2f - 5f);
+                    rot = Quaternion.LookRotation(new Vector3(dirHub, 1.9f, W / 2f) - pos, Vector3.up);
+                }
+                else
+                {
+                    int shot = (int)(Time.unscaledTime / 7f) % 3;
+                    if (shot == 0) { pos = new Vector3(Mathf.Lerp(L * 0.3f, L * 0.7f, Mathf.PingPong(Time.unscaledTime * 0.05f, 1f)), 5.5f, -1.2f); rot = Quaternion.LookRotation(new Vector3(Target.position.x, 0.5f, W / 2f) - pos, Vector3.up); }
+                    else if (shot == 1) { pos = Target.position + new Vector3(-1.8f, 2.8f, -3.6f); rot = Quaternion.LookRotation(Target.position + Vector3.up * 0.4f - pos, Vector3.up); }
+                    else { pos = new Vector3(L / 2f, 9f, W / 2f - 8f); rot = Quaternion.LookRotation(new Vector3(L / 2f, 0f, W / 2f) - pos, Vector3.up); }
+                }
+            }            else if (Mode == 6)
             {
                 // 觀眾席視角(-camera 6):站在場內低處看對面看台,檢查觀眾外觀
                 pos = new Vector3(L * 0.5f, 1.7f, 0.8f);

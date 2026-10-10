@@ -25,7 +25,7 @@ namespace FrcSim
         {
             sun.type = LightType.Directional;
             sun.color = new Color(1f, 0.955f, 0.88f);
-            sun.intensity = 1.3f;
+            sun.intensity = 1.05f;
             sun.shadows = LightShadows.Soft;
             sun.shadowStrength = 0.65f;
             sun.shadowBias = 0.04f;
@@ -36,7 +36,7 @@ namespace FrcSim
             RenderSettings.ambientEquatorColor = new Color(0.32f, 0.36f, 0.44f);
             RenderSettings.ambientGroundColor  = new Color(0.14f, 0.15f, 0.18f);
             RenderSettings.ambientIntensity = 1f;
-            RenderSettings.reflectionIntensity = 1f;
+            RenderSettings.reflectionIntensity = 0.55f;
 
             var fog = new Color(0.045f, 0.06f, 0.10f);
             RenderSettings.fog = true; RenderSettings.fogMode = FogMode.Linear; RenderSettings.fogColor = fog;
@@ -83,9 +83,9 @@ namespace FrcSim
         public static void Classify(Color c, out float smooth, out float metal)
         {
             float mx = Mathf.Max(c.r, c.g, c.b), mn = Mathf.Min(c.r, c.g, c.b);
-            if (mx - mn > 0.25f) { smooth = 0.52f; metal = 0f; }          // colored plastic / paint (HUB, bump, bumpers, alliance parts)
-            else if (mx < 0.22f) { smooth = 0.30f; metal = 0.05f; }       // black plastic / rubber
-            else                 { smooth = 0.42f; metal = 0.40f; }       // aluminium / steel / white parts
+            if (mx - mn > 0.25f) { smooth = 0.36f; metal = 0f; }          // colored plastic / paint (HUB, bump, bumpers, alliance parts)
+            else if (mx < 0.22f) { smooth = 0.22f; metal = 0.03f; }       // black plastic / rubber
+            else                 { smooth = 0.30f; metal = 0.22f; }       // aluminium / steel / white parts
         }
 
         static Texture2D carpetData, carpetNorm;
