@@ -102,6 +102,7 @@ namespace FrcSim
         }
 
         // ---------------------------------------------------------------- 畫面建構
+        static void FitTitle(Text t) { int n = 0; foreach (char c in t.text ?? "") n += c > 0x2E80 ? 2 : 1; t.fontSize = n <= 13 ? 64 : Mathf.Clamp(Mathf.RoundToInt(64f * 13.5f / n), 32, 64); t.horizontalOverflow = HorizontalWrapMode.Overflow; }
         MenuScreen Build(Func<string> titleFn, Func<string> subFn, Item[] items, Action onBack, Action<RectTransform> extra = null, float firstY = 330f)
         {
             var s = new MenuScreen { TitleFn = titleFn, OnBack = onBack };
@@ -120,7 +121,7 @@ namespace FrcSim
             var small = UiKit.Label("Tag", rt, "FRC 9427", 26, UiTheme.Accent, TextAnchor.UpperLeft);
             UiKit.PlaceTL(small.rectTransform, 90, 90, 600, 40);
             s.Title = UiKit.Label("Title", rt, titleFn(), 64, UiTheme.Text, TextAnchor.UpperLeft);
-            s.Title.fontStyle = FontStyle.Bold;
+            s.Title.fontStyle = FontStyle.Bold; FitTitle(s.Title);   // 英文標題較長:依字數縮小字級,不超出面板
             UiKit.PlaceTL(s.Title.rectTransform, 90, 130, 640, 90);
             var sub = UiKit.Label("Sub", rt, subFn != null ? subFn() : "", 28, new Color(0.79f, 0.83f, 0.90f), TextAnchor.UpperLeft);
             UiKit.PlaceTL(sub.rectTransform, 92, 225, 640, 40);
@@ -178,7 +179,7 @@ namespace FrcSim
         void RefreshScreen()
         {
             if (cur == null) return;
-            cur.Title.text = cur.TitleFn();
+            cur.Title.text = cur.TitleFn(); FitTitle(cur.Title);
             foreach (var r in cur.Refreshers) r();
             for (int i = 0; i < cur.Buttons.Count; i++) cur.Buttons[i].Refresh(i == cur.Sel);
         }
