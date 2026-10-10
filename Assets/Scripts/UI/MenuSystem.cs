@@ -487,7 +487,7 @@ namespace FrcSim
                     RobotModels.Selected = list[(i + 1) % list.Count];
                     RefreshScreen();
                 }),
-                new Item(() => Z("手把設定", "Controllers"), () => ShowPadSetup(() => ShowSettings(game), () => ShowSettings(game))),
+                new Item(() => Z("手把設定  ▸", "Controllers  ▸"), () => ShowPadSetup(() => ShowSettings(game), () => ShowSettings(game))),
                 new Item(() => Z("聲音與回饋  ▸", "Sound & feedback  ▸"), () => ShowSoundSettings(game)),
                 new Item(() => Z("後製特效", "Post effects") + ":  " + (PostFX.Quality == 0 ? Z("關", "Off") : PostFX.Quality == 1 ? Z("基本", "Basic") : PostFX.Quality == 2 ? Z("泛光", "Bloom") : "AO"), () => { PostFX.Quality = (PostFX.Quality + 1) % 3; }),
                 new Item(() => Z("液態玻璃(毛玻璃)", "Liquid glass") + ":  " + (UiGlass.Disabled ? Z("關", "Off") : Z("開", "On")), () => { UiGlass.Disabled = !UiGlass.Disabled; if (UiGlass.Disabled) UiGlass.Ready = false; Prefs.SetInt("noGlass", UiGlass.Disabled ? 1 : 0); PlayerPrefs.Save(); }),
@@ -676,6 +676,8 @@ namespace FrcSim
         }
     }
 }
+
+
 
 
 
