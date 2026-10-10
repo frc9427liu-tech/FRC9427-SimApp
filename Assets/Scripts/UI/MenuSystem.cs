@@ -242,19 +242,19 @@ namespace FrcSim
             MenuScreen s = null;
             s = Build(
                 () => Pad.AssignStage == 1 ? Z("按「駕駛」手把 A", "Press A: DRIVER") : Pad.AssignStage == 2 ? Z("按「操作手」手把 A", "Press A: OPERATOR") : Z("手把設定", "Controllers"),
-                () => Pad.AssignStage > 0 ? Z("在要當這個角色的那支手把上按 A 鍵", "On the pad you want for this role") : Z("先選要用幾支,再開始;沒手把也能用鍵盤", "Choose pad count first; keyboard works too"),
+                () => Pad.AssignStage > 0 ? Z("在要當這個角色的那支手把上按 A(Enter 跳過,自動分)", "Press A on that pad (Enter = skip, auto)") : Z("先選要用幾支,再開始;沒手把也能用鍵盤", "Choose pad count first; keyboard works too"),
                 new[]
                 {
                     new Item(() => Z("手把數量", "Pads") + ":  " + (Pad.Mode == 2 ? Z("2 支(駕駛+操作手)", "2 (driver+operator)") : Pad.Mode == 1 ? Z("1 支(一人全包)", "1 (all-in-one)") : Z("請選擇 ▸", "choose ▸")), () =>
                     {
                         Pad.Mode = Pad.Mode == 2 ? 1 : 2;
-                        if (Pad.Mode == 2) Pad.BeginAssign(); else Pad.AssignStage = 0;
+                        Pad.AssignStage = 0;   // 兩支都連上就自動分(第 1 槽駕駛、第 2 槽操作手),指派是選用的
                     }),
                     new Item(() => Z("駕駛", "Driver") + ":  " + PadStatus(true), null, false),
                     new Item(() => Z("操作手", "Operator") + ":  " + PadStatus(false), null, false),
                     new Item(() => Z("重新指派(各按一次 A)", "Re-assign (press A on each)"), () => { Pad.Mode = 2; Pad.BeginAssign(); }) { EnabledFn = () => Pad.Mode == 2 },
                     new Item(() => Z("操作手改用鍵盤", "Operator on keyboard") + ":  " + Loc.T(Pad.OperatorKeyboard ? "on" : "off"), () => { Pad.OperatorKeyboard = !Pad.OperatorKeyboard; }) { EnabledFn = () => Pad.Mode == 2 },
-                    new Item(() => Pad.Mode == 2 && !(Pad.DriverOnline && (Pad.OperatorOnline || Pad.OperatorKeyboard)) ? Z("下一步(需兩支都連線)", "Next (needs both pads)") : Z("下一步", "Next"), () => next()) { EnabledFn = () => Pad.Mode == 1 || (Pad.Mode == 2 && Pad.DriverOnline && (Pad.OperatorOnline || Pad.OperatorKeyboard) && Pad.AssignStage == 0) },
+                    new Item(() => Pad.Mode == 2 && !(Pad.DriverOnline && (Pad.OperatorOnline || Pad.OperatorKeyboard)) ? Z("下一步(需兩支都連線)", "Next (needs both pads)") : Z("下一步", "Next"), () => { Pad.AssignStage = 0; next(); }) { EnabledFn = () => Pad.Mode == 1 || (Pad.Mode == 2 && Pad.DriverOnline && (Pad.OperatorOnline || Pad.OperatorKeyboard)) },
                     new Item(() => Loc.T("menu.back"), () => back()),
                 }, () => back());
             padScreen = true;
@@ -479,7 +479,7 @@ namespace FrcSim
             {
                 Pad.Poll();
                 if (Time.unscaledTime >= nextLive) { nextLive = Time.unscaledTime + 0.2f; RefreshScreen(); }
-                if (Pad.AssignStage > 0) { if (Input.GetKeyDown(KeyCode.Escape)) Pad.AssignStage = 0; return; }
+                if (Pad.AssignStage > 0) { if (Input.GetKeyDown(KeyCode.Escape) || Input.GetKeyDown(KeyCode.Return)) Pad.AssignStage = 0; return; }
             }
 
             // 遊戲中按 Esc / 手把 Back 開暫停選單
