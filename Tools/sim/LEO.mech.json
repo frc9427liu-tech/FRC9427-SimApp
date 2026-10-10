@@ -25,6 +25,12 @@
     "forwardSign": -1
   },
   "mechanisms": {
+    "effects": [
+      { "name": "collect", "motor": "roller", "dir": "+", "minRps": 10, "needsArm": true, "note": "滾輪正轉 + 手臂放下 = 吸球" },
+      { "name": "eject",   "motor": "roller", "dir": "-", "minRps": 10, "interval": 0.18, "speed": 1.5, "note": "滾輪反轉 = 吐球(每 0.18 秒一顆)" },
+      { "name": "leak",    "motor": "feeder", "dir": "abs", "minRps": 15, "flywheelBelow": 15, "interval": 0.45, "speed": 2.2, "note": "只送球不轉飛輪 = 漏球" },
+      { "name": "shoot",   "motor": "feeder", "dir": "abs", "minRps": 15, "flywheelAbove": 15, "note": "送球 + 飛輪到速 = 發射" }
+    ],
     "roller": "Talon FX (v6)[6]",
     "arm": "Talon FX (v6)[5]",
     "armDownRev": 2.0,

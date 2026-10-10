@@ -26,6 +26,12 @@ namespace FrcSim
         public float CollectPerSec;      // >0:AI 難度用的吸球速率上限(顆/秒);玩家 0 = 不限
         float nextCollect;
         public bool Feeding, Ejecting;   // 送球(Orbit 轉)/吐球(滾輪反轉)中,HUD 顯示用
+        readonly System.Collections.Generic.Dictionary<string, float> effectNext = new System.Collections.Generic.Dictionary<string, float>();
+        static readonly Newtonsoft.Json.Linq.JArray DefaultEffects = Newtonsoft.Json.Linq.JArray.Parse(@"[
+          {""name"":""collect"",""motor"":""roller"",""dir"":""+"",""minRps"":10,""needsArm"":true},
+          {""name"":""eject"",""motor"":""roller"",""dir"":""-"",""minRps"":10,""interval"":0.18,""speed"":1.5},
+          {""name"":""leak"",""motor"":""feeder"",""dir"":""abs"",""minRps"":15,""flywheelBelow"":15,""interval"":0.45,""speed"":2.2},
+          {""name"":""shoot"",""motor"":""feeder"",""dir"":""abs"",""minRps"":15,""flywheelAbove"":15}]");
         float nextEject, nextLeak;
         public float RollerRps, RollerSigned;   // 滾輪轉速(帶正負號:測試/吐球判斷用)          // 滾輪轉速(真實程式模式,測試/除錯用)
         public int TotalCollected;
@@ -84,25 +90,45 @@ namespace FrcSim
                 ArmVisual.localPosition = new Vector3(SimConstants.BumperLength / 2f + ArmExt * 0.5f - 0.02f, 0.02f, 0f);
                 ArmVisual.localScale = new Vector3(0.05f + ArmExt, 0.10f, 0.62f);
             }
-            if (ArmExt >= 0.2f && rollerSigned > 10f && Held < Capacity) Collect();
-            Feeding = feedRps > 15f; Ejecting = rollerSigned < -10f;
-            // 吐球(X):滾輪反轉,球從吸球口慢慢滾出
-            if (Ejecting && Held > 0 && Time.time >= nextEject)
+            // ---- 資料驅動的「馬達 → 效果」規則(mech.json 的 "effects";沒寫就用預設 = LEO 原本行為)
+            //  每條:name(collect/eject/leak/shoot)、motor(mechanisms 裡的鍵)、dir(+/-/abs)、minRps、可選 needsArm、flywheelBelow/flywheelAbove、interval、speed
+            var effects = cfg["effects"] as Newtonsoft.Json.Linq.JArray ?? DefaultEffects;
+            Feeding = false; Ejecting = false; bool shootNow = false;
+            foreach (Newtonsoft.Json.Linq.JObject ef in effects)
             {
-                nextEject = Time.time + 0.18f;
-                float hh = Drive.HeadingRad;
-                Vector2 dir = new Vector2(Mathf.Cos(hh), Mathf.Sin(hh));
-                Vector2 mouth = Drive.Pose2d + dir * (SimConstants.BumperLength / 2f + 0.35f);
-                FuelManager.Spawn(new Vector3(mouth.x, 0.32f, mouth.y), new Vector3(dir.x * 1.5f + Drive.Velocity.x, 1.2f, dir.y * 1.5f + Drive.Velocity.y), RobotCollider);
-                Held--;
+                string mname = Name((string)ef["motor"]); if (string.IsNullOrEmpty(mname)) continue;
+                float mv = (float)Sim.Vel(mname); string dr = (string)ef["dir"] ?? "abs";
+                float sv = dr == "+" ? mv : dr == "-" ? -mv : Mathf.Abs(mv);
+                if (sv <= ((float?)ef["minRps"] ?? 10f)) continue;
+                if ((bool?)ef["needsArm"] == true && ArmExt < 0.2f) continue;
+                if (ef["flywheelBelow"] != null && FlywheelRps > (float)ef["flywheelBelow"]) continue;
+                if (ef["flywheelAbove"] != null && FlywheelRps <= (float)ef["flywheelAbove"]) continue;
+                string en = (string)ef["name"];
+                float interval = (float?)ef["interval"] ?? 0.2f, espeed = (float?)ef["speed"] ?? 1.5f;
+                effectNext.TryGetValue(en, out float nt);
+                switch (en)
+                {
+                    case "collect": if (Held < Capacity) Collect(); break;
+                    case "eject":   // 滾輪反轉:球從吸球口慢慢滾出
+                        Ejecting = true;
+                        if (Held > 0 && Time.time >= nt)
+                        {
+                            effectNext[en] = Time.time + interval;
+                            float hh = Drive.HeadingRad;
+                            Vector2 dir = new Vector2(Mathf.Cos(hh), Mathf.Sin(hh));
+                            Vector2 mouth = Drive.Pose2d + dir * (SimConstants.BumperLength / 2f + 0.35f);
+                            FuelManager.Spawn(new Vector3(mouth.x, 0.32f, mouth.y), new Vector3(dir.x * espeed + Drive.Velocity.x, 1.2f, dir.y * espeed + Drive.Velocity.y), RobotCollider);
+                            Held--;
+                        }
+                        break;
+                    case "leak":    // 只送球不轉飛輪:沒速度就「漏」出去一小段
+                        Feeding = true;
+                        if (Held > 0 && Time.time >= nt) { effectNext[en] = Time.time + interval; Fire(Drive.Pose2d, Drive.HeadingRad, espeed); }
+                        break;
+                    case "shoot": Feeding = true; shootNow = true; break;
+                }
             }
-            // 只送球不轉飛輪(RB):球被 Orbit 推到發射口,沒有飛輪速度就「漏」出去一小段
-            if (Feeding && FlywheelRps <= 15f && Held > 0 && Time.time >= nextLeak)
-            {
-                nextLeak = Time.time + 0.45f;
-                Fire(Drive.Pose2d, Drive.HeadingRad, 2.2f);
-            }
-            Shooting = feedRps > 15f && FlywheelRps > 15f;
+            Shooting = shootNow;
             Ready = Shooting;
             if (Shooting && Held > 0 && Time.time >= nextFire)
             {
