@@ -41,6 +41,7 @@ namespace FrcSim
 
         public static void Begin(CameraRig rig, bool selfTest = false, string projectOverride = null)
         {
+            BindingMap.Loaded = false; BindingMap.IntakeOnDriverRT = false; BindingMap.List.Clear();
             { var ca = System.Environment.GetCommandLineArgs(); int vi = System.Array.IndexOf(ca, "-vsai"); if (vi >= 0 && vi + 1 < ca.Length) { VsAi = true; int.TryParse(ca[vi + 1], out AiTestLevel); } }
             if (Active) return;
             Active = true;
@@ -119,6 +120,7 @@ namespace FrcSim
             }
             if (!string.IsNullOrEmpty(proj) && System.IO.File.Exists(System.IO.Path.Combine(proj, "gradlew.bat")))
             {
+                BindingMap.Load(proj);   // 讀專案 RobotContainer 的按鍵綁定(說明面板、單手把轉接用)
                 Hal = robot.AddComponent<HalSim>();
                 Hal.StartRobot(proj);
                 var ms = robot.AddComponent<MechSim>();

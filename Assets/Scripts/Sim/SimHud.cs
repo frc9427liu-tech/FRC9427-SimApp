@@ -226,11 +226,18 @@ namespace FrcSim
                         "Pad: L/R stick = left/right side   A arm   B roller   RT shoot   RB feed   D-pad L/R turret   Start pause")
                     : L("WASD 移動   Q/E 旋轉   Shift 慢速   I 吸球   空白/滑鼠 射擊   F 場地/車體座標", "WASD move   Q/E rotate   Shift slow   I intake   Space/Mouse shoot   F field/robot");
                 string t2 = L("H 人類球員放球   C 視角   R 重置   Esc 暫停   2P(紅):方向鍵移動  ,. 旋轉  / 吸球  右Ctrl 射擊", "H human-player chute   C camera   R reset   Esc pause   P2 (red): arrows move  ,. rotate  / intake  RCtrl shoot");
-                float hw = Mathf.Min(W - 20, 1100);
-                Panel(new Rect(cx - hw / 2f, H - 62, hw, 52), 0.6f);
+                bool bound = BindingMap.Loaded && tank && GameSession.Hal != null;
+                if (bound)
+                {
+                    string cc = Pad2.Separate ? "" : L("   [單手把:砲塔=十字鍵左右,收球=B]", "   [single pad: turret = D-pad, intake = B]");
+                    t1 = L("駕駛手  ", "Driver  ") + BindingMap.Line(true);
+                    t2 = L("操作手  ", "Operator  ") + BindingMap.Line(false) + cc + "      " + L("(說明由程式的 RobotContainer 自動產生)", "(auto-generated from RobotContainer)");
+                }                float hw = Mathf.Min(W - 20, 1100);
+                Panel(new Rect(cx - hw / 2f, H - (bound ? 84 : 62), hw, bound ? 74 : 52), 0.6f);
                 var hs = Style(14, dim);
-                GUI.Label(new Rect(cx - hw / 2f + 12, H - 58, hw - 16, 22), t1, hs);
-                GUI.Label(new Rect(cx - hw / 2f + 12, H - 36, hw - 16, 22), t2, hs);
+                GUI.Label(new Rect(cx - hw / 2f + 12, H - (bound ? 80 : 58), hw - 16, 22), t1, hs);
+                GUI.Label(new Rect(cx - hw / 2f + 12, H - (bound ? 58 : 36), hw - 16, 22), t2, hs);
+                if (bound) GUI.Label(new Rect(cx - hw / 2f + 12, H - 36, hw - 16, 22), L("H 球員放球   C 視角   R 重置   F5 再來一場   Esc 暫停   F1 隱藏說明", "H chute   C camera   R reset   F5 rematch   Esc pause   F1 hide"), hs);
             }
         }
     }

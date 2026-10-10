@@ -75,16 +75,31 @@ namespace FrcSim
                 for (int i = 0; i < 6; i++) { h.Axes[i] = 0f; h.Axes2[i] = 0f; }
                 for (int i = 0; i < h.Buttons.Length; i++) { h.Buttons[i] = false; h.Buttons2[i] = false; }
                 h.Axes[1] = -rawL; h.Axes[5] = -rawR;
-                h.Buttons[0] = Pad.Held(Pad.A) || kA;
-                h.Axes[3] = Mathf.Max(Pad2.Separate ? Pad.RT : (Pad.Held(Pad.B) ? 1f : 0f), kB ? 1f : 0f);   // LEO 新版:駕駛 RT = intake 收球(兩支手把用駕駛 RT;單手把時 B 代替,因為 RT 要留給發射)
+                bool dual = Pad2.Separate;
+                bool kBrt = kB && BindingMap.IntakeOnDriverRT, kBbtn = kB && !BindingMap.IntakeOnDriverRT;
+                if (dual)
+                {
+                    // 兩支手把:跟真的 Driver Station 一樣,實體按鍵原樣送進程式(device 0 = 駕駛、device 1 = 操作手),程式怎麼綁就怎麼動
+                    h.Axes[0] = Pad.LX; h.Axes[2] = Pad.LT; h.Axes[3] = Mathf.Max(Pad.RT, kBrt ? 1f : 0f); h.Axes[4] = Pad.RX;
+                    h.Buttons[0] = Pad.Held(Pad.A) || kA; h.Buttons[1] = Pad.Held(Pad.B) || kBbtn; h.Buttons[2] = Pad.Held(Pad.X); h.Buttons[3] = Pad.Held(Pad.Y);
+                    h.Buttons[4] = Pad.Held(Pad.LB); h.Buttons[5] = Pad.Held(Pad.RB); h.Buttons[6] = Pad.Held(Pad.Back); h.Buttons[7] = Pad.Held(Pad.Start);
+                }
+                else
+                {
+                    // 單手把:同一支當駕駛+操作手,RT 要留給發射,所以「收球」改用 B(綁在 RT 或 B 由專案的 RobotContainer 決定)
+                    h.Buttons[0] = Pad.Held(Pad.A) || kA;
+                    bool bHeld = Pad.Held(Pad.B) || kB;
+                    if (BindingMap.IntakeOnDriverRT) h.Axes[3] = bHeld ? 1f : 0f; else h.Buttons[1] = bHeld;
+                }
                 float turret = (Pad2.Held(Pad.DRight) || Input.GetKey(KeyCode.X) ? 1f : 0f) - (Pad2.Held(Pad.DLeft) || Input.GetKey(KeyCode.Z) ? 1f : 0f);
-                if (Pad2.Separate) turret = Mathf.Clamp(turret + Pad2.LX, -1f, 1f);   // 兩支手把:操作手左搖桿左右 = 砲塔(跟 LEO RobotContainer 一樣);一支時左搖桿是左輪,只能用十字鍵
+                if (dual) turret = Mathf.Clamp(turret + Pad2.LX, -1f, 1f);   // 兩支手把:操作手左搖桿左右 = 砲塔
                 h.Axes2[0] = turret;
                 h.Axes2[3] = Mathf.Max((Input.GetKey(KeyCode.Space) || Input.GetMouseButton(0)) ? 1f : 0f, Pad2.RT);
                 h.Axes2[2] = Pad2.LT;
+                if (dual) { h.Axes2[1] = -Pad2.LY; h.Axes2[4] = Pad2.RX; h.Axes2[5] = -Pad2.RY; h.Buttons2[0] = Pad2.Held(Pad.A); h.Buttons2[1] = Pad2.Held(Pad.B); h.Buttons2[3] = Pad2.Held(Pad.Y); h.Buttons2[4] = Pad2.Held(Pad.LB); h.Buttons2[6] = Pad2.Held(Pad.Back); h.Buttons2[7] = Pad2.Held(Pad.Start); }
                 h.Buttons2[5] = Pad2.Held(Pad.RB) || Input.GetKey(KeyCode.V);
                 h.Buttons2[2] = Pad2.Held(Pad.X) || Input.GetKey(KeyCode.C);
-                h.Pov2 = (Pad2.Held(Pad.DUp) || kUp) ? 0 : -1;
+                h.Pov2 = (Pad2.Held(Pad.DUp) || kUp) ? 0 : (dual && Pad2.Held(Pad.DRight)) ? 90 : (dual && Pad2.Held(Pad.DDown)) ? 180 : (dual && Pad2.Held(Pad.DLeft)) ? 270 : -1;
             }
             else if (halLive)
             {
