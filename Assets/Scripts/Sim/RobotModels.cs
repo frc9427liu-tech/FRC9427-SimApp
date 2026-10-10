@@ -1,4 +1,5 @@
-﻿using System;
+using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UnityEngine;
@@ -48,7 +49,7 @@ namespace FrcSim
         public static string LastError = "";
 
         // 載入並掛到機器人底下,貼地置中。成功後隱藏內建方塊外觀。
-        public static async void Attach(Transform robot, string file, float yawDeg, Action<bool> done)
+        public static async void Attach(Transform robot, string file, float yawDeg, Action<bool> done, bool red = false)
         {
             bool ok = false;
             try
@@ -71,7 +72,7 @@ namespace FrcSim
                     Debug.Log($"[RobotModels] Instantiate returned {inst}");
                     if (inst)
                     {
-                        Fix(root, robot, yawDeg);
+                        Fix(root, robot, yawDeg, red); CombineByMaterial(root);
                         ok = true;
                     }
                     else UnityEngine.Object.Destroy(root);
@@ -82,7 +83,45 @@ namespace FrcSim
             done?.Invoke(ok);
         }
 
-        static void Fix(GameObject root, Transform robot, float yawDeg)
+        static readonly Dictionary<int, Material> matCache = new Dictionary<int, Material>();
+
+        // 把整個模型依材質合併成少數幾個 Mesh(模型不會動,只會跟著車走),draw call 從幾百降到十幾個;不可讀的 Mesh 就略過
+        static void CombineByMaterial(GameObject root)
+        {
+            try
+            {
+                var groups = new Dictionary<Material, List<CombineInstance>>();
+                var used = new List<Renderer>();
+                Matrix4x4 w2l = root.transform.worldToLocalMatrix;
+                foreach (var mf in root.GetComponentsInChildren<MeshFilter>(true))
+                {
+                    var r = mf.GetComponent<Renderer>();
+                    if (r == null || !r.enabled || mf.sharedMesh == null || !mf.sharedMesh.isReadable) continue;
+                    var mats = r.sharedMaterials;
+                    for (int sm = 0; sm < mf.sharedMesh.subMeshCount && sm < mats.Length; sm++)
+                    {
+                        if (!groups.TryGetValue(mats[sm], out var l)) groups[mats[sm]] = l = new List<CombineInstance>();
+                        l.Add(new CombineInstance { mesh = mf.sharedMesh, subMeshIndex = sm, transform = w2l * mf.transform.localToWorldMatrix });
+                    }
+                    used.Add(r);
+                }
+                if (used.Count == 0) { Debug.Log("[RobotModels] combine skipped (meshes not readable)"); return; }
+                foreach (var kv in groups)
+                {
+                    var mesh = new Mesh { indexFormat = UnityEngine.Rendering.IndexFormat.UInt32 };
+                    mesh.CombineMeshes(kv.Value.ToArray(), true, true);
+                    var go = new GameObject("Combined");
+                    go.transform.SetParent(root.transform, false);
+                    go.AddComponent<MeshFilter>().sharedMesh = mesh;
+                    var mr = go.AddComponent<MeshRenderer>(); mr.sharedMaterial = kv.Key; mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
+                }
+                foreach (var r in used) r.enabled = false;
+                Debug.Log($"[RobotModels] combined {used.Count} renderers into {groups.Count} meshes");
+            }
+            catch (Exception e) { Debug.LogWarning("[RobotModels] combine failed: " + e.Message); }
+        }
+
+        static void Fix(GameObject root, Transform robot, float yawDeg, bool red = false)
         {
             // 材質換成內建 Standard(保留 glTF 的基本色),避免 shader 被打包流程裁掉
             foreach (var r in root.GetComponentsInChildren<Renderer>(true))
@@ -98,8 +137,8 @@ namespace FrcSim
                         else if (m.HasProperty("_BaseColor")) c = m.GetColor("_BaseColor");
                         else if (m.HasProperty("_Color")) c = m.GetColor("_Color");
                     }
-                    c.a = 1f;
-                    mats[i] = FieldBuilder.MakeMat(c);
+                    c.a = 1f; if (red && c.b > c.r + 0.15f && c.b > c.g) c = new Color(c.b, c.g * 0.4f, c.r * 0.6f, 1f);   // 紅方:藍色保險桿改紅色
+                    { Color32 c32 = c; int key = (c32.r << 16) | (c32.g << 8) | c32.b; if (!matCache.TryGetValue(key, out var cm)) { cm = FieldBuilder.MakeMat(c); matCache[key] = cm; } mats[i] = cm; }   // 同色共用材質,才能合批
                 }
                 r.sharedMaterials = mats;
                 r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;

@@ -76,6 +76,7 @@ namespace FrcSim
                 m2.Drive = d2; m2.RobotCollider = robot2.GetComponent<Collider>(); m2.TurretVisual = t2; m2.ArmVisual = a2;
                 m2.TargetHub = new Vector2(SimConstants.FieldLength - 4.42586f, SimConstants.FieldWidth / 2f);
                 var in2 = robot2.AddComponent<Robot2Input>(); in2.Drive = d2; in2.Mech = m2;
+                if (!string.IsNullOrEmpty(RobotModels.Selected)) RobotModels.Attach(robot2.transform, RobotModels.Selected, RobotModels.YawDeg, ok => { }, true);   // 對手也用同一個外觀模型(保險桿改紅)
                 if (VsAi) { in2.enabled = false; var ai = robot2.AddComponent<Robot2AI>(); ai.Drive = d2; ai.Mech = m2; ai.Level = AiTestLevel >= 0 ? AiTestLevel : AiLevel; }
             }
 

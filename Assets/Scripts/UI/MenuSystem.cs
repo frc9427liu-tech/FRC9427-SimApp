@@ -284,75 +284,76 @@ namespace FrcSim
             Show(s, false);
         }
         // 進遊戲前:選機器人模型、匯入 .glb、選機器人程式專案
+        // ---- 機器人設定:分成「外觀 / 機器人程式 / 手感 / 比賽」四個分類,主頁只留入口與「開始」
+        Item ItModel() => new Item(() => Loc.T("set.model") + ":  " + (RobotModels.Selected == "" ? Loc.T("model.builtin") : RobotModels.Selected), () =>
+        {
+            var list = new List<string> { "" };
+            list.AddRange(RobotModels.List());
+            int i = list.IndexOf(RobotModels.Selected);
+            RobotModels.Selected = list[(i + 1) % list.Count];
+        });
+        Item ItImport() => new Item(() => Loc.T("setup.import"), () =>
+        {
+            string p = NativeDialogs.OpenFile(Loc.T("setup.import"), "GLB (*.glb)\0*.glb\0");
+            if (string.IsNullOrEmpty(p)) return;
+            try
+            {
+                System.IO.Directory.CreateDirectory(RobotModels.Dir);
+                string name = System.IO.Path.GetFileName(p);
+                System.IO.File.Copy(p, System.IO.Path.Combine(RobotModels.Dir, name), true);
+                RobotModels.Selected = name;
+            }
+            catch (Exception e) { Debug.LogError("import model: " + e.Message); }
+        });
+        Item ItYaw() => new Item(() => Loc.T("setup.yaw") + ":  " + RobotModels.YawDeg.ToString("0") + "°", () => { RobotModels.YawDeg = (RobotModels.YawDeg + 90f) % 360f; });
+        Item ItProject() => new Item(() =>
+        {
+            string c = PlayerPrefs.GetString("robotProject", "");
+            return Loc.T("setup.code") + ":  " + (c == "" ? Loc.T("setup.none") : System.IO.Path.GetFileName(c.TrimEnd('\\', '/')));
+        }, () =>
+        {
+            string p = NativeDialogs.PickFolder(Loc.T("setup.code"));
+            if (string.IsNullOrEmpty(p)) return;
+            PlayerPrefs.SetString("robotProject", FindGradleRoot(p));
+            PlayerPrefs.Save();
+        });
+        Item ItReal() => new Item(() => Loc.T("setup.real") + ":  " + Loc.T(PlayerPrefs.GetInt("useRealCode", 0) == 1 ? "on" : "off"), () => { PlayerPrefs.SetInt("useRealCode", PlayerPrefs.GetInt("useRealCode", 0) == 1 ? 0 : 1); PlayerPrefs.Save(); });
+        Item ItCtl() => new Item(() => Loc.T("setup.ctl") + ":  " + Loc.T(PlayerPrefs.GetInt("tankMode", 1) == 1 ? "ctl.tank" : "ctl.swerve"), () => { PlayerPrefs.SetInt("tankMode", PlayerPrefs.GetInt("tankMode", 1) == 1 ? 0 : 1); PlayerPrefs.Save(); });
+        Item ItSpeed() => new Item(() => Loc.T("setup.speed") + ":  " + SettingsStore.MaxSpeedChoice.ToString("0.0") + " m/s", () => { SettingsStore.SpeedIndex = (SettingsStore.SpeedIndex + 1) % SettingsStore.SpeedOptions.Length; });
+        Item ItAccel() => new Item(() => Loc.T("setup.accel") + ":  " + SettingsStore.AccelChoice.ToString("0") + " m/s²", () => { SettingsStore.AccelIndex = (SettingsStore.AccelIndex + 1) % SettingsStore.AccelOptions.Length; });
+        Item ItSecond() => new Item(() => Loc.T("setup.second") + ":  " + Loc.T(PlayerPrefs.GetInt("secondRobot", 1) == 1 ? "on" : "off"), () => { PlayerPrefs.SetInt("secondRobot", PlayerPrefs.GetInt("secondRobot", 1) == 1 ? 0 : 1); PlayerPrefs.Save(); });
+        Item ItLevel()
+        {
+            string[] zh = { "簡單", "普通", "困難", "超困難" }, en = { "Easy", "Normal", "Hard", "Insane" };
+            return new Item(() => Z("對手難度", "Opponent") + ":  " + (Loc.Lang == "zh" ? zh : en)[GameSession.AiLevel], () => { GameSession.AiLevel = (GameSession.AiLevel + 1) % 4; }) { EnabledFn = () => GameSession.VsAi };
+        }
+
+        void ShowSub(Func<string> title, Func<string> sub, Item[] items)
+        {
+            var all = new List<Item>(items) { new Item(() => Loc.T("menu.back"), ShowRobotSetup) };
+            Show(Build(title, sub, all.ToArray(), ShowRobotSetup), false);
+        }
+
         void ShowRobotSetup()
         {
-            var s = Build(() => Loc.T("setup.title"), () => Loc.T("setup.sub"), new[]
+            string Sum()
             {
-                new Item(() => Loc.T("set.model") + ":  " + (RobotModels.Selected == "" ? Loc.T("model.builtin") : RobotModels.Selected), () =>
-                {
-                    var list = new List<string> { "" };
-                    list.AddRange(RobotModels.List());
-                    int i = list.IndexOf(RobotModels.Selected);
-                    RobotModels.Selected = list[(i + 1) % list.Count];
-                }),
-                new Item(() => Loc.T("setup.import"), () =>
-                {
-                    string p = NativeDialogs.OpenFile(Loc.T("setup.import"), "GLB (*.glb)\0*.glb\0");
-                    if (string.IsNullOrEmpty(p)) return;
-                    try
-                    {
-                        System.IO.Directory.CreateDirectory(RobotModels.Dir);
-                        string name = System.IO.Path.GetFileName(p);
-                        System.IO.File.Copy(p, System.IO.Path.Combine(RobotModels.Dir, name), true);
-                        RobotModels.Selected = name;
-                    }
-                    catch (Exception e) { Debug.LogError("import model: " + e.Message); }
-                }),
-                new Item(() => Loc.T("setup.yaw") + ":  " + RobotModels.YawDeg.ToString("0") + "°", () =>
-                {
-                    RobotModels.YawDeg = (RobotModels.YawDeg + 90f) % 360f;
-                }),
-                new Item(() =>
-                {
-                    string c = PlayerPrefs.GetString("robotProject", "");
-                    return Loc.T("setup.code") + ":  " + (c == "" ? Loc.T("setup.none") : System.IO.Path.GetFileName(c.TrimEnd('\\', '/')));
-                }, () =>
-                {
-                    string p = NativeDialogs.PickFolder(Loc.T("setup.code"));
-                    if (string.IsNullOrEmpty(p)) return;
-                    PlayerPrefs.SetString("robotProject", FindGradleRoot(p));
-                    PlayerPrefs.Save();
-                }),
-                new Item(() => Loc.T("setup.real") + ":  " + Loc.T(PlayerPrefs.GetInt("useRealCode", 0) == 1 ? "on" : "off"), () =>
-                {
-                    PlayerPrefs.SetInt("useRealCode", PlayerPrefs.GetInt("useRealCode", 0) == 1 ? 0 : 1); PlayerPrefs.Save();
-                }),
-                new Item(() => Loc.T("setup.clock") + ":  " + Loc.T(PlayerPrefs.GetInt("matchClock", 1) == 1 ? "on" : "off"), () =>
-                {
-                    PlayerPrefs.SetInt("matchClock", PlayerPrefs.GetInt("matchClock", 1) == 1 ? 0 : 1); PlayerPrefs.Save();
-                }),
-                new Item(() => Loc.T("setup.speed") + ":  " + SettingsStore.MaxSpeedChoice.ToString("0.0") + " m/s", () =>
-                {
-                    SettingsStore.SpeedIndex = (SettingsStore.SpeedIndex + 1) % SettingsStore.SpeedOptions.Length;
-                }),
-                new Item(() => Loc.T("setup.accel") + ":  " + SettingsStore.AccelChoice.ToString("0") + " m/s²", () =>
-                {
-                    SettingsStore.AccelIndex = (SettingsStore.AccelIndex + 1) % SettingsStore.AccelOptions.Length;
-                }),
-                new Item(() => Loc.T("setup.ctl") + ":  " + Loc.T(PlayerPrefs.GetInt("tankMode", 1) == 1 ? "ctl.tank" : "ctl.swerve"), () =>
-                {
-                    PlayerPrefs.SetInt("tankMode", PlayerPrefs.GetInt("tankMode", 1) == 1 ? 0 : 1); PlayerPrefs.Save();
-                }),
-                new Item(() => Loc.T("setup.second") + ":  " + Loc.T(PlayerPrefs.GetInt("secondRobot", 1) == 1 ? "on" : "off"), () =>
-                {
-                    PlayerPrefs.SetInt("secondRobot", PlayerPrefs.GetInt("secondRobot", 1) == 1 ? 0 : 1); PlayerPrefs.Save();
-                }),
+                string m = RobotModels.Selected == "" ? Loc.T("model.builtin") : RobotModels.Selected;
+                string c = PlayerPrefs.GetString("robotProject", "");
+                string cc = c == "" ? Loc.T("setup.none") : System.IO.Path.GetFileName(c.TrimEnd('\\', '/'));
+                return m + "  ·  " + cc;
+            }
+            var s = Build(() => Loc.T("setup.title"), Sum, new[]
+            {
+                new Item(() => Z("外觀  ▸", "Appearance  ▸"), () => ShowSub(() => Z("外觀", "Appearance"), () => Z("機器人模型與方向", "Robot model & orientation"), new[] { ItModel(), ItImport(), ItYaw() })),
+                new Item(() => Z("機器人程式  ▸", "Robot code  ▸"), () => ShowSub(() => Z("機器人程式", "Robot code"), () => Z("專案、是否跑真實程式、操控方式", "Project, real code, controls"), new[] { ItProject(), ItReal(), ItCtl() })),
+                new Item(() => Z("手感  ▸", "Handling  ▸"), () => ShowSub(() => Z("手感", "Handling"), () => Z("最高車速與加速度(慣性)", "Top speed & acceleration"), new[] { ItSpeed(), ItAccel() })),
+                new Item(() => Z("比賽  ▸", "Match  ▸"), () => ShowSub(() => Z("比賽", "Match"), () => Z("對手機器人與難度", "Opponent robot & level"), new[] { ItSecond(), ItLevel() })),
                 new Item(() => Loc.T("setup.start"), StartGame),
                 new Item(() => Loc.T("menu.back"), ShowModes),
             }, ShowModes);
             Show(s, false);
         }
-
         // 使用者可能選到外層資料夾:往下找 3 層內有 build.gradle 的那個
         static string FindGradleRoot(string dir)
         {
