@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 namespace FrcSim
 {
@@ -14,9 +14,34 @@ namespace FrcSim
         public static HalSim Hal;
 
         static GameObject robot, robot2, score, hud;
+        public static bool PracticeMode;      // 練習模式:沒有比賽時鐘(不限時、不結束)
+        public static bool VsAi;               // 模擬比賽:紅方機器人由 AI 操作
+        public static int AiLevel { get => PlayerPrefs.GetInt("aiLevel", 1); set { PlayerPrefs.SetInt("aiLevel", Mathf.Clamp(value, 0, 3)); PlayerPrefs.Save(); } }
+        public static CameraRig LastRig;
+        public static int AiTestLevel = -1;   // 測試用:-vsai N(不寫入玩家設定)
+
+        // 不重開機器人程式,直接把場地/比分/機器人位置重置成開賽狀態(「再來一場」「F5」)
+        public static void Rematch()
+        {
+            if (!Active || Drive == null) return;
+            FuelManager.Clear(); FuelManager.Init(); FuelManager.SpawnStart();
+            HumanPlayer.ResetMatch();
+            if (score != null) Object.Destroy(score);
+            score = new GameObject("Score");
+            score.AddComponent<HumanPlayer>();
+            score.AddComponent<ScoreManager>();
+            Drive.ResetPose(); Mech.Held = 8; Mech.ShotsFired = 0; Mech.IntakeDown = false; Mech.Shooting = false; Mech.FlywheelRps = 0f;
+            if (robot2 != null)
+            {
+                var d2 = robot2.GetComponent<SwerveDrive>(); d2.ResetPose();
+                var m2 = robot2.GetComponent<RobotMechanisms>(); m2.Held = 8; m2.ShotsFired = 0; m2.IntakeDown = false; m2.Shooting = false; m2.FlywheelRps = 0f;
+            }
+            Time.timeScale = 1f;
+        }
 
         public static void Begin(CameraRig rig, bool selfTest = false, string projectOverride = null)
         {
+            { var ca = System.Environment.GetCommandLineArgs(); int vi = System.Array.IndexOf(ca, "-vsai"); if (vi >= 0 && vi + 1 < ca.Length) { VsAi = true; int.TryParse(ca[vi + 1], out AiTestLevel); } }
             if (Active) return;
             Active = true;
             StartTime = Time.time;
@@ -51,6 +76,7 @@ namespace FrcSim
                 m2.Drive = d2; m2.RobotCollider = robot2.GetComponent<Collider>(); m2.TurretVisual = t2; m2.ArmVisual = a2;
                 m2.TargetHub = new Vector2(SimConstants.FieldLength - 4.42586f, SimConstants.FieldWidth / 2f);
                 var in2 = robot2.AddComponent<Robot2Input>(); in2.Drive = d2; in2.Mech = m2;
+                if (VsAi) { in2.enabled = false; var ai = robot2.AddComponent<Robot2AI>(); ai.Drive = d2; ai.Mech = m2; ai.Level = AiTestLevel >= 0 ? AiTestLevel : AiLevel; }
             }
 
             // 真實機器人程式(設定畫面選的專案;沒選就用內建行為)

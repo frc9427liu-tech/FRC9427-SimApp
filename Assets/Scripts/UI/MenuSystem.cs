@@ -263,15 +263,26 @@ namespace FrcSim
 
         void ShowModes()
         {
-            var s = Build(() => Loc.T("mode.title"), null, new[]
+            var s = Build(() => Loc.T("mode.title"), () => Z("練習不限時;比賽 160 秒、紅方由 AI 對戰", "Practice: untimed. Match: 160 s vs AI"), new[]
             {
-                new Item(() => Loc.T("mode.free"),  () => ShowPadSetup(ShowRobotSetup, ShowModes)),
-                // 「比賽模式/自動階段練習」還沒做,先不顯示避免新手點不動(比賽計時在機器人設定頁開關)
+                new Item(() => Z("練習模式(不限時)", "Practice (no time limit)"), () => { GameSession.PracticeMode = true; GameSession.VsAi = false; ShowPadSetup(ShowRobotSetup, ShowModes); }),
+                new Item(() => Z("模擬比賽(對戰 AI)", "Match vs AI"), ShowAiLevel),
                 new Item(() => Loc.T("menu.back"),  ShowMain),
             }, ShowMain);
             Show(s, false);
         }
 
+        void ShowAiLevel()
+        {
+            string[] zh = { "簡單", "普通", "困難", "超困難" }, en = { "Easy", "Normal", "Hard", "Insane" };
+            Item Lv(int i) => new Item(() => (GameSession.AiLevel == i ? "● " : "○ ") + (Loc.Lang == "zh" ? zh[i] : en[i]), () => { GameSession.AiLevel = i; GameSession.PracticeMode = false; GameSession.VsAi = true; ShowPadSetup(ShowRobotSetup, ShowAiLevel); });
+            var s = Build(() => Z("對手難度", "Opponent level"), () => Z("紅隊 AI 會自己撿球、射 HUB", "The red team plays by itself"), new[]
+            {
+                Lv(0), Lv(1), Lv(2), Lv(3),
+                new Item(() => Loc.T("menu.back"), ShowModes),
+            }, ShowModes);
+            Show(s, false);
+        }
         // 進遊戲前:選機器人模型、匯入 .glb、選機器人程式專案
         void ShowRobotSetup()
         {
@@ -443,6 +454,7 @@ namespace FrcSim
             {
                 new Item(() => Loc.T("pause.resume"),   Resume),
                 new Item(() => Loc.T("pause.reset"),    () => { GameSession.Drive?.ResetPose(); Resume(); }),
+                new Item(() => Z("再來一場(重置場地)", "Restart match (reset field)"), () => { Resume(); GameSession.Rematch(); }),
                 new Item(() => Loc.T("menu.settings"),  () => { settingsBack = ShowPause; ShowSettings(true); }),
                 new Item(() => Loc.T("pause.menu"),     BackToMain),
             }, Resume);
@@ -451,6 +463,8 @@ namespace FrcSim
         }
 
         // ---------------------------------------------------------------- 流程
+        public static void GoMain() { if (I != null) I.BackToMain(); }
+
         void StartGame()
         {
             Hide();

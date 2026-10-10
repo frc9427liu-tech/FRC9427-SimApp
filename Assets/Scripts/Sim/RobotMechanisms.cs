@@ -22,6 +22,10 @@ namespace FrcSim
         public float HoodDeg = 1f;
         public float TurretRad;             // 相對機器人,逆時針為正
         public bool Ready;
+        public float FireInterval;       // >0:AI 難度用的發射間隔(秒);玩家 0 = 預設 1/8 秒
+        public float CollectPerSec;      // >0:AI 難度用的吸球速率上限(顆/秒);玩家 0 = 不限
+        float nextCollect;
+        public float SpreadDeg;          // 出球散布(度,AI 難度用;玩家 0)
         public int ShotsFired;
         public float TargetDistance;
 
@@ -81,7 +85,7 @@ namespace FrcSim
             if (Shooting && Held > 0 && Time.time >= nextFire)
             {
                 Fire(Drive.Pose2d, Drive.HeadingRad);
-                nextFire = Time.time + ShootInterval;
+                nextFire = Time.time + (FireInterval > 0f ? FireInterval : ShootInterval);
             }
         }
 
@@ -109,7 +113,7 @@ namespace FrcSim
             {
                 TurretRad = 0f;      // 這台機器人沒有砲塔馬達:靠底盤轉向瞄準(程式的 AutoAlign)
                 Fire(Drive.Pose2d, Drive.HeadingRad);
-                nextFire = Time.time + ShootInterval;
+                nextFire = Time.time + (FireInterval > 0f ? FireInterval : ShootInterval);
             }
         }
 
@@ -158,12 +162,13 @@ namespace FrcSim
             if (Shooting && Ready && Held > 0 && Time.time >= nextFire)
             {
                 Fire(pos, heading);
-                nextFire = Time.time + ShootInterval;
+                nextFire = Time.time + (FireInterval > 0f ? FireInterval : ShootInterval);
             }
         }
 
         void Collect()
         {
+            if (CollectPerSec > 0f && Time.time < nextCollect) return;
             Vector3 center = transform.TransformPoint(new Vector3(SimConstants.BumperLength / 2f + 0.22f, 0.05f, 0f));
             var hits = Physics.OverlapBox(center, new Vector3(0.28f, 0.14f, 0.34f), transform.rotation);
             foreach (var h in hits)
@@ -172,8 +177,10 @@ namespace FrcSim
                 var f = h.GetComponent<Fuel>();
                 if (f == null) continue;
                 Held++;
+                if (CollectPerSec > 0f) nextCollect = Time.time + 1f / CollectPerSec;
                 SpawnAbsorb(f.transform.position);
                 FuelManager.Remove(f);
+                if (CollectPerSec > 0f) break;
             }
         }
 
@@ -279,7 +286,7 @@ namespace FrcSim
 
         void Fire(Vector2 pos, float heading)
         {
-            float yaw = heading + TurretRad;
+            float yaw = heading + TurretRad + (SpreadDeg > 0f ? Random.Range(-SpreadDeg, SpreadDeg) * Mathf.Deg2Rad : 0f);
             // 出球模型:用機器人查表(飛輪轉速/Hood 角/飛行時間)擬合到「落在 HUB 開口」,球有空氣阻力 0.375/s(與程式的 linearDragTimeConstant 一致)
             // 擬合結果(2~4m 誤差 ≤0.26m,HUB 半寬 0.5m):速度 = 0.14*rps + 2.0 m/s,仰角 = 71° - 0.75*hood
             float elev = (ShotElevDeg > 0f ? ShotElevDeg : 71f - 0.75f * HoodDeg) * Mathf.Deg2Rad;

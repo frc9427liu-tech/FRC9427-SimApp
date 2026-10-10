@@ -37,6 +37,7 @@ namespace FrcSim
         {
             fps = Mathf.Lerp(fps, 1f / Mathf.Max(Time.unscaledDeltaTime, 1e-4f), 0.05f);
             if (Input.GetKeyDown(KeyCode.F3)) showDebug = !showDebug;
+            if (Input.GetKeyDown(KeyCode.F5) && !MenuSystem.Blocking) GameSession.Rematch();
             if (Input.GetKeyDown(KeyCode.F1)) { showHelp = !showHelp; born = showHelp ? Time.unscaledTime - 9999f : Time.unscaledTime - 9999f; }
         }
 
@@ -65,6 +66,16 @@ namespace FrcSim
             Rounded(r, new Color(0.05f, 0.09f, 0.16f, Mathf.Clamp01(alpha * 0.55f + 0.18f)), rad);               // 玻璃底
             Rounded(new Rect(r.x + 2, r.y + 2, r.width - 4, r.height * 0.5f), new Color(0.75f, 0.88f, 1f, 0.10f), rad - 2f);   // 上半部高光
             Outline(r, new Color(0.85f, 0.93f, 1f, 0.42f), rad, 1.5f);                                           // 亮邊
+        }
+        // 玻璃按鈕:膠囊、滑過變亮;回傳是否被點擊
+        static bool GBtn(Rect r, string text, bool primary)
+        {
+            bool hover = r.Contains(Event.current.mousePosition);
+            Color fill = primary ? new Color(0.35f, 0.65f, 1f, hover ? 0.75f : 0.55f) : new Color(1f, 1f, 1f, hover ? 0.22f : 0.12f);
+            Rounded(r, fill, r.height / 2f);
+            Outline(r, new Color(1f, 1f, 1f, hover ? 0.8f : 0.4f), r.height / 2f, 1.5f);
+            GUI.Label(r, text, Style(20, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold));
+            return GUI.Button(r, GUIContent.none, GUIStyle.none);
         }
         static void Bar(Rect r, float frac, Color fill)
         {
@@ -144,6 +155,21 @@ namespace FrcSim
                 GUI.Label(new Rect(cx - 220, 56, 440, 24), $"{tl / 60}:{tl % 60:00}   {PhaseName(ScoreManager.Phase)}{hubs}", Style(15, dim, TextAnchor.UpperCenter, FontStyle.Bold));
             }
 
+            // ---- 比賽結束:成績卡 + 再來一場 / 回主選單(手把 A / B,Enter 再來一場)
+            if (ScoreManager.ClockOn && ScoreManager.Ended)
+            {
+                float cw = 560, ch = 330;
+                var cr = new Rect(cx - cw / 2f, H / 2f - ch / 2f, cw, ch);
+                Panel(cr, 0.95f);
+                int bs = ScoreManager.BlueScore, rs = ScoreManager.RedScore;
+                string res = bs > rs ? L("勝利", "VICTORY") : bs < rs ? L("落敗", "DEFEAT") : L("平手", "DRAW");
+                Color rc2 = bs > rs ? new Color(0.4f, 1f, 0.55f) : bs < rs ? new Color(1f, 0.5f, 0.45f) : new Color(1f, 0.9f, 0.4f);
+                GUI.Label(new Rect(cr.x, cr.y + 22, cw, 30), L("比賽結束", "MATCH OVER"), Style(18, dim, TextAnchor.UpperCenter, FontStyle.Bold));
+                GUI.Label(new Rect(cr.x, cr.y + 54, cw, 70), res, Style(54, rc2, TextAnchor.UpperCenter, FontStyle.Bold));
+                GUI.Label(new Rect(cr.x, cr.y + 132, cw, 50), $"{L("藍", "BLUE")} {bs}  :  {rs} {L("紅", "RED")}", Style(34, Color.white, TextAnchor.UpperCenter, FontStyle.Bold));
+                if (GBtn(new Rect(cr.x + 40, cr.y + 214, 230, 56), L("再來一場  (A)", "Rematch  (A)"), true) || Pad.Down(Pad.A) || Input.GetKeyDown(KeyCode.Return)) GameSession.Rematch();
+                if (GBtn(new Rect(cr.x + cw - 270, cr.y + 214, 230, 56), L("回主選單  (B)", "Main menu  (B)"), false) || Pad.Down(Pad.B)) MenuSystem.GoMain();
+            }
             // ---- 開局提醒(例如專案沒有模擬設定檔、改用內建行為)
             if (GameSession.Notice != "" && Time.time < GameSession.NoticeUntil)
             {
