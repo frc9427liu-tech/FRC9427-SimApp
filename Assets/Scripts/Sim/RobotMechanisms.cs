@@ -23,7 +23,7 @@ namespace FrcSim
         public float TurretRad;             // 相對機器人,逆時針為正
         public bool Ready;
         public float FireInterval;       // >0:AI 難度用的發射間隔(秒);玩家 0 = 預設 1/8 秒
-        public float CollectPerSec;      // >0:AI 難度用的吸球速率上限(顆/秒);玩家 0 = 不限
+        public float CollectPerSec = 7f;  // 吸球速率上限(顆/秒):玩家預設 7(理論 6~8 顆/秒);AI 依難度覆寫
         float nextCollect;
         public bool Feeding, Ejecting;   // 送球(Orbit 轉)/吐球(滾輪反轉)中,HUD 顯示用
         readonly System.Collections.Generic.Dictionary<string, float> effectNext = new System.Collections.Generic.Dictionary<string, float>();

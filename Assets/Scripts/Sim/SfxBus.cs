@@ -52,6 +52,7 @@ namespace FrcSim
                 var g = new GameObject("v" + i); g.transform.SetParent(transform, false);
                 var s = g.AddComponent<AudioSource>(); s.playOnAwake = false; s.spatialBlend = 0f; pool[i] = s;
             }
+            SetupReverb();
             StartCoroutine(Prewarm());
         }
         IEnumerator Prewarm()   // synthesize one clip per frame during the menu so no hitch on first play
@@ -91,6 +92,31 @@ namespace FrcSim
         /// Lower music/ambience to `level` (e.g. 0.35) for `hold` seconds, then recover slowly.
         public static void Duck(float level, float hold) { if (I == null) return; I.duckTarget = Mathf.Min(I.duckTarget, level); I.duck = Mathf.Min(I.duck, level < 1f ? Mathf.Max(level, I.duck) : I.duck); I.duckHold = Mathf.Max(I.duckHold, hold); }
 
+        // ---- 場館殘響:掛在 AudioListener 上的 AudioReverbFilter 會作用在整個混音(體育館的短長尾),聲音不再「貼在耳朵上」
+        AudioReverbFilter rev;
+        public static bool ReverbOn { get => Prefs.GetInt("reverb", 1) == 1; set { Prefs.SetInt("reverb", value ? 1 : 0); if (I != null && I.rev != null) I.rev.enabled = value; } }
+        void SetupReverb()
+        {
+            try
+            {
+                var lis = FindFirstObjectByType<AudioListener>();
+                if (lis == null) return;
+                rev = lis.gameObject.GetComponent<AudioReverbFilter>() ?? lis.gameObject.AddComponent<AudioReverbFilter>();
+                rev.reverbPreset = AudioReverbPreset.Arena;
+                rev.dryLevel = 0f; rev.reverbLevel = -900f; rev.reflectionsLevel = -1400f;
+                rev.enabled = ReverbOn;
+            }
+            catch { }
+        }
+        // 簡易限幅:同時發聲數很多(400 顆球亂撞)時整體音量往下收,避免爆音
+        float limiter = 1f;
+        void UpdateLimiter(float dt)
+        {
+            int active = 0; for (int i = 0; i < Voices; i++) if (pool[i].isPlaying) active++;
+            float target = 1f / (1f + 0.045f * Mathf.Max(0, active - 7));
+            limiter = Mathf.MoveTowards(limiter, target, dt * (target < limiter ? 6f : 0.8f));
+            AudioListener.volume = limiter;
+        }
         // ---------------- internals ----------------
         AudioSource PlayInternal(string name, float vol, float pitch, float pan, SfxGroup g)
         {
@@ -126,6 +152,7 @@ namespace FrcSim
                 var d = delayed[i];
                 if (now >= d.at) { delayed[i] = delayed[delayed.Count - 1]; delayed.RemoveAt(delayed.Count - 1); PlayInternal(d.name, d.vol, d.pitch, d.pan, d.g); }
             }
+            UpdateLimiter(dt);
             if (duckHold > 0f) { duckHold -= dt; duck = Mathf.MoveTowards(duck, duckTarget, dt * 8f); }
             else { duckTarget = 1f; duck = Mathf.MoveTowards(duck, 1f, dt * 0.7f); }
             bool paused = Time.timeScale == 0f;

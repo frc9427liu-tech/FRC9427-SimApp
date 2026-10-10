@@ -55,6 +55,9 @@ namespace FrcSim
         }
 
         Vector2 blueHub, redHub;
+        struct Pending { public Fuel f; public float t; public Vector2 hub; public float dir; }
+        static readonly System.Collections.Generic.List<Pending> pending = new System.Collections.Generic.List<Pending>();
+        static float lastRelease;
         public static readonly System.Collections.Generic.List<string> Trace = new System.Collections.Generic.List<string>();
         readonly System.Collections.Generic.HashSet<Fuel> traced = new System.Collections.Generic.HashSet<Fuel>();
 
@@ -69,6 +72,7 @@ namespace FrcSim
             blueHub = new Vector2(d, W / 2f);
             redHub = new Vector2(L - d, W / 2f);
             Juice.ResetMatch();
+            pending.Clear(); lastRelease = 0f;
         }
 
         // N:跳過 AUTO / TRANSITION,直接進 TELEOP(真實程式模式下 AUTO 手把無效,想直接開車就按 N)
@@ -79,6 +83,18 @@ namespace FrcSim
 
         void FixedUpdate()
         {
+            for (int q = pending.Count - 1; q >= 0; q--)   // HUB 出口:到時間就把球從 4 個出口之一送出,帶速度滾出去
+            {
+                var pd = pending[q]; if (pd.f == null) { pending.RemoveAt(q); continue; }
+                if (Time.time < pd.t) continue;
+                pending.RemoveAt(q);
+                float[] exits = { -0.42f, -0.14f, 0.14f, 0.42f };
+                var pf = pd.f; var prb = pf.GetComponent<Rigidbody>();
+                pf.transform.position = new Vector3(pd.hub.x + pd.dir * 0.80f, 0.10f, pd.hub.y + exits[Random.Range(0, 4)] + Random.Range(-0.04f, 0.04f));
+                pf.Col.enabled = true; var pr = pf.GetComponent<Renderer>(); if (pr != null) pr.enabled = true;
+                prb.isKinematic = false; pf.RimT = -9f;
+                prb.linearVelocity = new Vector3(pd.dir * Random.Range(2.2f, 3.6f), 0f, Random.Range(-0.6f, 0.6f)); prb.angularVelocity = Vector3.zero;
+            }
             // 真實程式模式:機器人程式連上 HALSim 之後才開始計時(連線要 20~60 秒,不然 AUTO 的 20 秒早就過了,程式的自動模式根本沒跑到)
             if (ClockOn && !RobotWaiting()) MatchTime += Time.fixedDeltaTime;
             UpdateClock();
@@ -109,9 +125,12 @@ namespace FrcSim
                 Vector2 hub = inBlue ? blueHub : redHub;
                 float dir = inBlue ? 1f : -1f;
                 Juice.OnScore(inBlue, active, new Vector3(hub.x, 1.9f, hub.y));
-                f.transform.position = new Vector3(hub.x + dir * 0.78f, 0.25f, hub.y + Random.Range(-0.3f, 0.3f));
-                rb.linearVelocity = new Vector3(dir * Random.Range(0.4f, 0.9f), 0f, Random.Range(-0.4f, 0.4f));   // 輕輕吐出,不會滾到老遠
-                rb.angularVelocity = Vector3.zero;
+                // 進 HUB:球先在 HUB 裡「處理」1~2.2 秒,再從面向中立區的 4 個出口之一滾出來(官方 HUB 導覽影片:隨機散出)
+                rb.linearVelocity = Vector3.zero; rb.angularVelocity = Vector3.zero; rb.isKinematic = true;
+                f.Col.enabled = false; var rend = f.GetComponent<Renderer>(); if (rend != null) rend.enabled = false;
+                f.transform.position = new Vector3(hub.x, 0.6f, hub.y);
+                float rel = Mathf.Max(Time.time + Random.Range(1.0f, 2.2f), lastRelease + 0.12f); lastRelease = rel;
+                pending.Add(new Pending { f = f, t = rel, hub = hub, dir = dir });
             }
         }
     }

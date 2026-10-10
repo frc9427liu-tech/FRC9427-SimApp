@@ -371,6 +371,7 @@ namespace FrcSim
                 new Item(() => Z("音樂", "Music") + ":  " + P(JuiceSettings.Music), () => { JuiceSettings.Music = JuiceSettings.Step(JuiceSettings.Music); RefreshScreen(); }),
                 new Item(() => Z("鏡頭晃動", "Camera shake") + ":  " + (JuiceSettings.Shake > 0.75f ? Z("正常", "Normal") : JuiceSettings.Shake > 0.25f ? Z("減弱", "Reduced") : Z("關", "Off")), () => { JuiceSettings.Shake = JuiceSettings.ShakeCycle(JuiceSettings.Shake); RefreshScreen(); }),
                 new Item(() => Z("手把震動", "Controller rumble") + ":  " + Loc.T(JuiceSettings.Rumble ? "on" : "off"), () => { JuiceSettings.Rumble = !JuiceSettings.Rumble; Rumble.Pulse(Pad.DriverIndex, 0.4f, 0.4f, 0.15f); RefreshScreen(); }),
+                new Item(() => Z("場館殘響", "Arena reverb") + ":  " + Loc.T(SfxBus.ReverbOn ? "on" : "off"), () => { SfxBus.ReverbOn = !SfxBus.ReverbOn; SfxBus.Play("ding", 0.5f); RefreshScreen(); }),
                 new Item(() => Z("減少閃光與粒子", "Reduce flashes & particles") + ":  " + Loc.T(JuiceSettings.ReduceFlash ? "on" : "off"), () => { JuiceSettings.ReduceFlash = !JuiceSettings.ReduceFlash; RefreshScreen(); }),
                 new Item(() => Loc.T("menu.back"), () => ShowSettings(game)),
             }, () => ShowSettings(game));
