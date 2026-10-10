@@ -35,7 +35,7 @@ namespace FrcSim
         void Start() { born = Time.unscaledTime; if (System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-f12test") >= 0) Invoke(nameof(TestShot), 8f); }
         void TestShot() { StartCoroutine(SaveShot()); }
 
-        string shotMsg = ""; float shotUntil;
+        string shotMsg = "", bannerPhase, bannerText = ""; float shotUntil, bannerUntil;
         System.Collections.IEnumerator SaveShot()
         {
             yield return new WaitForEndOfFrame();
@@ -243,6 +243,15 @@ namespace FrcSim
             }
             GUI.Label(new Rect(16, H - 74, 300, 20), L("F1 按鍵說明   F3 詳細數據", "F1 help   F3 details"), Style(12, new Color(1f, 1f, 1f, 0.55f)));
             DrawMinimap(W);
+            // 階段切換橫幅:AUTO / 轉換期 / SHIFT / END GAME 變換時,畫面中上方淡出大字
+            if (ScoreManager.ClockOn && ScoreManager.Phase != bannerPhase) { if (bannerPhase != null && !ScoreManager.Ended) { bannerUntil = Time.unscaledTime + 1.8f; bannerText = PhaseName(ScoreManager.Phase); } bannerPhase = ScoreManager.Phase; }
+            if (Time.unscaledTime < bannerUntil)
+            {
+                float k = (bannerUntil - Time.unscaledTime) / 1.8f, a = Mathf.Clamp01(Mathf.Min(k * 3f, (1f - k) * 6f));
+                var br = new Rect(cx - 300, H * 0.2f, 600, 70);
+                GUI.color = new Color(0, 0, 0, 0.5f * a); GUI.Label(new Rect(br.x + 2, br.y + 2, br.width, br.height), bannerText, Style(52, Color.black, TextAnchor.MiddleCenter, FontStyle.Bold));
+                GUI.color = new Color(1, 1, 1, a); GUI.Label(br, bannerText, Style(52, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold)); GUI.color = Color.white;
+            }
             // ---- 頂部中央:比分 + 計時(運動轉播風格:藍/紅色塊 + 中央大計時)
             {
                 float sw = 460f, sh = 62f, sx = cx - sw / 2f, sy = 10f;
@@ -387,6 +396,7 @@ namespace FrcSim
         }
     }
 }
+
 
 
 
