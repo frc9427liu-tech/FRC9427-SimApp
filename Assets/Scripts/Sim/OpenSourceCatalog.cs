@@ -26,8 +26,8 @@ namespace FrcSim
                 PatchFind = "// drivetrain.setDefaultCommand(drivetrain.applyRequest(() ->\n\t\t// getDriverInput()));" },
             new Entry { Id = "1710-Robot", Team = "FRC 1710", Repo = "https://github.com/frc-Team-1710/2026-Robot.git", Status = "partial",
                 Note = "能開車;吸球/射擊走狀態機,尚未對上機構" },
-            new Entry { Id = "1405-Robot", Team = "FRC 1405", Repo = "https://github.com/FRC-Team-1405/2026Robot.git", Status = "untested",
-                Note = "Phoenix 6 swerve;尚未測試" },
+            new Entry { Id = "1405-Robot", Team = "FRC 1405", Repo = "https://github.com/FRC-Team-1405/2026Robot.git", Status = "partial",
+                Note = "能開車、飛輪會轉、LB 吸球;送球條件未對上" },
             new Entry { Id = "364-Fusion", Team = "FRC 364", Repo = "https://github.com/TeamFusion364/2026RobotCode.git", Status = "untested",
                 Note = "旋轉砲塔自動追 HUB;尚未測試" },
         };

@@ -14,8 +14,39 @@ namespace FrcSim
 
         public string ModeName => Mode == 0 ? "overview" : Mode == 1 ? "chase" : Mode == 7 ? "operator" : Mode == 8 ? "broadcast" : "top-down";
 
+        // ---- 進場動畫(賽車遊戲式):鏡頭從高處繞著車俯衝到追車位、上下黑邊、名牌淡入淡出;測試/截圖參數下略過
+        float introT = 99f; const float IntroLen = 4.2f;
+        public void StartIntro()
+        {
+            if (System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-intro") < 0)
+            foreach (var a in System.Environment.GetCommandLineArgs())
+                if (a == "-batchmode" || a == "-shot" || a.EndsWith("test") || a == "-leoauto" || a == "-vsai" || a == "-noclock") return;
+            introT = 0f; chaseInit = false; Debug.Log("[Intro] start");
+        }
+        bool IntroOn => introT < IntroLen;
+        GUIStyle gBig, gSmall;
+        void OnGUI()
+        {
+            if (!IntroOn || Orbit) return;
+            float t = introT / IntroLen, bar = Screen.height * 0.11f * Mathf.Clamp01(Mathf.Min(t * 6f, (1f - t) * 5f));
+            GUI.color = Color.black; GUI.DrawTexture(new Rect(0, 0, Screen.width, bar), Texture2D.whiteTexture); GUI.DrawTexture(new Rect(0, Screen.height - bar, Screen.width, bar), Texture2D.whiteTexture);
+            float a = Mathf.Clamp01(Mathf.Min((t - 0.12f) * 8f, (0.85f - t) * 8f));
+            if (a > 0f)
+            {
+                string proj = Prefs.GetString("robotProject", ""); string nm = string.IsNullOrEmpty(proj) ? "FRC 9427" : System.IO.Path.GetFileName(proj.TrimEnd('\\', '/'));
+                if (gBig == null) { gBig = new GUIStyle(GUI.skin.label) { fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleLeft }; gSmall = new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleLeft }; }
+                gBig.fontSize = Mathf.RoundToInt(Screen.height * 0.07f); gSmall.fontSize = Mathf.RoundToInt(Screen.height * 0.028f);
+                float x = Screen.width * 0.07f + (1f - a) * -80f, y = Screen.height * 0.70f;
+                GUI.color = new Color(0.25f, 0.55f, 1f, a); GUI.DrawTexture(new Rect(x - 18f, y, 6f, Screen.height * 0.13f), Texture2D.whiteTexture);
+                GUI.color = new Color(1f, 1f, 1f, a); GUI.Label(new Rect(x, y - 4f, Screen.width * 0.7f, Screen.height * 0.08f), nm, gBig);
+                GUI.color = new Color(1f, 1f, 1f, a * 0.75f); GUI.Label(new Rect(x, y + Screen.height * 0.08f, Screen.width * 0.7f, Screen.height * 0.05f), Loc.Lang == "en" ? "REBUILT 2026  ·  Match starting" : "REBUILT 2026  ·  比賽即將開始", gSmall);
+            }
+            GUI.color = Color.white;
+        }
+
         void Update()
         {
+            if (IntroOn) introT += Mathf.Min(Time.unscaledDeltaTime, 0.033f);   // 載入卡頓的大幀不能把進場動畫一次吃掉
             if (!Orbit && !MenuSystem.Blocking && Input.GetKeyDown(KeyCode.C)) Mode = Mode == 1 ? 2 : Mode == 2 ? 0 : Mode == 0 ? 7 : Mode == 7 ? 8 : 1;
         }
 
@@ -111,7 +142,15 @@ namespace FrcSim
                                   Mathf.Clamp(Target.position.z, Mathf.Min(3.2f, W / 2f), Mathf.Max(W - 3.2f, W / 2f)));
                 rot = Quaternion.LookRotation(Vector3.down, Vector3.forward);
             }
-            transform.position = Vector3.SmoothDamp(transform.position, pos, ref velPos, 0.12f, Mathf.Infinity, Time.unscaledDeltaTime);
+            if (IntroOn)
+            {
+                float t = introT / IntroLen, ee = t * t * (3f - 2f * t);
+                float ang = Mathf.Lerp(200f, 0f, ee) * Mathf.Deg2Rad; Vector3 fw = Target.right; fw.y = 0f; fw.Normalize(); Vector3 rt = Vector3.Cross(Vector3.up, fw);
+                Vector3 off = (-fw * Mathf.Cos(ang) + rt * Mathf.Sin(ang)) * Mathf.Lerp(7.5f, 3.2f, ee) + Vector3.up * Mathf.Lerp(5.5f, 2.6f, ee);
+                Vector3 ip = Target.position + off; Quaternion ir = Quaternion.LookRotation(Target.position + Vector3.up * 0.4f - ip, Vector3.up);
+                transform.position = Vector3.Lerp(ip, pos, ee * ee); transform.rotation = Quaternion.Slerp(ir, rot, ee * ee); velPos = Vector3.zero;
+                return;
+            }            transform.position = Vector3.SmoothDamp(transform.position, pos, ref velPos, 0.12f, Mathf.Infinity, Time.unscaledDeltaTime);
             transform.rotation = Quaternion.Slerp(transform.rotation, rot, 8f * Time.unscaledDeltaTime);
         }
     }

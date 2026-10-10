@@ -161,6 +161,7 @@ namespace FrcSim
 
             rig.Orbit = false;
             rig.Target = robot.transform;
+            rig.StartIntro();
             rig.Mode = 1;
 
             hud = new GameObject("SimUI");
