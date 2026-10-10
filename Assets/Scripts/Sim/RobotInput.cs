@@ -83,7 +83,7 @@ namespace FrcSim
                 h.Axes2[3] = Mathf.Max((Input.GetKey(KeyCode.Space) || Input.GetMouseButton(0)) ? 1f : 0f, Pad2.RT);
                 h.Axes2[2] = Pad2.LT;
                 h.Buttons2[5] = Pad2.Held(Pad.RB) || Input.GetKey(KeyCode.V);
-                h.Buttons2[2] = Pad2.Held(Pad.X);
+                h.Buttons2[2] = Pad2.Held(Pad.X) || Input.GetKey(KeyCode.C);
                 h.Pov2 = (Pad2.Held(Pad.DUp) || kUp) ? 0 : -1;
             }
             else if (halLive)

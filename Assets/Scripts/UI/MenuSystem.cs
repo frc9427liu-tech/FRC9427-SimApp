@@ -230,6 +230,7 @@ namespace FrcSim
         {
             bool on = driver ? Pad.DriverOnline : Pad.OperatorOnline;
             if (Pad.Mode == 1 && !driver) return Z("(單手把:同一支)", "(single pad)");
+            if (!on && !driver && Pad.Mode == 2 && Pad.OperatorKeyboard) return Z("⌨ 鍵盤(空白=發射 Z/X=砲塔 C=吐球)", "⌨ keyboard (Space/Z/X/C)");
             if (!on) return Z("✗ 未偵測(請接上手把)", "✗ not detected");
             int idx = driver ? Pad.DriverIndex : Pad.OperatorIndex;
             return Z("✓ 已連線(第 ", "✓ connected (#") + (idx + 1) + Z(" 槽)", ")");
@@ -252,7 +253,8 @@ namespace FrcSim
                     new Item(() => Z("駕駛", "Driver") + ":  " + PadStatus(true), null, false),
                     new Item(() => Z("操作手", "Operator") + ":  " + PadStatus(false), null, false),
                     new Item(() => Z("重新指派(各按一次 A)", "Re-assign (press A on each)"), () => { Pad.Mode = 2; Pad.BeginAssign(); }) { EnabledFn = () => Pad.Mode == 2 },
-                    new Item(() => Pad.Mode == 2 && !(Pad.DriverOnline && Pad.OperatorOnline) ? Z("下一步(需兩支都連線)", "Next (needs both pads)") : Z("下一步", "Next"), () => next()) { EnabledFn = () => Pad.Mode == 1 || (Pad.Mode == 2 && Pad.DriverOnline && Pad.OperatorOnline && Pad.AssignStage == 0) },
+                    new Item(() => Z("操作手改用鍵盤", "Operator on keyboard") + ":  " + Loc.T(Pad.OperatorKeyboard ? "on" : "off"), () => { Pad.OperatorKeyboard = !Pad.OperatorKeyboard; }) { EnabledFn = () => Pad.Mode == 2 },
+                    new Item(() => Pad.Mode == 2 && !(Pad.DriverOnline && (Pad.OperatorOnline || Pad.OperatorKeyboard)) ? Z("下一步(需兩支都連線)", "Next (needs both pads)") : Z("下一步", "Next"), () => next()) { EnabledFn = () => Pad.Mode == 1 || (Pad.Mode == 2 && Pad.DriverOnline && (Pad.OperatorOnline || Pad.OperatorKeyboard) && Pad.AssignStage == 0) },
                     new Item(() => Loc.T("menu.back"), () => back()),
                 }, () => back());
             padScreen = true;
