@@ -155,6 +155,7 @@ namespace FrcSim
             m.SetFloat("_Height", height); m.SetFloat("_Bottom", bottom); m.SetFloat("_Top", top);
             m.SetFloat("_PanelW", height > 2f ? 2.4f : 1000f);       // floors: no seams
             m.SetFloat("_SeamAmt", height > 2f ? 0.12f : 0f);
+            if (height <= 2f) { m.SetFloat("_Smooth", 0.04f); m.SetColor("_Color", c * 0.55f); }   // 場外地板:壓暗、不反光,場地才有主體感
             if (accent.HasValue) { m.SetColor("_Accent", accent.Value); m.SetFloat("_AccentY", accentY); m.SetFloat("_AccentI", accentI); }
             return m;
         }

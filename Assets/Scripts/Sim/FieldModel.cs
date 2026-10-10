@@ -186,7 +186,12 @@ namespace FrcSim
                 Debug.Log("[FieldModel] textures=" + texCount + " colors: " + top);
                 LastLog = $"field model loaded: shown={shown} hiddenFuel={hidden} bounds center={b.center} size={b.size}";
                 Debug.Log("[FieldModel] " + LastLog);
-                Look.BakeProbe();   // 靜態合批與材質都定案後,烘一次反射探針
+                {   // HUB 發光環(開口前緣一圈 LED,藍/紅)
+                    var hg = new GameObject("HubGlows").transform;
+                    float Wf = SimConstants.FieldWidth, Lf = SimConstants.FieldLength, hx = SimConstants.AllianceZoneDepth + SimConstants.HubSize / 2f;
+                    HubGlow.Create(hg, new Vector3(hx, 0f, Wf / 2f), 1.06f, SimConstants.HubRimHeight, new Color(0.15f, 0.35f, 1f));
+                    HubGlow.Create(hg, new Vector3(Lf - hx, 0f, Wf / 2f), 1.06f, SimConstants.HubRimHeight, new Color(1f, 0.2f, 0.15f));
+                }                Look.BakeProbe();   // 靜態合批與材質都定案後,烘一次反射探針
                 // 遊戲在模型載入完成前就開始了:用官方擺法換掉暫用的格狀擺法
                 if (GameSession.Active && Time.time - GameSession.StartTime < 20f) FuelManager.ReplaceStartLayout();
             }
