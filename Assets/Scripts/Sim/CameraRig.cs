@@ -66,6 +66,18 @@ namespace FrcSim
             {
                 orbitT += Time.unscaledDeltaTime * 0.12f;
                 if (ScoreCube.Overhead != null) ScoreCube.Overhead.SetActive(false);
+                if (PreviewRobot.I != null && PreviewRobot.I.Active)
+                {
+                    // 機器人預覽:貼近車子慢慢繞一圈;注視點往旁邊偏,讓車出現在左側選單面板的右邊
+                    Vector3 pc = PreviewRobot.Center + Vector3.up * 0.35f;
+                    float ang = Mathf.Deg2Rad * (105f + Mathf.Sin(Time.unscaledTime * 0.35f) * 45f);   // 站在 +z 側看,背景是對面看台(不是 HUB)
+                    Vector3 pp = pc + new Vector3(Mathf.Cos(ang) * 2.7f, 1.0f, Mathf.Sin(ang) * 2.7f);
+                    Vector3 fwd = (pc - pp); Vector3 right = Vector3.Cross(Vector3.up, fwd).normalized;
+                    Vector3 look = pc - right * 0.95f;
+                    transform.position = Vector3.Lerp(transform.position, pp, 1f - Mathf.Exp(-4f * Time.unscaledDeltaTime));
+                    transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(look - transform.position, Vector3.up), 1f - Mathf.Exp(-6f * Time.unscaledDeltaTime));
+                    return;
+                }
                 Vector3 c = new Vector3(L / 2f, 0.5f, W / 2f);
                 Vector3 p = c + new Vector3(Mathf.Cos(orbitT) * 13f, 6.5f, Mathf.Sin(orbitT) * 8.5f);
                 transform.position = p;

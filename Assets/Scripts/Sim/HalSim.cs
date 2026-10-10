@@ -163,6 +163,7 @@ namespace FrcSim
         void OnDestroy() { Stop(); if (I == this) I = null; }
         void OnApplicationQuit() { Stop(); }
 
+        bool launched;   // 只有「我自己啟動過機器人程式」才會在結束時去殺埠上的 JVM(沒啟動過就什麼都不殺,避免誤殺別的模擬器)
         public void Stop()
         {
             try { cts?.Cancel(); } catch { }
@@ -178,6 +179,7 @@ namespace FrcSim
             }
             catch { }
             // 機器人 JVM 是 Gradle daemon 啟動的,不在上面的程序樹裡:依命令列找出機器人程式的 java 一併結束
+            if (!launched) return;
             try
             {
                 // 只結束「自己這個模擬器」的機器人 JVM:用它佔住的 HALSim 埠(3300 + 埠偏移)找擁有者。以前是依命令列比對所有 java,
@@ -228,7 +230,9 @@ namespace FrcSim
                 psi.EnvironmentVariables["HALSIMWS_PORT"] = (3300 + SimPorts.Offset).ToString();
                 if (SimPorts.Offset != 0) psi.EnvironmentVariables["JAVA_TOOL_OPTIONS"] += " -Dsimagent.port=" + (3399 + SimPorts.Offset);
                 psi.EnvironmentVariables["HALSIMWS_FILTERS"] = "CANMotor,CANEncoder,CANGyro,Gyro,DriverStation";
-                gradle = Process.Start(psi);
+                // 埠已被另一個模擬器佔用:不要再啟動第二份(否則結束時會把對方的機器人程式一起殺掉,對方畫面會跳「WebSocket 被遠端關閉」)
+                { bool inUse = false; try { var pl = new System.Net.Sockets.TcpListener(System.Net.IPAddress.Loopback, 3300 + SimPorts.Offset); pl.Start(); pl.Stop(); } catch { inUse = true; } if (inUse) { Status = "error: another simulator is already running (port " + (3300 + SimPorts.Offset) + " in use). Close it and retry."; return; } }
+                gradle = Process.Start(psi); launched = true;
                 var w = new StreamWriter(logPath, false);
                 gradle.OutputDataReceived += (s, e) => { if (e.Data != null) { lock (w) { w.WriteLine(e.Data); w.Flush(); } ParseStage(e.Data); } };
                 gradle.ErrorDataReceived += (s, e) => { if (e.Data != null) lock (w) { w.WriteLine(e.Data); w.Flush(); } };

@@ -12,7 +12,7 @@ namespace FrcSim
     {
         public class Entry
         {
-            public string Id, Team, Repo, Note, Status, Model;      // Status: ok / partial / untested
+            public string Id, Team, Repo, Note, Status, Model, LibModel;      // Status: ok / partial / untested
             public string PatchFile, PatchFind, PatchReplace;
             public string Patch2File, Patch2Find, Patch2Replace;   // 第二個修補(例如把機器人程式內的起始位姿對齊模擬器)
             public string Dir => Path.Combine(Root, Id);
@@ -21,34 +21,45 @@ namespace FrcSim
         public const string Root = @"C:\FRC\opensource";
         public static readonly Entry[] All =
         {
-            new Entry { Id = "6901-Rebuilt", Model = "proc:0.72,0.74,0.55,#1E8CFF", Team = "FRC 6901", Repo = "https://github.com/frc-6901/2026-Rebuilt.git", Status = "ok",
+            new Entry { Id = "6901-Rebuilt", LibModel = "as_frogbot", Model = "proc:0.72,0.74,0.55,#1E8CFF", Team = "FRC 6901", Repo = "https://github.com/frc-6901/2026-Rebuilt.git", Status = "ok",
                 Note = "swerve + 吸球/飛輪/送球全可用(實測)",
                 PatchFile = @"src\main\java\frc\robot\RobotContainer.java",
                 PatchFind = @"//\s*(drivetrain\.setDefaultCommand\(drivetrain\.applyRequest\(\(\) ->)\s*//\s*(getDriverInput\(\)\)\);)", PatchReplace = "$1 $2" },
-            new Entry { Id = "1710-Robot", Model = "proc:0.62,0.86,0.60,#F2B600", Team = "FRC 1710", Repo = "https://github.com/frc-Team-1710/2026-Robot.git", Status = "ok",
+            new Entry { Id = "1710-Robot", LibModel = "as_bananasplit", Model = "proc:0.62,0.86,0.60,#F2B600", Team = "FRC 1710", Repo = "https://github.com/frc-Team-1710/2026-Robot.git", Status = "ok",
                 Note = "實測:自動把硬體 IO 切到 REAL;RT 吸球、飛輪/送球會動;自動瞄準會讓車自己轉",
                 PatchFile = @"src\main\java\frc\robot\RobotContainer.java",
                 PatchFind = @"switch \(Mode\.currentMode\) \{", PatchReplace = "switch (CurrentMode.REAL) {" },
-            new Entry { Id = "1405-Robot", Model = "proc:0.76,0.76,0.58,#FF6A00", Team = "FRC 1405", Repo = "https://github.com/FRC-Team-1405/2026Robot.git", Status = "ok",
+            new Entry { Id = "1405-Robot", LibModel = "as_duckbot", Model = "proc:0.76,0.76,0.58,#FF6A00", Team = "FRC 1405", Repo = "https://github.com/FRC-Team-1405/2026Robot.git", Status = "ok",
                 Note = "實測可用:操作手先按 B/Y/A 選射速,駕駛 LB 吸球、RB 射擊" },
-            new Entry { Id = "364-Fusion", Model = "proc:0.64,0.64,0.62,#8A3BFF", Team = "FRC 364", Repo = "https://github.com/TeamFusion364/2026RobotCode.git", Status = "ok",
+            new Entry { Id = "364-Fusion", LibModel = "as_crabbot", Model = "proc:0.64,0.64,0.62,#8A3BFF", Team = "FRC 364", Repo = "https://github.com/TeamFusion364/2026RobotCode.git", Status = "ok",
                 Note = "swerve + 吸球/飛輪/送球可用(實測);自動把 simMode 改成 REAL",
                 PatchFile = @"src\main\java\frc\robot\Constants.java",
                 PatchFind = @"Mode simMode = Mode\.SIM;", PatchReplace = "Mode simMode = Mode.REAL;" },
-            new Entry { Id = "4915-Artemis", Model = "proc:0.70,0.74,0.60,#3DDC84", Team = "FRC 4915 Spartronics (MIT)", Repo = "https://github.com/Spartronics4915/2026-Rebuilt.git", Status = "ok",
+            new Entry { Id = "4915-Artemis", LibModel = "as_manta", Model = "proc:0.70,0.74,0.60,#3DDC84", Team = "FRC 4915 Spartronics (MIT)", Repo = "https://github.com/Spartronics4915/2026-Rebuilt.git", Status = "ok",
                 Note = "實測可用:操作手 Start 開自動瞄準 → LT 吸球 → RT 射擊(已把紅方起始位姿改成與模擬器一致)",
                 PatchFile = @"src\main\java\com\spartronics4915\frc2026\subsystems\swerve\SwerveSubsystem.java",
                 PatchFind = @"new Translation2d\(14\.0, 5\.0\), Rotation2d\.fromDegrees\(180\)", PatchReplace = "new Translation2d(2.11, 4.04), Rotation2d.fromDegrees(0)" },
-            new Entry { Id = "REV-ION-StarterBot", Team = "REV ION", Repo = "https://github.com/REVrobotics/2026-REV-ION-FRC-StarterBot.git", Status = "untested",
+            new Entry { Id = "REV-ION-StarterBot", LibModel = "as_kitbot2026", Team = "REV ION", Repo = "https://github.com/REVrobotics/2026-REV-ION-FRC-StarterBot.git", Status = "untested",
                 Model = "proc:0.70,0.70,0.50,#FF8A00",
                 Note = "官方入門機(BSD-3);用 SparkMax/Flex,模擬器目前只模擬 TalonFX,暫時無法驅動" },
         };
 
         public static bool Installed(Entry e) { return File.Exists(Path.Combine(e.Dir, "gradlew.bat")); }
 
+        // 選用這個隊伍時同時換上對應的 3D 模型:模型庫已下載就直接用;還沒下載就先用程序化外觀並背景下載,好了自動換上
+        public static void UseModel(Entry e)
+        {
+            UnityEngine.PlayerPrefs.DeleteKey("modelYaw");
+            var lm = string.IsNullOrEmpty(e.LibModel) ? null : ModelLibrary.Find(e.LibModel);
+            if (lm != null && ModelLibrary.Installed(lm)) { Prefs.SetString("robotModel", lm.File); return; }
+            if (!string.IsNullOrEmpty(e.Model)) Prefs.SetString("robotModel", e.Model);
+            if (lm != null) ModelLibrary.Install(lm, () => { if (Prefs.GetString("robotProject", "") == e.Dir) Prefs.SetString("robotModel", lm.File); });
+        }
+
         public static void Install(Entry e)
         {
             if (e.State == "…") return;
+            { var lm = string.IsNullOrEmpty(e.LibModel) ? null : ModelLibrary.Find(e.LibModel); if (lm != null) ModelLibrary.Install(lm); }   // 順便把對應模型一起下載
             e.State = "…";
             new Thread(() =>
             {
@@ -107,6 +118,8 @@ namespace FrcSim
         System.Collections.IEnumerator Start()
         {
             var a = Environment.GetCommandLineArgs(); int i = Array.IndexOf(a, "-installtest"); string id = a[i + 1];
+            var lib = ModelLibrary.Find(id);
+            if (lib != null) { ModelLibrary.Install(lib); float t2 = 0f; while ((lib.State == "…" || t2 < 2f) && t2 < 600f) { t2 += 1f; yield return new UnityEngine.WaitForSecondsRealtime(1f); } File.WriteAllText(Path.Combine(Path.GetDirectoryName(UnityEngine.Application.dataPath), "installtest.txt"), "model state='" + lib.State + "' installed=" + ModelLibrary.Installed(lib) + " size=" + (ModelLibrary.Installed(lib) ? new FileInfo(lib.Path).Length : 0)); UnityEngine.Application.Quit(); yield break; }
             foreach (var en in OpenSourceCatalog.All) if (en.Id == id)
             {
                 OpenSourceCatalog.Install(en);

@@ -194,7 +194,7 @@ namespace FrcSim
 
         // ---------------------------------------------------------------- 各畫面
         void ShowLanguage()
-        {
+        { PreviewRobot.Want = false;
             var s = Build(() => Loc.T("lang.pick"), null, new[]
             {
                 new Item(() => "繁體中文", () => { Loc.Lang = "zh"; ShowMain(); }),
@@ -204,7 +204,7 @@ namespace FrcSim
         }
 
         void ShowMain()
-        {
+        { PreviewRobot.Want = false;
             var s = Build(() => Loc.T("app.title"), () => Loc.T("app.sub") + (UpdateCheck.Progress != "" ? "   ●" + UpdateCheck.Progress : UpdateCheck.Newer ? (Loc.Lang == "zh" ? "   ●有新版 v" + UpdateCheck.Latest + "(按 U 自動更新)" : "   ●New v" + UpdateCheck.Latest + " (press U to update)") : ""), new[]
             {
                 new Item(() => Loc.T("menu.start"),    ShowModes),
@@ -254,7 +254,7 @@ namespace FrcSim
         }
 
         void ShowModes()
-        {
+        { PreviewRobot.Want = false;
             var s = Build(() => Loc.T("mode.title"), () => Z("練習不限時;比賽 160 秒、紅方由 AI 對戰", "Practice: untimed. Match: 160 s vs AI"), new[]
             {
                 new Item(() => Z("練習模式(不限時)", "Practice (no time limit)"), () => { GameSession.PracticeMode = true; GameSession.VsAi = false; ShowPadSetup(ShowRobotSetup, ShowModes); }),
@@ -318,6 +318,23 @@ namespace FrcSim
                 l.Add(new Item(() => (PlayerPrefs.HasKey("mechPreset") && Prefs.GetInt("useRealCode", 0) == 0 && MechPresets.Index == i2 ? "✓ " : "") + Z(p.ZhName, p.EnName) + "  —  " + Z(p.ZhDesc, p.EnDesc), () => MechPresets.Choose(i2)));
             }
             return l.ToArray();
+        }        Item[] ModelLibItems()
+        {
+            var l = new List<Item>();
+            foreach (var mm in ModelLibrary.All)
+            {
+                var m2 = mm;
+                l.Add(new Item(() =>
+                {
+                    string st = m2.State == "…" ? Z("下載中…", "Downloading…") : m2.State != "" ? m2.State : ModelLibrary.Installed(m2) ? (RobotModels.Selected == m2.File ? Z("使用中 ✓", "In use ✓") : Z("已下載,按一下使用", "Installed — click to use")) : Z("按一下下載", "Click to download");
+                    return ModelLibrary.Name(m2) + "  —  " + st;
+                }, () =>
+                {
+                    if (!ModelLibrary.Installed(m2)) { ModelLibrary.Install(m2, () => { RobotModels.Selected = m2.File; PlayerPrefs.DeleteKey("modelYaw"); }); return; }
+                    RobotModels.Selected = m2.File; PlayerPrefs.DeleteKey("modelYaw");
+                }));
+            }
+            return l.ToArray();
         }        Item[] CatalogItems()
         {
             var l = new List<Item>();
@@ -329,11 +346,11 @@ namespace FrcSim
                     string st = en2.State == "…" ? Z("下載中…", "Downloading…") : en2.State != "" ? en2.State
                         : OpenSourceCatalog.Installed(en2) ? (Prefs.GetString("robotProject", "") == en2.Dir ? Z("使用中 ✓", "In use ✓") : Z("已下載,按一下使用", "Installed — click to use")) : Z("按一下下載", "Click to download");
                     string tag = en2.Status == "ok" ? Z("可用", "Works") : en2.Status == "partial" ? Z("部分", "Partial") : Z("未測試", "Untested");
-                    return en2.Team + "  [" + tag + "]  " + st + (string.IsNullOrEmpty(en2.Note) ? "" : "  ·  " + en2.Note);
+                    string mdl = string.IsNullOrEmpty(en2.LibModel) ? "" : "  ·  " + Z("模型", "Model") + ": " + ModelLibrary.Name(ModelLibrary.Find(en2.LibModel)) + (ModelLibrary.Installed(ModelLibrary.Find(en2.LibModel)) ? "" : (ModelLibrary.Find(en2.LibModel).State == "…" ? Z("(下載中…)", "(downloading…)") : "")); return en2.Team + "  [" + tag + "]  " + st + mdl + (string.IsNullOrEmpty(en2.Note) ? "" : "  ·  " + en2.Note);
                 }, () =>
                 {
                     if (!OpenSourceCatalog.Installed(en2)) { OpenSourceCatalog.Install(en2); return; }
-                    Prefs.SetString("robotProject", en2.Dir); Prefs.SetInt("useRealCode", 1); if (!string.IsNullOrEmpty(en2.Model)) { Prefs.SetString("robotModel", en2.Model); PlayerPrefs.DeleteKey("modelYaw"); } Prefs.SetInt("tankMode", 0); PlayerPrefs.Save();
+                    Prefs.SetString("robotProject", en2.Dir); Prefs.SetInt("useRealCode", 1); OpenSourceCatalog.UseModel(en2); Prefs.SetInt("tankMode", 0); PlayerPrefs.Save();
                 }));
             }
             return l.ToArray();
@@ -349,13 +366,13 @@ namespace FrcSim
         }
 
         void ShowSub(Func<string> title, Func<string> sub, Item[] items)
-        {
+        { PreviewRobot.Boot(); PreviewRobot.Want = true;
             var all = new List<Item>(items) { new Item(() => Loc.T("menu.back"), ShowRobotSetup) };
             Show(Build(title, sub, all.ToArray(), ShowRobotSetup), false);
         }
 
         void ShowRobotSetup()
-        {
+        { PreviewRobot.Boot(); PreviewRobot.Want = true;
             string Sum()
             {
                 string m = RobotModels.Selected == "" ? Loc.T("model.builtin") : RobotModels.Display(RobotModels.Selected);
@@ -366,7 +383,7 @@ namespace FrcSim
             var s = Build(() => Loc.T("setup.title"), Sum, new[]
             {
                 new Item(() => Z("外觀  ▸", "Appearance  ▸"), () => ShowSub(() => Z("外觀", "Appearance"), () => Z("機器人模型與方向", "Robot model & orientation"), new[] { ItModel(), ItImport(), ItYaw() })),
-                new Item(() => Z("機器人程式  ▸", "Robot code  ▸"), () => ShowSub(() => Z("機器人程式", "Robot code"), () => Z("專案、是否跑真實程式、操控方式", "Project, real code, controls"), new[] { ItProject(), ItReal(), ItCtl(), new Item(() => Z("內建機構(5 款)  ▸", "Built-in mechanisms (5)  ▸"), () => ShowSub(() => Z("內建機構", "Built-in mechanisms"), () => Z("不用機器人程式,直接用內建行為;各有外觀與手感", "No robot code needed — each has its own look and feel"), PresetItems())), new Item(() => Z("開源機器人程式庫  ▸", "Open-source robot library  ▸"), () => ShowSub(() => Z("開源機器人程式庫", "Open-source robot library"), () => Z("別隊公開的 2026 程式:下載後直接在模擬器跑(來源 GitHub,未打包)", "Public 2026 team code: download and run (from GitHub, not bundled)"), CatalogItems())) })),
+                new Item(() => Z("機器人程式  ▸", "Robot code  ▸"), () => ShowSub(() => Z("機器人程式", "Robot code"), () => Z("專案、是否跑真實程式、操控方式", "Project, real code, controls"), new[] { ItProject(), ItReal(), ItCtl(), new Item(() => Z("內建機構(5 款)  ▸", "Built-in mechanisms (5)  ▸"), () => ShowSub(() => Z("內建機構", "Built-in mechanisms"), () => Z("不用機器人程式,直接用內建行為;各有外觀與手感", "No robot code needed — each has its own look and feel"), PresetItems())), new Item(() => Z("開源機器人模型庫(3D)  ▸", "Open-source robot models (3D)  ▸"), () => ShowSub(() => Z("開源機器人模型", "Open-source robot models"), () => Z("真實隊伍的 3D 機器人(AdvantageScope 公開資產),按一下下載並使用", "Real FRC team 3D robots (AdvantageScope public assets) — click to download & use"), ModelLibItems())), new Item(() => Z("開源機器人程式庫  ▸", "Open-source robot library  ▸"), () => ShowSub(() => Z("開源機器人程式庫", "Open-source robot library"), () => Z("別隊公開的 2026 程式:下載後直接在模擬器跑(來源 GitHub,未打包)", "Public 2026 team code: download and run (from GitHub, not bundled)"), CatalogItems())) })),
                 new Item(() => Z("手感  ▸", "Handling  ▸"), () => ShowSub(() => Z("手感", "Handling"), () => Z("最高車速與加速度(慣性)", "Top speed & acceleration"), new[] { ItSpeed(), ItAccel() })),
                 new Item(() => Z("比賽  ▸", "Match  ▸"), () => ShowSub(() => Z("比賽", "Match"), () => Z("對手機器人與難度", "Opponent robot & level"), new[] { ItSecond(), ItLevel() })),
                 new Item(() => Loc.T("setup.start"), StartGame),
@@ -407,7 +424,7 @@ namespace FrcSim
             Show(s, game);
         }
         void ShowSettings(bool game)
-        {
+        { PreviewRobot.Want = false;
             MenuScreen s = null;
             s = Build(() => Loc.T("set.title"), null, new[]
             {
@@ -449,7 +466,7 @@ namespace FrcSim
         }
 
         void ShowControls()
-        {
+        { PreviewRobot.Want = false;
             var s = Build(() => Loc.T("ctl.title"), null, new[]
             {
                 new Item(() => Loc.T("menu.back"), ShowMain),

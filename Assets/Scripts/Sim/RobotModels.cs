@@ -17,8 +17,9 @@ namespace FrcSim
         {
             try
             {
-                if (!Directory.Exists(Dir)) return new string[0];
-                return Directory.GetFiles(Dir, "*.glb").Select(Path.GetFileName).OrderBy(x => x).ToArray();
+                var l = Directory.Exists(Dir) ? Directory.GetFiles(Dir, "*.glb").Select(Path.GetFileName).ToList() : new List<string>();
+                foreach (var m in ModelLibrary.All) if (ModelLibrary.Installed(m)) l.Add(m.File);   // 開源模型庫下載到 C:\FRC\models 的也算
+                return l.OrderBy(x => x).ToArray();
             }
             catch { return new string[0]; }
         }
@@ -42,6 +43,7 @@ namespace FrcSim
         // 選單顯示用的友善名稱:程序化機器人("proc:..." 規格字串)顯示成內建機構名稱/開源隊名,不要露出規格字串
         public static string Display(string file)
         {
+            if (ModelLibrary.Is(file)) return ModelLibrary.Name(ModelLibrary.Find(file));
             if (!ProcRobot.Is(file)) return file;
             foreach (var p in MechPresets.All) if (p.Model == file) return Loc.Lang == "en" ? p.EnName : p.ZhName;
             foreach (var c in OpenSourceCatalog.All) if (c.Model == file) return c.Team;
@@ -50,7 +52,7 @@ namespace FrcSim
         public static float YawDeg
         {
             // kepler.glb 的 intake 在模型 +z 側,車頭(+x)要轉 90° 才對;使用者沒調過時預設用這個
-            get => PlayerPrefs.GetFloat("modelYaw", Selected == "kepler.glb" ? 90f : 0f);
+            get => PlayerPrefs.GetFloat("modelYaw", (Selected == "kepler.glb" || ModelLibrary.Is(Selected)) ? 90f : 0f);
             set { PlayerPrefs.SetFloat("modelYaw", value); PlayerPrefs.Save(); }
         }
 
@@ -68,7 +70,7 @@ namespace FrcSim
             }
             try
             {
-                var path = Path.Combine(Dir, file);
+                var path = ModelLibrary.Is(file) ? ModelLibrary.Find(file).Path : Path.Combine(Dir, file);
                 Debug.Log($"[RobotModels] loading {path} exists={File.Exists(path)}");
                 var imp = new GltfImport(null, null, null, new GLTFast.Logging.ConsoleLogger());
                 bool loaded = await imp.Load(new Uri(path).AbsoluteUri);
