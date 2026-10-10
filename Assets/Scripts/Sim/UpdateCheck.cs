@@ -17,7 +17,7 @@ namespace FrcSim
     //   找不到差異包(或失敗)時退回「開啟下載頁」,讓使用者手動下載完整版。
     public class UpdateCheck : MonoBehaviour
     {
-        public const string Current = "0.4.4";
+        public const string Current = "0.4.5";
         const string Repo = "frc9427liu-tech/FRC9427-SimApp";
         const string ReleasesApi = "https://api.github.com/repos/" + Repo + "/releases?per_page=30";
         public const string Page = "https://github.com/" + Repo + "/releases/latest";

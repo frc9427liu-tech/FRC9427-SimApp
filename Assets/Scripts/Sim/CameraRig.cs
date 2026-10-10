@@ -125,7 +125,12 @@ namespace FrcSim
                     else if (shot == 1) { pos = Target.position + new Vector3(-1.8f, 2.8f, -3.6f); rot = Quaternion.LookRotation(Target.position + Vector3.up * 0.4f - pos, Vector3.up); }
                     else { pos = new Vector3(L / 2f + Mathf.Sin(Time.unscaledTime * 0.25f) * 4f, 9f - Mathf.PingPong(Time.unscaledTime * 0.3f, 1.5f), W / 2f - 8f); rot = Quaternion.LookRotation(new Vector3(L / 2f, 0f, W / 2f) - pos, Vector3.up); }
                 }
-            }            else if (Mode == 6)
+            }            else if (Mode == 9)
+            {
+                pos = new Vector3(L / 2f - 7f, 2.5f, W / 2f - 5f);   // 除錯:看場地上方的計分板與桁架(-camera 9)
+                rot = Quaternion.LookRotation(new Vector3(L / 2f, 7.2f, W / 2f) - pos, Vector3.up);
+            }
+            else if (Mode == 6)
             {
                 // 觀眾席視角(-camera 6):站在場內低處看對面看台,檢查觀眾外觀
                 pos = new Vector3(L * 0.5f, 1.7f, 0.8f);

@@ -25,7 +25,7 @@ namespace FrcSim
             {
                 var face = new GameObject("face" + s); face.transform.SetParent(cube.transform, false); face.transform.localRotation = Quaternion.Euler(0, s * 90f, 0); face.transform.localPosition = face.transform.localRotation * new Vector3(0, 0, -1.82f);
                 var tm = face.AddComponent<TextMesh>(); tm.font = font; tm.fontSize = 120; tm.characterSize = 0.045f; tm.anchor = TextAnchor.MiddleCenter; tm.alignment = TextAlignment.Center; tm.color = Color.white; tm.text = "0 : 0";
-                if (font != null) face.GetComponent<MeshRenderer>().sharedMaterial = font.material;
+                if (font != null) { var ts = Resources.Load<Shader>("Shaders/FrcText3D"); if (ts != null) { var fm = new Material(ts); fm.mainTexture = font.material.mainTexture; face.GetComponent<MeshRenderer>().sharedMaterial = fm; } else face.GetComponent<MeshRenderer>().sharedMaterial = font.material; }   // 自訂字型 shader:ZTest 正常,不會穿透方塊顯示對面的鏡像字
                 sc.tms[s] = tm;
             }
         }
