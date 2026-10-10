@@ -57,10 +57,10 @@ namespace FrcSim
         public static bool Connected => Count > 0;
 
         // ---- 手把模式與指派(開始前由使用者選):0 未選(舊行為:自動依序)、1 單手把(同一支當駕駛+操作手)、2 雙手把(駕駛/操作手各一支,依指派)
-        public static int Mode { get => PlayerPrefs.GetInt("padMode", 0); set { PlayerPrefs.SetInt("padMode", value); PlayerPrefs.Save(); } }
-        public static bool OperatorKeyboard { get => PlayerPrefs.GetInt("padOprKb", 0) == 1; set { PlayerPrefs.SetInt("padOprKb", value ? 1 : 0); PlayerPrefs.Save(); } }   // 雙手把模式下,操作手改用鍵盤(其中一支手把壞了/沒接時)
-        public static int DriverSlot { get => PlayerPrefs.GetInt("padDrv", -1); set { PlayerPrefs.SetInt("padDrv", value); PlayerPrefs.Save(); } }
-        public static int OperatorSlot { get => PlayerPrefs.GetInt("padOpr", -1); set { PlayerPrefs.SetInt("padOpr", value); PlayerPrefs.Save(); } }
+        public static int Mode { get => Prefs.GetInt("padMode", 0); set { Prefs.SetInt("padMode", value); PlayerPrefs.Save(); } }
+        public static bool OperatorKeyboard { get => Prefs.GetInt("padOprKb", 0) == 1; set { Prefs.SetInt("padOprKb", value ? 1 : 0); PlayerPrefs.Save(); } }   // 雙手把模式下,操作手改用鍵盤(其中一支手把壞了/沒接時)
+        public static int DriverSlot { get => Prefs.GetInt("padDrv", -1); set { Prefs.SetInt("padDrv", value); PlayerPrefs.Save(); } }
+        public static int OperatorSlot { get => Prefs.GetInt("padOpr", -1); set { Prefs.SetInt("padOpr", value); PlayerPrefs.Save(); } }
         public static bool DriverOnline { get { Poll(); return Drv.Connected; } }
         public static bool OperatorOnline { get { Poll(); return Opr.Connected && Opr != Drv; } }
         public static int DriverIndex { get { Poll(); return System.Array.IndexOf(Slots, Drv); } }

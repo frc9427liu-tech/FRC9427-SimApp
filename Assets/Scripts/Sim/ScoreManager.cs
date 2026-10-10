@@ -63,7 +63,7 @@ namespace FrcSim
             BlueScore = RedScore = 0;
             MatchTime = 0f; Ended = false; BlueWonAuto = true;
             { var ca = System.Environment.GetCommandLineArgs(); int ci = System.Array.IndexOf(ca, "-clockstart"); if (ci >= 0 && ci + 1 < ca.Length) float.TryParse(ca[ci + 1], out MatchTime); }   // 測試用:從第 N 秒開始
-            ClockOn = !GameSession.PracticeMode && PlayerPrefs.GetInt("matchClock", 1) == 1 && System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-noclock") < 0;
+            ClockOn = !GameSession.PracticeMode && Prefs.GetInt("matchClock", 1) == 1 && System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-noclock") < 0;
             float L = SimConstants.FieldLength, W = SimConstants.FieldWidth;
             float d = SimConstants.AllianceZoneDepth + SimConstants.HubSize / 2f;
             blueHub = new Vector2(d, W / 2f);

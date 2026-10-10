@@ -4,18 +4,26 @@ namespace FrcSim
 {
     public static class SettingsStore
     {
-        public static readonly int[] FpsOptions = { 30, 60, 90, 120, 144 };   // 不再提供 240/不限(會讓顯卡、CPU 滿載燒機)
-
-        public static int FpsIndex
+        // 幀率改用「垂直同步的整數分頻」(144Hz 螢幕:144/72/48/36),不再用 targetFrameRate 睡眠限速——後者與螢幕刷新不同步,會每幀快慢不一(看起來卡)
+        public static int RefreshHz { get { int h = Mathf.RoundToInt((float)Screen.currentResolution.refreshRateRatio.value); return h < 30 ? 60 : h; } }
+        public static int FpsIndex   // 0..3 = vsync 間隔 1..4(新鍵 pace,預設 1 = 刷新率的一半)
         {
-            get => Mathf.Clamp(PlayerPrefs.GetInt("fps2", 1), 0, FpsOptions.Length - 1);
-            set { PlayerPrefs.SetInt("fps2", value); PlayerPrefs.Save(); }
+            get => Mathf.Clamp(Prefs.GetInt("pace", 1), 0, 3);
+            set { Prefs.SetInt("pace", value); PlayerPrefs.Save(); }
         }
-        public static readonly float[] RenderScales = { 1.0f, 1.25f, 1.5f, 2.0f };   // 超取樣比例(畫質)
+        public static int VSyncInterval(bool menu) { int k = FpsIndex + 1; if (menu && RefreshHz >= 120) k = Mathf.Max(k, 2); return k; }
+        public static int EffectiveFps => RefreshHz / VSyncInterval(MenuSystem.Blocking);
+        public static string PaceLabel(int i) => (RefreshHz / (i + 1)) + " Hz";
+        public static void ApplyPacing()
+        {
+            int k = VSyncInterval(MenuSystem.Blocking);
+            if (QualitySettings.vSyncCount != k) QualitySettings.vSyncCount = k;
+            if (Application.targetFrameRate != -1) Application.targetFrameRate = -1;
+        }        public static readonly float[] RenderScales = { 1.0f, 1.25f, 1.5f, 2.0f };   // 超取樣比例(畫質)
         public static int RenderScaleIndex
         {
-            get => Mathf.Clamp(PlayerPrefs.GetInt("rscale", 1), 0, RenderScales.Length - 1);
-            set { PlayerPrefs.SetInt("rscale", value); PlayerPrefs.Save(); }
+            get => Mathf.Clamp(Prefs.GetInt("rscale", 1), 0, RenderScales.Length - 1);
+            set { Prefs.SetInt("rscale", value); PlayerPrefs.Save(); }
         }
         public static float RenderScale => RenderScales[RenderScaleIndex];
 
@@ -23,8 +31,8 @@ namespace FrcSim
         public static readonly float[] SpeedOptions = { 2.5f, 3.5f, 4.0f, 5.0f };
         public static int SpeedIndex
         {
-            get => Mathf.Clamp(PlayerPrefs.GetInt("speedIdx", 2), 0, SpeedOptions.Length - 1);
-            set { PlayerPrefs.SetInt("speedIdx", value); PlayerPrefs.Save(); }
+            get => Mathf.Clamp(Prefs.GetInt("speedIdx", 2), 0, SpeedOptions.Length - 1);
+            set { Prefs.SetInt("speedIdx", value); PlayerPrefs.Save(); }
         }
         public static float MaxSpeedChoice => SpeedOptions[SpeedIndex];
 
@@ -32,31 +40,30 @@ namespace FrcSim
         public static readonly float[] AccelOptions = { 5f, 8f, 12f, 22f };
         public static int AccelIndex
         {
-            get => Mathf.Clamp(PlayerPrefs.GetInt("accel2", 2), 0, AccelOptions.Length - 1);
-            set { PlayerPrefs.SetInt("accel2", value); PlayerPrefs.Save(); }
+            get => Mathf.Clamp(Prefs.GetInt("accel2", 2), 0, AccelOptions.Length - 1);
+            set { Prefs.SetInt("accel2", value); PlayerPrefs.Save(); }
         }
         public static float AccelChoice => AccelOptions[AccelIndex];
 
         // 陰影開關(關掉最省效能)
         public static bool Shadows
         {
-            get => PlayerPrefs.GetInt("shadows", 1) == 1;
-            set { PlayerPrefs.SetInt("shadows", value ? 1 : 0); PlayerPrefs.Save(); }
+            get => Prefs.GetInt("shadows", 1) == 1;
+            set { Prefs.SetInt("shadows", value ? 1 : 0); PlayerPrefs.Save(); }
         }
 
         public static bool VSync
         {
-            get => PlayerPrefs.GetInt("vsync", 0) == 1;
-            set { PlayerPrefs.SetInt("vsync", value ? 1 : 0); PlayerPrefs.Save(); }
+            get => Prefs.GetInt("vsync", 0) == 1;
+            set { Prefs.SetInt("vsync", value ? 1 : 0); PlayerPrefs.Save(); }
         }
         public static bool Fullscreen
         {
-            get => PlayerPrefs.GetInt("full", 0) == 1;
-            set { PlayerPrefs.SetInt("full", value ? 1 : 0); PlayerPrefs.Save(); }
+            get => Prefs.GetInt("full", 0) == 1;
+            set { Prefs.SetInt("full", value ? 1 : 0); PlayerPrefs.Save(); }
         }
 
         // 目前該用的幀率上限:選單/暫停時固定 30(待機不燒機),遊戲中用設定值
-        public static int EffectiveFps => MenuSystem.Blocking ? 30 : FpsOptions[FpsIndex];
 
         static bool firstRunChecked;
         // 第一次啟動(沒有存過任何畫質設定)時依顯卡自動選預設:內顯/小顯存 → 低(超取樣 100%、關陰影、MSAA 2x);其餘維持預設(125%、陰影開、4x)
@@ -69,21 +76,19 @@ namespace FrcSim
             bool weak = gpu.IndexOf("Intel", System.StringComparison.OrdinalIgnoreCase) >= 0 || gpu.IndexOf("UHD", System.StringComparison.OrdinalIgnoreCase) >= 0
                         || gpu.IndexOf("Iris", System.StringComparison.OrdinalIgnoreCase) >= 0 || (SystemInfo.graphicsMemorySize > 0 && SystemInfo.graphicsMemorySize < 2000);
             Debug.Log($"[Settings] first run, GPU=\"{gpu}\" VRAM={SystemInfo.graphicsMemorySize}MB → {(weak ? "low" : "default")} quality preset");
-            if (weak) { PlayerPrefs.SetInt("rscale", 0); PlayerPrefs.SetInt("shadows", 0); PlayerPrefs.SetInt("msaa", 2); PlayerPrefs.Save(); }
+            if (weak) { Prefs.SetInt("rscale", 0); Prefs.SetInt("shadows", 0); Prefs.SetInt("msaa", 2); PlayerPrefs.Save(); }
         }
-        public static int Msaa => PlayerPrefs.GetInt("msaa", 4);
+        public static int Msaa => Prefs.GetInt("msaa", 4);
 
         public static void Apply()
         {
             FirstRunDefaults();
-            QualitySettings.vSyncCount = VSync ? 1 : 0;
+            ApplyPacing();
             // 畫質:4x 抗鋸齒、高解析柔和陰影、各向異性過濾
             QualitySettings.antiAliasing = Msaa;
             Look.ApplyShadowQuality(Shadows);
             QualitySettings.anisotropicFiltering = AnisotropicFiltering.ForceEnable;
             QualitySettings.pixelLightCount = 4;
-            int f = FpsOptions[FpsIndex];
-            Application.targetFrameRate = f == 0 ? -1 : f;
             Screen.fullScreenMode = Fullscreen ? FullScreenMode.FullScreenWindow : FullScreenMode.Windowed;
         }
     }

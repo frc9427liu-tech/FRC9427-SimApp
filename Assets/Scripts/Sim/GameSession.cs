@@ -16,7 +16,7 @@ namespace FrcSim
         static GameObject robot, robot2, score, hud;
         public static bool PracticeMode;      // 練習模式:沒有比賽時鐘(不限時、不結束)
         public static bool VsAi;               // 模擬比賽:紅方機器人由 AI 操作
-        public static int AiLevel { get => PlayerPrefs.GetInt("aiLevel", 1); set { PlayerPrefs.SetInt("aiLevel", Mathf.Clamp(value, 0, 3)); PlayerPrefs.Save(); } }
+        public static int AiLevel { get => Prefs.GetInt("aiLevel", 1); set { Prefs.SetInt("aiLevel", Mathf.Clamp(value, 0, 3)); PlayerPrefs.Save(); } }
         public static CameraRig LastRig;
         public static int AiTestLevel = -1;   // 測試用:-vsai N(不寫入玩家設定)
 
@@ -84,7 +84,7 @@ namespace FrcSim
             Mech.ArmVisual = armVis;
 
             // 第二台機器人(紅方,內建行為,方向鍵操控)
-            if (PlayerPrefs.GetInt("secondRobot", 1) == 1)
+            if (Prefs.GetInt("secondRobot", 1) == 1)
             {
                 robot2 = SimBootstrap.BuildRobot(out var t2, out var a2, "Robot2", new Color(0.9f, 0.2f, 0.2f));
                 var d2 = robot2.GetComponent<SwerveDrive>();
@@ -100,15 +100,15 @@ namespace FrcSim
 
             // 真實機器人程式(設定畫面選的專案;沒選就用內建行為)
             // 預設關閉:真實程式模式還在實驗(閉環時序不穩),內建行為才是穩定版
-            string proj = projectOverride ?? (PlayerPrefs.GetInt("useRealCode", 0) == 1 ? PlayerPrefs.GetString("robotProject", "") : "");
-            bool tankMode = PlayerPrefs.GetInt("tankMode", 1) == 1;
+            string proj = projectOverride ?? (Prefs.GetInt("useRealCode", 0) == 1 ? Prefs.GetString("robotProject", "") : "");
+            bool tankMode = Prefs.GetInt("tankMode", 1) == 1;
             if (projectOverride == null && tankMode && !string.IsNullOrEmpty(proj) && !IsTankProfile(proj)) proj = "";   // 坦克模式只跑有坦克設定檔的專案(如 LEO)
-            if (string.IsNullOrEmpty(proj) && PlayerPrefs.GetInt("useRealCode", 0) == 1 && !tankMode)
+            if (string.IsNullOrEmpty(proj) && Prefs.GetInt("useRealCode", 0) == 1 && !tankMode)
             {
                 foreach (var c in new[] { @"C:\Users\frc94\2026_FRC9427_offseasonBot\FRC9427_offseasonBot" })
                     if (System.IO.File.Exists(System.IO.Path.Combine(c, "gradlew.bat"))) { proj = c; break; }
             }
-            if (string.IsNullOrEmpty(proj) && PlayerPrefs.GetInt("useRealCode", 0) == 1 && tankMode)
+            if (string.IsNullOrEmpty(proj) && Prefs.GetInt("useRealCode", 0) == 1 && tankMode)
             {
                 // 沒選專案時自動找桌面上的 LEO(資料夾名開頭 LEO、內有 gradlew.bat)
                 try
@@ -122,9 +122,9 @@ namespace FrcSim
             if (System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-norealcode") >= 0) proj = "";
             // 使用者要跑真實程式,但選的專案沒有對應的模擬設定檔(或操控方式和專案型式不合)→ 改用內建行為,並明講原因(不要靜靜地不動)
             Notice = "";
-            if (projectOverride == null && PlayerPrefs.GetInt("useRealCode", 0) == 1)
+            if (projectOverride == null && Prefs.GetInt("useRealCode", 0) == 1)
             {
-                string chosen = PlayerPrefs.GetString("robotProject", "");
+                string chosen = Prefs.GetString("robotProject", "");
                 if (string.IsNullOrEmpty(proj) && !string.IsNullOrEmpty(chosen))
                 {
                     bool hasProfile = System.IO.File.Exists(System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Application.dataPath), "Sim", SimProject.Profile(chosen) + ".mech.json"));

@@ -180,8 +180,11 @@ namespace FrcSim
             // 機器人 JVM 是 Gradle daemon 啟動的,不在上面的程序樹裡:依命令列找出機器人程式的 java 一併結束
             try
             {
-                var ps = new ProcessStartInfo("powershell",
-                    "-NoProfile -Command \"Get-CimInstance Win32_Process -Filter \\\"Name='java.exe'\\\" | Where-Object { $_.CommandLine -match 'frc\\.robot|robotRunMain|simulateJava|halsim' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force }\"")
+                // 只結束「自己這個模擬器」的機器人 JVM:用它佔住的 HALSim 埠(3300 + 埠偏移)找擁有者。以前是依命令列比對所有 java,
+                // 會把使用者另一個正在跑的模擬器的機器人程式一起殺掉(自動測試收尾時發生過:使用者畫面跳「WebSocket 被遠端關閉」)
+                int myPort = 3300 + SimPorts.Offset;
+                string cmd = "Get-NetTCPConnection -LocalPort " + myPort + " -State Listen -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }";
+                var ps = new ProcessStartInfo("powershell", "-NoProfile -EncodedCommand " + System.Convert.ToBase64String(System.Text.Encoding.Unicode.GetBytes(cmd)))
                 { CreateNoWindow = true, UseShellExecute = false };
                 Process.Start(ps);
             }

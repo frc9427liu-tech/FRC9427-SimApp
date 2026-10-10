@@ -33,13 +33,13 @@ namespace FrcSim
             acc += 1f; accT += Time.unscaledDeltaTime;
             if (accT < 6f) return;
             float avg = acc / accT; acc = 0f; accT = 0f;
-            if (avg < 28f && SettingsStore.RenderScaleIndex == 0 && SettingsStore.Shadows)
+            if (avg < SettingsStore.EffectiveFps * 0.85f && SettingsStore.RenderScaleIndex == 0 && SettingsStore.Shadows)
             {
                 SettingsStore.Shadows = false; SettingsStore.Apply();   // 畫質已降到最低還是卡:關陰影
                 Debug.Log($"[SuperSample] avg FPS {avg:0} < 28 at min scale → shadows off");
                 warm = Time.unscaledTime + 8f;
             }
-            else if (avg < 28f && SettingsStore.RenderScaleIndex > 0)
+            else if (avg < SettingsStore.EffectiveFps * 0.85f && SettingsStore.RenderScaleIndex > 0)
             {
                 SettingsStore.RenderScaleIndex = SettingsStore.RenderScaleIndex - 1;
                 Debug.Log($"[SuperSample] avg FPS {avg:0} < 28 → render scale lowered to {SettingsStore.RenderScale}");
@@ -49,8 +49,7 @@ namespace FrcSim
 
         void LateUpdate()
         {
-            int wantFps = SettingsStore.EffectiveFps;
-            if (Application.targetFrameRate != wantFps) Application.targetFrameRate = wantFps;   // 選單時 30、遊戲中用設定值(預設 60)
+            SettingsStore.ApplyPacing();   // 垂直同步整數分頻(選單與遊戲都不再用 targetFrameRate 睡眠限速)
             if (!MenuSystem.Blocking) AutoQuality();
             float s = SettingsStore.RenderScale;
             if (curScale == s && w == Screen.width && h == Screen.height && post == PostFX.Active) return;

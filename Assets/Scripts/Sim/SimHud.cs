@@ -13,7 +13,7 @@ namespace FrcSim
         float born;
         bool showDebug, showHelp;
         Camera hudCam;
-        static bool Zh => Loc.Lang == "zh";
+        static bool Zh => Loc.Lang == "zh";   // Loc.Lang 已走 Prefs 記憶體快取
         static string L(string zh, string en) => Zh ? zh : en;
         static string PhaseName(string p)
         {
@@ -47,10 +47,17 @@ namespace FrcSim
             if (Input.GetKeyDown(KeyCode.F1)) { showHelp = !showHelp; born = showHelp ? Time.unscaledTime - 9999f : Time.unscaledTime - 9999f; }
         }
 
+        static readonly System.Collections.Generic.Dictionary<long, GUIStyle> styleCache = new System.Collections.Generic.Dictionary<long, GUIStyle>();
         static GUIStyle Style(int size, Color c, TextAnchor a = TextAnchor.UpperLeft, FontStyle fs = FontStyle.Normal)
         {
-            var s = new GUIStyle(GUI.skin.label) { fontSize = size, font = UiTheme.Font, alignment = a, fontStyle = fs, wordWrap = false };
-            s.normal.textColor = c;
+            Color32 c32 = c;
+            long key = ((long)size << 40) ^ ((long)c32.r << 32) ^ ((long)c32.g << 24) ^ ((long)c32.b << 16) ^ ((long)c32.a << 8) ^ ((long)(int)a << 4) ^ (long)(int)fs;
+            if (!styleCache.TryGetValue(key, out var s))
+            {
+                s = new GUIStyle(GUI.skin.label) { fontSize = size, font = UiTheme.Font, alignment = a, fontStyle = fs, wordWrap = false };
+                s.normal.textColor = c;
+                styleCache[key] = s;
+            }
             return s;
         }
 
@@ -119,6 +126,8 @@ namespace FrcSim
         void OnGUI()
         {
             if (Drive == null) return;
+            bool hasBtn = (ScoreManager.ClockOn && ScoreManager.Ended) || (GameSession.Drill && Mech != null);
+            if (Event.current.type != EventType.Repaint && !hasBtn) return;   // Layout/KeyDown 等事件 HUD 沒事做(全是 Rect 定位),省掉每幀 2~3 倍的 OnGUI 成本
             if (Event.current.type == EventType.Repaint) UiGlass.HudFrame = Time.frameCount;
             GUI.depth = -100;   // HUD 畫在最上層(超取樣貼圖在 depth 1000,畫在最底)
             // 依螢幕高度縮放(高解析度螢幕上字不會太小/面板不會太擠)
@@ -253,7 +262,7 @@ namespace FrcSim
             {
                 float nw = Mathf.Min(W - 20, 820);
                 Panel(new Rect(cx - nw / 2f, 124, nw, 48), 0.85f);
-                var ns = Style(15, new Color(1f, 0.85f, 0.4f), TextAnchor.UpperLeft, FontStyle.Bold); ns.wordWrap = true;
+                var ns = new GUIStyle(Style(15, new Color(1f, 0.85f, 0.4f), TextAnchor.UpperLeft, FontStyle.Bold)) { wordWrap = true };
                 GUI.Label(new Rect(cx - nw / 2f + 12, 128, nw - 24, 44), GameSession.Notice, ns);
             }
 
@@ -290,7 +299,7 @@ namespace FrcSim
             bool help = showHelp || Time.unscaledTime - born < 15f;
             if (help)
             {
-                bool tank = PlayerPrefs.GetInt("tankMode", 1) == 1;
+                bool tank = Prefs.GetInt("tankMode", 1) == 1;
                 string t1 = tank
                     ? L("手把:左/右搖桿 = 左/右側輪   A 放手臂   駕駛 RT 滾輪(單手把用 B)   操作 RT 發射(到速自動送球)   RB 強制送球   十字鍵左右 砲塔   十字鍵上 收手臂   Start 暫停",
                         "Pad: L/R stick = left/right side   A arm   B roller   RT shoot   RB feed   D-pad L/R turret   Start pause")

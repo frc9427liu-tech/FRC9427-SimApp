@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace FrcSim
@@ -8,8 +8,8 @@ namespace FrcSim
     {
         public static string Lang
         {
-            get => PlayerPrefs.GetString("lang", "zh");
-            set { PlayerPrefs.SetString("lang", value); PlayerPrefs.Save(); }
+            get => Prefs.GetString("lang", "zh");
+            set { Prefs.SetString("lang", value); PlayerPrefs.Save(); }
         }
         public static bool HasChosen => PlayerPrefs.HasKey("lang");
 

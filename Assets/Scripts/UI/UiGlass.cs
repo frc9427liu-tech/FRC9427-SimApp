@@ -43,7 +43,7 @@ namespace FrcSim
     public static class UiGlass
     {
         public static bool Ready;                 // blur textures valid and shader usable
-        public static bool Disabled = HasArg("-noglass") || PlayerPrefs.GetInt("noGlass", 0) == 1;
+        public static bool Disabled = HasArg("-noglass") || Prefs.GetInt("noGlass", 0) == 1;
         public static bool FlipY = HasArg("-glassflip");     // toggle if backdrop appears upside down on some GPU/API
         public static bool UseOnRenderImage = HasArg("-glassori"); // fallback capture path
         public static bool DebugView = HasArg("-glassdebug");

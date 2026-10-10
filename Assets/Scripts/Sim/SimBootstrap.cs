@@ -9,7 +9,7 @@ namespace FrcSim
         static void Init()
         {
             SettingsStore.Apply();
-            Time.fixedDeltaTime = 1f / 60f;   // 物理 60Hz(原本 100Hz 太吃 CPU;機器人程式本身的 20ms 週期由 MechSim 累計)
+            Time.fixedDeltaTime = 1f / 60f; Time.maximumDeltaTime = 0.05f;   // 卡頓後最多補 5 步,避免越卡越補   // 物理 60Hz(原本 100Hz 太吃 CPU;機器人程式本身的 20ms 週期由 MechSim 累計)
             Physics.defaultSolverIterations = 8;
             Physics.defaultSolverVelocityIterations = 2;
 
@@ -35,7 +35,8 @@ namespace FrcSim
             camObj.AddComponent<SuperSample>();
             var rig = camObj.AddComponent<CameraRig>();
             rig.Orbit = true;
-            Juice.Boot(camObj);   // 音效/粒子/鏡頭回饋(Juice 套件)
+            Juice.Boot(camObj);
+            new GameObject("PerfOverlay").AddComponent<PerfOverlay>();   // F3:幀時間圖與 1% low   // 音效/粒子/鏡頭回饋(Juice 套件)
 
             bool selfTest = System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-selftest") >= 0;
             if (selfTest)
@@ -57,7 +58,7 @@ namespace FrcSim
                 int bi2 = System.Array.IndexOf(a, "-bindtest");
                 if (bi2 >= 0 && bi2 + 1 < a.Length)
                 {
-                    PlayerPrefs.SetInt("tankMode", 1);
+                    Prefs.SetInt("tankMode", 1);
                     GameSession.Begin(rig, false, a[bi2 + 1]);
                     new GameObject("BindTest").AddComponent<BindTest>();
                     return;
@@ -65,7 +66,7 @@ namespace FrcSim
                 int li = System.Array.IndexOf(a, "-leotest");
                 if (li >= 0 && li + 1 < a.Length)
                 {
-                    PlayerPrefs.SetInt("tankMode", 1);
+                    Prefs.SetInt("tankMode", 1);
                     GameSession.Begin(rig, false, a[li + 1]);
                     new GameObject("LeoTest").AddComponent<LeoTest>();
                     return;
@@ -73,7 +74,7 @@ namespace FrcSim
                 int la = System.Array.IndexOf(a, "-leoauto");
                 if (la >= 0 && la + 1 < a.Length)
                 {
-                    PlayerPrefs.SetInt("tankMode", 1);
+                    Prefs.SetInt("tankMode", 1);
                     GameSession.Begin(rig, false, a[la + 1]);
                     new GameObject("LeoAuto").AddComponent<LeoAuto>();
                     return;

@@ -12,8 +12,8 @@ namespace FrcSim
         public static PostFX Instance;
         public static int Quality
         {
-            get => PlayerPrefs.GetInt("postfx", 2);
-            set { PlayerPrefs.SetInt("postfx", Mathf.Clamp(value, 0, 3)); PlayerPrefs.Save(); if (Instance != null) Instance.Refresh(); }
+            get => Prefs.GetInt("postfx", 2);
+            set { Prefs.SetInt("postfx", Mathf.Clamp(value, 0, 3)); PlayerPrefs.Save(); if (Instance != null) Instance.Refresh(); }
         }
         public static bool Active => Instance != null && Instance.mat != null && Quality > 0;
         public static float MenuBlur;                       // 0..1 target; MenuSystem sets this

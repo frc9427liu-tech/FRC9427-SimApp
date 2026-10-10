@@ -30,13 +30,13 @@ namespace FrcSim
             {
                 if (PlayerPrefs.HasKey("robotModel"))
                 {
-                    string s = PlayerPrefs.GetString("robotModel");
+                    string s = Prefs.GetString("robotModel", "");
                     return s == "" || List().Contains(s) ? s : "";
                 }
                 var l = List();
                 return l.Length > 0 ? l[0] : "";
             }
-            set { PlayerPrefs.SetString("robotModel", value); PlayerPrefs.Save(); }
+            set { Prefs.SetString("robotModel", value); PlayerPrefs.Save(); }
         }
 
         public static float YawDeg

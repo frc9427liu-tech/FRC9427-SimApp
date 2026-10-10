@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.IO;
 using System.Text;
 using UnityEngine;
@@ -15,7 +15,7 @@ namespace FrcSim
             yield return new WaitForSeconds(1.0f);
             var d = GameSession.Drive; var m = GameSession.Mech;
             while (FuelManager.All.Count > 0) FuelManager.Remove(FuelManager.All[FuelManager.All.Count - 1]);
-            PlayerPrefs.SetInt("tankMode", 1);
+            Prefs.SetInt("tankMode", 1);
             d.SetPose(new Vector2(6f, 4f), 0f); yield return new WaitForSeconds(0.3f);
             Vector2 p0 = d.Pose2d; float h0 = d.HeadingRad;
             Pad.SetFake(true, ly: 1f, ry: 1f); yield return new WaitForSeconds(1.5f);

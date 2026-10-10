@@ -42,7 +42,7 @@ namespace FrcSim
             if (Input.GetKey(KeyCode.E) || Input.GetKey(KeyCode.JoystickButton5) || Pad.Held(Pad.RB)) rot -= 1f; // 順時針
 
             // LEO 坦克模式:左/右搖桿各控一側輪(死區 0.08 + 平方,照 LEO DriveSubsystem.tankDrive)
-            bool tank = PlayerPrefs.GetInt("tankMode", 1) == 1;
+            bool tank = Prefs.GetInt("tankMode", 1) == 1;
             float tankL = 0f, tankR = 0f, rawL = 0f, rawR = 0f;
             if (tank)
             {

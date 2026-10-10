@@ -299,20 +299,20 @@ namespace FrcSim
         Item ItYaw() => new Item(() => Loc.T("setup.yaw") + ":  " + RobotModels.YawDeg.ToString("0") + "°", () => { RobotModels.YawDeg = (RobotModels.YawDeg + 90f) % 360f; });
         Item ItProject() => new Item(() =>
         {
-            string c = PlayerPrefs.GetString("robotProject", "");
+            string c = Prefs.GetString("robotProject", "");
             return Loc.T("setup.code") + ":  " + (c == "" ? Loc.T("setup.none") : System.IO.Path.GetFileName(c.TrimEnd('\\', '/')));
         }, () =>
         {
             string p = NativeDialogs.PickFolder(Loc.T("setup.code"));
             if (string.IsNullOrEmpty(p)) return;
-            PlayerPrefs.SetString("robotProject", FindGradleRoot(p));
+            Prefs.SetString("robotProject", FindGradleRoot(p));
             PlayerPrefs.Save();
         });
-        Item ItReal() => new Item(() => Loc.T("setup.real") + ":  " + Loc.T(PlayerPrefs.GetInt("useRealCode", 0) == 1 ? "on" : "off"), () => { PlayerPrefs.SetInt("useRealCode", PlayerPrefs.GetInt("useRealCode", 0) == 1 ? 0 : 1); PlayerPrefs.Save(); });
-        Item ItCtl() => new Item(() => Loc.T("setup.ctl") + ":  " + Loc.T(PlayerPrefs.GetInt("tankMode", 1) == 1 ? "ctl.tank" : "ctl.swerve"), () => { PlayerPrefs.SetInt("tankMode", PlayerPrefs.GetInt("tankMode", 1) == 1 ? 0 : 1); PlayerPrefs.Save(); });
+        Item ItReal() => new Item(() => Loc.T("setup.real") + ":  " + Loc.T(Prefs.GetInt("useRealCode", 0) == 1 ? "on" : "off"), () => { Prefs.SetInt("useRealCode", Prefs.GetInt("useRealCode", 0) == 1 ? 0 : 1); PlayerPrefs.Save(); });
+        Item ItCtl() => new Item(() => Loc.T("setup.ctl") + ":  " + Loc.T(Prefs.GetInt("tankMode", 1) == 1 ? "ctl.tank" : "ctl.swerve"), () => { Prefs.SetInt("tankMode", Prefs.GetInt("tankMode", 1) == 1 ? 0 : 1); PlayerPrefs.Save(); });
         Item ItSpeed() => new Item(() => Loc.T("setup.speed") + ":  " + SettingsStore.MaxSpeedChoice.ToString("0.0") + " m/s", () => { SettingsStore.SpeedIndex = (SettingsStore.SpeedIndex + 1) % SettingsStore.SpeedOptions.Length; });
         Item ItAccel() => new Item(() => Loc.T("setup.accel") + ":  " + SettingsStore.AccelChoice.ToString("0") + " m/s²", () => { SettingsStore.AccelIndex = (SettingsStore.AccelIndex + 1) % SettingsStore.AccelOptions.Length; });
-        Item ItSecond() => new Item(() => Loc.T("setup.second") + ":  " + Loc.T(PlayerPrefs.GetInt("secondRobot", 1) == 1 ? "on" : "off"), () => { PlayerPrefs.SetInt("secondRobot", PlayerPrefs.GetInt("secondRobot", 1) == 1 ? 0 : 1); PlayerPrefs.Save(); });
+        Item ItSecond() => new Item(() => Loc.T("setup.second") + ":  " + Loc.T(Prefs.GetInt("secondRobot", 1) == 1 ? "on" : "off"), () => { Prefs.SetInt("secondRobot", Prefs.GetInt("secondRobot", 1) == 1 ? 0 : 1); PlayerPrefs.Save(); });
         Item ItLevel()
         {
             string[] zh = { "簡單", "普通", "困難", "超困難" }, en = { "Easy", "Normal", "Hard", "Insane" };
@@ -330,7 +330,7 @@ namespace FrcSim
             string Sum()
             {
                 string m = RobotModels.Selected == "" ? Loc.T("model.builtin") : RobotModels.Selected;
-                string c = PlayerPrefs.GetString("robotProject", "");
+                string c = Prefs.GetString("robotProject", "");
                 string cc = c == "" ? Loc.T("setup.none") : System.IO.Path.GetFileName(c.TrimEnd('\\', '/'));
                 return m + "  ·  " + cc;
             }
@@ -386,15 +386,7 @@ namespace FrcSim
                     Loc.Lang = Loc.Lang == "zh" ? "en" : "zh";
                     RefreshScreen();
                 }),
-                new Item(() =>
-                {
-                    int f = SettingsStore.FpsOptions[SettingsStore.FpsIndex];
-                    return Loc.T("set.fps") + ":  " + (f == 0 ? Loc.T("set.unlimited") : f.ToString());
-                }, () =>
-                {
-                    SettingsStore.FpsIndex = (SettingsStore.FpsIndex + 1) % SettingsStore.FpsOptions.Length;
-                    SettingsStore.Apply(); RefreshScreen();
-                }),
+                new Item(() => Loc.T("set.fps") + ":  " + SettingsStore.PaceLabel(SettingsStore.FpsIndex) + Z("(垂直同步)", " (vsync)"), () => { SettingsStore.FpsIndex = (SettingsStore.FpsIndex + 1) % 4; SettingsStore.Apply(); RefreshScreen(); }),
                 new Item(() => Loc.T("set.rscale") + ":  " + Mathf.RoundToInt(SettingsStore.RenderScale * 100f) + "%", () =>
                 {
                     SettingsStore.RenderScaleIndex = (SettingsStore.RenderScaleIndex + 1) % SettingsStore.RenderScales.Length;
@@ -404,10 +396,7 @@ namespace FrcSim
                 {
                     SettingsStore.Shadows = !SettingsStore.Shadows; SettingsStore.Apply(); RefreshScreen();
                 }),
-                new Item(() => Loc.T("set.vsync") + ":  " + Loc.T(SettingsStore.VSync ? "on" : "off"), () =>
-                {
-                    SettingsStore.VSync = !SettingsStore.VSync; SettingsStore.Apply(); RefreshScreen();
-                }),
+                
                 new Item(() => Loc.T("set.full") + ":  " + Loc.T(SettingsStore.Fullscreen ? "on" : "off"), () =>
                 {
                     SettingsStore.Fullscreen = !SettingsStore.Fullscreen; SettingsStore.Apply(); RefreshScreen();
@@ -423,7 +412,7 @@ namespace FrcSim
                 new Item(() => Z("手把設定", "Controllers"), () => ShowPadSetup(() => ShowSettings(game), () => ShowSettings(game))),
                 new Item(() => Z("聲音與回饋  ▸", "Sound & feedback  ▸"), () => ShowSoundSettings(game)),
                 new Item(() => Z("後製特效", "Post effects") + ":  " + (PostFX.Quality == 0 ? Z("關", "Off") : PostFX.Quality == 1 ? Z("基本", "Basic") : PostFX.Quality == 2 ? Z("泛光", "Bloom") : "AO"), () => { PostFX.Quality = (PostFX.Quality + 1) % 3; }),
-                new Item(() => Z("液態玻璃(毛玻璃)", "Liquid glass") + ":  " + (UiGlass.Disabled ? Z("關", "Off") : Z("開", "On")), () => { UiGlass.Disabled = !UiGlass.Disabled; if (UiGlass.Disabled) UiGlass.Ready = false; PlayerPrefs.SetInt("noGlass", UiGlass.Disabled ? 1 : 0); PlayerPrefs.Save(); }),
+                new Item(() => Z("液態玻璃(毛玻璃)", "Liquid glass") + ":  " + (UiGlass.Disabled ? Z("關", "Off") : Z("開", "On")), () => { UiGlass.Disabled = !UiGlass.Disabled; if (UiGlass.Disabled) UiGlass.Ready = false; Prefs.SetInt("noGlass", UiGlass.Disabled ? 1 : 0); PlayerPrefs.Save(); }),
                 new Item(() => Loc.T("menu.back"), () => settingsBack?.Invoke()),
             }, () => settingsBack?.Invoke());
             Show(s, game);
