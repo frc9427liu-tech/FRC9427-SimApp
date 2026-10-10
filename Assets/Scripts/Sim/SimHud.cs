@@ -245,8 +245,13 @@ namespace FrcSim
             }
             GUI.Label(new Rect(16, H - 74, 300, 20), L("F1 按鍵說明   F3 詳細數據", "F1 help   F3 details"), Style(12, new Color(1f, 1f, 1f, 0.55f)));
             DrawMinimap(W);
+            if (CameraRig.ActiveMode == 8 && Time.timeScale > 0.05f && Time.timeScale < 0.9f)
+            {   // 進球慢動作標籤
+                var rb = new Rect(16, 16, 150, 30); Rounded(rb, new Color(0.9f, 0.15f, 0.2f, 0.92f), 8f);
+                GUI.Label(rb, "● " + L("慢動作回放", "SLOW-MO REPLAY"), Style(13, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold));
+            }
             // 新手提示:第一次進比賽顯示 12 秒操作重點(按任意常用鍵或時間到就收起);測試旗標 -tuttest 強制顯示
-            if (tutStart < 0f && (Prefs.GetInt("tutSeen", 0) == 0 || System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-tuttest") >= 0) && !MenuSystem.Blocking) tutStart = Time.unscaledTime;
+            if (tutStart < 0f && ((Prefs.GetInt("tutSeen", 0) == 0 && !SuperSample.IsTestRun()) || System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-tuttest") >= 0) && !MenuSystem.Blocking) tutStart = Time.unscaledTime;
             if (tutStart >= 0f && !tutDone)
             {
                 float tt = Time.unscaledTime - tutStart; float ta = Mathf.Clamp01(Mathf.Min(tt * 2f, (12f - tt) * 1.5f));
@@ -412,6 +417,8 @@ namespace FrcSim
         }
     }
 }
+
+
 
 
 
