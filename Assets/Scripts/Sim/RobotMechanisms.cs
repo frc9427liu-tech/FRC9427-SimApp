@@ -25,7 +25,9 @@ namespace FrcSim
         public float FireInterval;       // >0:AI 難度用的發射間隔(秒);玩家 0 = 預設 1/8 秒
         public float CollectPerSec;      // >0:AI 難度用的吸球速率上限(顆/秒);玩家 0 = 不限
         float nextCollect;
-        public float RollerRps;          // 滾輪轉速(真實程式模式,測試/除錯用)
+        public bool Feeding, Ejecting;   // 送球(Orbit 轉)/吐球(滾輪反轉)中,HUD 顯示用
+        float nextEject, nextLeak;
+        public float RollerRps, RollerSigned;   // 滾輪轉速(帶正負號:測試/吐球判斷用)          // 滾輪轉速(真實程式模式,測試/除錯用)
         public int TotalCollected;
         public float LastFireTime;       // 本場吸進的球數(成績卡統計)
         public float SpreadDeg;          // 出球散布(度,AI 難度用;玩家 0)
@@ -59,7 +61,7 @@ namespace FrcSim
         void RealStepCfg(Newtonsoft.Json.Linq.JObject cfg)
         {
             string Name(string k) => (string)cfg[k];
-            float rollerRps = Mathf.Abs((float)Sim.Vel(Name("roller"))); RollerRps = rollerRps;
+            float rollerSigned = (float)Sim.Vel(Name("roller")); float rollerRps = Mathf.Abs(rollerSigned); RollerRps = rollerRps; RollerSigned = rollerSigned;
             double armDown = (double?)cfg["armDownRev"] ?? 2.0;
             IntakeDown = Sim.Pos(Name("arm")) > armDown;
             ArmExt = Mathf.MoveTowards(ArmExt, IntakeDown ? ArmMax : 0f, ArmSpeed * Time.fixedDeltaTime);
@@ -82,7 +84,24 @@ namespace FrcSim
                 ArmVisual.localPosition = new Vector3(SimConstants.BumperLength / 2f + ArmExt * 0.5f - 0.02f, 0.02f, 0f);
                 ArmVisual.localScale = new Vector3(0.05f + ArmExt, 0.10f, 0.62f);
             }
-            if (ArmExt >= 0.2f && rollerRps > 10f && Held < Capacity) Collect();
+            if (ArmExt >= 0.2f && rollerSigned > 10f && Held < Capacity) Collect();
+            Feeding = feedRps > 15f; Ejecting = rollerSigned < -10f;
+            // 吐球(X):滾輪反轉,球從吸球口慢慢滾出
+            if (Ejecting && Held > 0 && Time.time >= nextEject)
+            {
+                nextEject = Time.time + 0.18f;
+                float hh = Drive.HeadingRad;
+                Vector2 dir = new Vector2(Mathf.Cos(hh), Mathf.Sin(hh));
+                Vector2 mouth = Drive.Pose2d + dir * (SimConstants.BumperLength / 2f + 0.35f);
+                FuelManager.Spawn(new Vector3(mouth.x, 0.32f, mouth.y), new Vector3(dir.x * 1.5f + Drive.Velocity.x, 1.2f, dir.y * 1.5f + Drive.Velocity.y), RobotCollider);
+                Held--;
+            }
+            // 只送球不轉飛輪(RB):球被 Orbit 推到發射口,沒有飛輪速度就「漏」出去一小段
+            if (Feeding && FlywheelRps <= 15f && Held > 0 && Time.time >= nextLeak)
+            {
+                nextLeak = Time.time + 0.45f;
+                Fire(Drive.Pose2d, Drive.HeadingRad, 2.2f);
+            }
             Shooting = feedRps > 15f && FlywheelRps > 15f;
             Ready = Shooting;
             if (Shooting && Held > 0 && Time.time >= nextFire)
@@ -288,13 +307,13 @@ namespace FrcSim
 
         void Update() { UpdatePrediction(); }
 
-        void Fire(Vector2 pos, float heading)
+        void Fire(Vector2 pos, float heading, float speedOverride = -1f)
         {
             float yaw = heading + TurretRad + (SpreadDeg > 0f ? Random.Range(-SpreadDeg, SpreadDeg) * Mathf.Deg2Rad : 0f);
             // 出球模型:用機器人查表(飛輪轉速/Hood 角/飛行時間)擬合到「落在 HUB 開口」,球有空氣阻力 0.375/s(與程式的 linearDragTimeConstant 一致)
             // 擬合結果(2~4m 誤差 ≤0.26m,HUB 半寬 0.5m):速度 = 0.14*rps + 2.0 m/s,仰角 = 71° - 0.75*hood
             float elev = (ShotElevDeg > 0f ? ShotElevDeg : 71f - 0.75f * HoodDeg) * Mathf.Deg2Rad;
-            float speed = ShotSpeedPerRps * FlywheelRps + ShotSpeedBase;
+            float speed = speedOverride > 0f ? speedOverride : ShotSpeedPerRps * FlywheelRps + ShotSpeedBase;
 
             float c = Mathf.Cos(heading), s = Mathf.Sin(heading);
             Vector2 off = new Vector2(ShooterCalc.TurretOffset.x * c, ShooterCalc.TurretOffset.x * s);
