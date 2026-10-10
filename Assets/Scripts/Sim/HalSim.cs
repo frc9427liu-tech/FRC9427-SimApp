@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -88,6 +88,11 @@ namespace FrcSim
         public int Pov2 = -1;
 
         public string Status = "idle";
+        // ---- 載入進度(給 HUD 顯示 %):依 gradle 輸出的階段 + 上次載入花的時間估算
+        public volatile float StageFloor; public DateTime StartUtc = DateTime.UtcNow; public float EstSecs = 45f; public volatile float LoadedSecs;
+        public bool Failed => Status.StartsWith("robot process exited") || Status.StartsWith("could not connect") || Status.StartsWith("error") || Status.StartsWith("gradlew");
+        public float LoadProgress { get { if (Connected) return 1f; float t = (float)(DateTime.UtcNow - StartUtc).TotalSeconds; return Mathf.Max(Mathf.Min(0.95f, t / Mathf.Max(10f, EstSecs)), StageFloor); } }
+        void ParseStage(string l) { float f = 0f; if (l.Contains("Daemon")) f = 0.08f; if (l.Contains("compileJava")) f = 0.3f; if (l.Contains("classes") || l.Contains("processResources")) f = 0.5f; if (l.Contains("simulateExternalJava") || l.Contains("simulateJava") || l.Contains("robotRunMain")) f = 0.75f; if (l.Contains("Robot program starting") || l.Contains("HALSim")) f = 0.9f; if (f > StageFloor) StageFloor = f; }
         public int MessagesIn;
         public readonly Dictionary<string, JObject> Devices = new Dictionary<string, JObject>();
 
@@ -150,6 +155,7 @@ namespace FrcSim
         public void StartRobot(string projectDir)
         {
             ProjectDir = projectDir;
+            StartUtc = DateTime.UtcNow; EstSecs = PlayerPrefs.GetFloat("robotLoadSecs", 45f);
             cts = new CancellationTokenSource();
             Task.Run(() => Run(cts.Token));
         }
@@ -221,7 +227,7 @@ namespace FrcSim
                 psi.EnvironmentVariables["HALSIMWS_FILTERS"] = "CANMotor,CANEncoder,CANGyro,Gyro,DriverStation";
                 gradle = Process.Start(psi);
                 var w = new StreamWriter(logPath, false);
-                gradle.OutputDataReceived += (s, e) => { if (e.Data != null) lock (w) { w.WriteLine(e.Data); w.Flush(); } };
+                gradle.OutputDataReceived += (s, e) => { if (e.Data != null) { lock (w) { w.WriteLine(e.Data); w.Flush(); } ParseStage(e.Data); } };
                 gradle.ErrorDataReceived += (s, e) => { if (e.Data != null) lock (w) { w.WriteLine(e.Data); w.Flush(); } };
                 gradle.BeginOutputReadLine();
                 gradle.BeginErrorReadLine();
@@ -237,6 +243,7 @@ namespace FrcSim
                     if (gradle.HasExited) { Status = "robot process exited (see " + logPath + ")"; return; }
                 }
                 if (!Connected) { Status = "could not connect to HALSim"; return; }
+                LoadedSecs = (float)(DateTime.UtcNow - StartUtc).TotalSeconds;
                 Status = "connected";
 
                 _ = Task.Run(() => SendLoop(ct));

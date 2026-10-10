@@ -31,7 +31,7 @@ namespace FrcSim
             }
         }
 
-        bool wasPadOk = true; float padLostUntil;
+        bool wasPadOk = true, wasLoading; float padLostUntil;
         void Start() { born = Time.unscaledTime; }
 
         void Update()
@@ -39,6 +39,7 @@ namespace FrcSim
             fps = Mathf.Lerp(fps, 1f / Mathf.Max(Time.unscaledDeltaTime, 1e-4f), 0.05f);
             if (Input.GetKeyDown(KeyCode.F3)) showDebug = !showDebug;
             if (Input.GetKeyDown(KeyCode.F5) && !MenuSystem.Blocking) GameSession.Rematch();
+            { bool loading = GameSession.Hal != null && !GameSession.Hal.Connected && !GameSession.Hal.Failed; if (loading) { Time.timeScale = 0f; wasLoading = true; } else if (wasLoading) { wasLoading = false; Time.timeScale = 1f; if (GameSession.Hal != null && GameSession.Hal.LoadedSecs > 5f) { PlayerPrefs.SetFloat("robotLoadSecs", GameSession.Hal.LoadedSecs); PlayerPrefs.Save(); } } }
             bool padOk = Pad.Mode != 2 || (Pad.DriverOnline && (Pad.OperatorOnline || Pad.OperatorKeyboard));
             if (wasPadOk && !padOk && GameSession.Active && !MenuSystem.Blocking) { padLostUntil = Time.unscaledTime + 8f; MenuSystem.PauseNow(); }   // 手把掉線:自動暫停並提示
             wasPadOk = padOk;
@@ -193,14 +194,28 @@ namespace FrcSim
                 GUI.Label(new Rect(cx - 280, 93, 560, 26), L("自動階段:你的機器人程式自己跑,手把暫時無效 — 按 N 跳過", "AUTO: your robot code is driving, sticks disabled — press N to skip"), Style(15, new Color(1f, 0.9f, 0.4f), TextAnchor.UpperCenter, FontStyle.Bold));
             }
 
-            // ---- 真實程式啟動中提示
+            // ---- 真實程式載入中:整個遊戲凍結,顯示進度 %(載入完才開始計時、才能動)
             if (GameSession.Hal != null && !GameSession.Hal.Connected)
             {
-                Panel(new Rect(cx - 260, H * 0.42f, 520, 54), 0.75f);
-                GUI.Label(new Rect(cx - 260, H * 0.42f + 6, 520, 24), L("機器人程式啟動中…", "Starting robot code…"), Style(20, Color.white, TextAnchor.UpperCenter, FontStyle.Bold));
-                GUI.Label(new Rect(cx - 260, H * 0.42f + 30, 520, 22), L("第一次約 20~60 秒;期間先用內建操控,連上後自動交給你的程式", "First start takes 20–60 s; built-in controls until it connects"), Style(13, dim, TextAnchor.UpperCenter));
+                var hal = GameSession.Hal;
+                float pg = hal.LoadProgress;
+                float lw = 620, lh = 190;
+                var lr = new Rect(cx - lw / 2f, H * 0.5f - lh / 2f, lw, lh);
+                Panel(lr, 0.95f);
+                if (hal.Failed)
+                {
+                    GUI.Label(new Rect(lr.x, lr.y + 28, lw, 36), L("機器人程式啟動失敗", "Robot code failed to start"), Style(24, new Color(1f, 0.6f, 0.4f), TextAnchor.UpperCenter, FontStyle.Bold));
+                    GUI.Label(new Rect(lr.x + 20, lr.y + 74, lw - 40, 80), hal.Status, Style(14, dim, TextAnchor.UpperCenter));
+                }
+                else
+                {
+                    GUI.Label(new Rect(lr.x, lr.y + 22, lw, 36), L("機器人程式載入中…", "Loading robot code…"), Style(24, Color.white, TextAnchor.UpperCenter, FontStyle.Bold));
+                    Bar(new Rect(lr.x + 40, lr.y + 78, lw - 80, 14), pg, new Color(0.4f, 0.75f, 1f));
+                    GUI.Label(new Rect(lr.x, lr.y + 98, lw, 40), $"{Mathf.RoundToInt(pg * 100f)}%", Style(30, Color.white, TextAnchor.UpperCenter, FontStyle.Bold));
+                    string stg = pg < 0.25f ? L("啟動 Gradle…", "Starting Gradle…") : pg < 0.55f ? L("編譯機器人程式…", "Compiling…") : pg < 0.85f ? L("啟動模擬器…", "Launching sim…") : L("連線中…", "Connecting…");
+                    GUI.Label(new Rect(lr.x, lr.y + 144, lw, 28), stg + "   " + L("載入完成前遊戲暫停,不會計時", "Game is paused until loaded"), Style(14, dim, TextAnchor.UpperCenter));
+                }
             }
-
             // ---- 按鍵說明:開場 15 秒顯示,之後 F1 切換
             bool help = showHelp || Time.unscaledTime - born < 15f;
             if (help)

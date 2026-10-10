@@ -23,12 +23,12 @@ namespace FrcSim
             string cam = Arg("-camera");
             string shot = Arg("-shot");
             float delay = 20f; float.TryParse(Arg("-shotdelay"), out delay); if (delay <= 0f) delay = 20f;
-            yield return new WaitForSeconds(1f);
+            yield return new WaitForSecondsRealtime(1f);
             if (cam != null && int.TryParse(cam, out int m)) Rig.Mode = m;
             if (shot == null) yield break;
-            yield return new WaitForSeconds(delay);
+            yield return new WaitForSecondsRealtime(delay);
             ScreenCapture.CaptureScreenshot(shot);
-            yield return new WaitForSeconds(2f);
+            yield return new WaitForSecondsRealtime(2f);
             Application.Quit();
         }
     }
