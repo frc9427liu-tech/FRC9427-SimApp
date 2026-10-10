@@ -16,8 +16,8 @@ namespace FrcSim
             var d = GameSession.Drive; var h = GameSession.Hal;
             var ri = d.GetComponent<RobotInput>(); if (ri != null) ri.enabled = false;
             { var ms = d.GetComponent<MechSim>(); sb.AppendLine("PT mech: " + (ms != null ? ms.Info : "none") + " status=" + h.Status + " enabled=" + h.Enabled + " auto=" + h.Autonomous); }
-            Vector2 p0 = d.Pose2d; h.Axes[1] = -1f; yield return new WaitForSeconds(3f); h.Axes[1] = 0f;
-            sb.AppendLine($"PT forward3s dx={d.Pose2d.x - p0.x:0.00} dy={d.Pose2d.y - p0.y:0.00} speed={d.Speed:0.00}");
+            float h0 = d.HeadingRad * Mathf.Rad2Deg; Vector2 p0 = d.Pose2d; h.Axes[1] = -1f; yield return new WaitForSeconds(3f); h.Axes[1] = 0f;
+            sb.AppendLine($"PT forward3s dx={d.Pose2d.x - p0.x:0.00} dy={d.Pose2d.y - p0.y:0.00} speed={d.Speed:0.00} heading0={h0:0} heading={d.HeadingRad * Mathf.Rad2Deg:0}");
             h.Axes[1] = 0f; h.Axes[0] = 1f; p0 = d.Pose2d; yield return new WaitForSeconds(2f); h.Axes[0] = 0f;
             sb.AppendLine($"PT strafe2s dx={d.Pose2d.x - p0.x:0.00} dy={d.Pose2d.y - p0.y:0.00}");
             string[] names = { "A", "B", "X", "Y", "LB", "RB" };
