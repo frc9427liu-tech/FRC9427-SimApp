@@ -36,7 +36,7 @@ namespace FrcSim
         void TestShot() { StartCoroutine(SaveShot()); }
         void FakeScore() { if (ScoreManager.Ended) return; ScoreManager.BlueScore += 2; if (Random.value < 0.5f) ScoreManager.RedScore += 1; }   // 測試旗標 -fakescore:模擬得分給結算折線圖截圖用
 
-        float tutStart = -1f; bool tutDone, tutKey; bool bestDone, bestNew; int bestPrev;
+        float tutStart = -1f; bool tutDone, tutKey; bool bestDone, bestNew; int bestPrev; bool showPad; float padWriteT;
         readonly System.Collections.Generic.List<Vector3> chart = new System.Collections.Generic.List<Vector3>();   // (比賽秒數, 藍分, 紅分) 每秒取樣,結算折線圖用
         float chartNext;
         void SampleChart()
@@ -84,6 +84,8 @@ namespace FrcSim
         {
             fps = Mathf.Lerp(fps, 1f / Mathf.Max(Time.unscaledDeltaTime, 1e-4f), 0.05f);
             SampleChart();
+            if (Input.GetKeyDown(KeyCode.F2)) showPad = !showPad;
+            if (Time.unscaledTime >= padWriteT) { padWriteT = Time.unscaledTime + 0.25f; try { System.IO.File.WriteAllText(System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Application.dataPath), "padlive.txt"), Time.time.ToString("0.0") + "s  " + Pad.Raw() + "  pose=" + (Drive != null ? Drive.Pose2d.ToString("0.00") : "-") + "\n"); } catch { } }   // 即時手把狀態寫到檔案(KaiBot 在同一台電腦可讀,用來幫忙診斷手把)
             if (Input.GetKeyDown(KeyCode.F3)) showDebug = !showDebug;
             if (tutStart >= 0f && Input.GetKeyDown(KeyCode.Space)) tutKey = true;
             if (Input.GetKeyDown(KeyCode.F12)) StartCoroutine(SaveShot());
@@ -272,7 +274,22 @@ namespace FrcSim
             }
             GUI.Label(new Rect(16, H - 74, 300, 20), L("F1 按鍵說明   F3 詳細數據", "F1 help   F3 details"), Style(12, new Color(1f, 1f, 1f, 0.55f)));
             DrawMinimap(W);
-            if (CameraRig.ActiveMode == 8 && Time.timeScale > 0.05f && Time.timeScale < 0.9f)
+            if (showPad && Event.current.type == EventType.Repaint)
+            {   // F2:手把即時顯示(搖桿位置 + 按鍵),診斷漂移/誤觸用
+                float px = W - 250f, py = H - 190f; Panel(new Rect(px, py, 236, 176), 0.8f);
+                var wt2 = Texture2D.whiteTexture;
+                void Stick(float ox, float oy, float sx, float sy, string nm)
+                {
+                    GUI.color = new Color(1f, 1f, 1f, 0.15f); GUI.DrawTexture(new Rect(ox, oy, 64, 64), wt2);
+                    GUI.color = new Color(0.4f, 0.9f, 1f, 1f); GUI.DrawTexture(new Rect(ox + 32 + sx * 28 - 4, oy + 32 - sy * 28 - 4, 8, 8), wt2);
+                    GUI.color = Color.white; GUI.Label(new Rect(ox, oy + 64, 64, 18), nm + $" {sx:0.00},{sy:0.00}", Style(10, dim, TextAnchor.UpperLeft));
+                }
+                Stick(px + 14, py + 26, Pad.LX, Pad.LY, "L"); Stick(px + 100, py + 26, Pad.RX, Pad.RY, "R");
+                string bs2 = (Pad.Held(Pad.A) ? "A " : "") + (Pad.Held(Pad.B) ? "B " : "") + (Pad.Held(Pad.X) ? "X " : "") + (Pad.Held(Pad.Y) ? "Y " : "") + (Pad.Held(Pad.LB) ? "LB " : "") + (Pad.Held(Pad.RB) ? "RB " : "") + (Pad.Held(Pad.Start) ? "Start " : "") + (Pad.Held(Pad.Back) ? "Back " : "");
+                GUI.Label(new Rect(px + 12, py + 6, 220, 18), L("手把(F2 關閉)", "Gamepad (F2 off)") + $"  x{Pad.Count}", Style(11, Color.white, TextAnchor.UpperLeft, FontStyle.Bold));
+                GUI.Label(new Rect(px + 12, py + 118, 220, 18), $"LT {Pad.LT:0.00}  RT {Pad.RT:0.00}", Style(11, Color.white, TextAnchor.UpperLeft));
+                GUI.Label(new Rect(px + 12, py + 138, 220, 34), bs2 == "" ? "-" : bs2, Style(13, new Color(1f, 0.85f, 0.3f), TextAnchor.UpperLeft, FontStyle.Bold));
+            }            if (CameraRig.ActiveMode == 8 && Time.timeScale > 0.05f && Time.timeScale < 0.9f)
             {   // 進球慢動作標籤
                 var rb = new Rect(16, 16, 150, 30); Rounded(rb, new Color(0.9f, 0.15f, 0.2f, 0.92f), 8f);
                 GUI.Label(rb, "● " + L("慢動作回放", "SLOW-MO REPLAY"), Style(13, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold));
@@ -335,7 +352,7 @@ namespace FrcSim
                 int bs = ScoreManager.BlueScore, rs = ScoreManager.RedScore;
                 string res = bs > rs ? L("勝利", "VICTORY") : bs < rs ? L("落敗", "DEFEAT") : L("平手", "DRAW");
                 Color rc2 = bs > rs ? new Color(0.4f, 1f, 0.55f) : bs < rs ? new Color(1f, 0.5f, 0.45f) : new Color(1f, 0.9f, 0.4f);
-                if (!bestDone) { bestDone = true; string bk = "best_" + (GameSession.VsAi ? GameSession.AiLevel : -1); bestPrev = Prefs.GetInt(bk, 0); bestNew = bs > bestPrev; if (bestNew && !SuperSample.IsTestRun()) { Prefs.SetInt(bk, bs); PlayerPrefs.Save(); } }
+                if (!bestDone) { bestDone = true; string bk = "best_" + (GameSession.VsAi ? GameSession.AiLevel : -1); bestPrev = Profile.GetInt(bk, 0); bestNew = bs > bestPrev; if (bestNew && !SuperSample.IsTestRun()) { Profile.SetInt(bk, bs); } }
                 GUI.Label(new Rect(cr.x, cr.y + 22, cw, 30), L("比賽結束", "MATCH OVER") + (bestNew ? "   ·   " + L("★ 新紀錄!", "★ NEW BEST!") : bestPrev > 0 ? "   ·   " + L("你的最佳 ", "Your best ") + bestPrev : ""), Style(18, bestNew ? new Color(1f, 0.85f, 0.3f) : dim, TextAnchor.UpperCenter, FontStyle.Bold));
                 GUI.Label(new Rect(cr.x, cr.y + 54, cw, 70), res, Style(54, rc2, TextAnchor.UpperCenter, FontStyle.Bold));
                 GUI.Label(new Rect(cr.x, cr.y + 132, cw, 50), $"{L("藍", "BLUE")} {bs}  :  {rs} {L("紅", "RED")}", Style(34, Color.white, TextAnchor.UpperCenter, FontStyle.Bold));
@@ -449,6 +466,9 @@ namespace FrcSim
         }
     }
 }
+
+
+
 
 
 

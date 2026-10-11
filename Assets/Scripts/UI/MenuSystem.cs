@@ -226,7 +226,7 @@ namespace FrcSim
 
         void ShowMain()
         { PreviewRobot.Want = false;
-            var s = Build(() => Loc.T("app.title"), () => Loc.T("app.sub") + (CrashFlag.Msg != "" ? "   ⚠ " + CrashFlag.Msg : "") + (UpdateCheck.Progress != "" ? "   ●" + UpdateCheck.Progress : UpdateCheck.Newer ? (Loc.Lang == "zh" ? "   ●有新版 v" + UpdateCheck.Latest + "(按 U 自動更新)" : "   ●New v" + UpdateCheck.Latest + " (press U to update)") : ""), new[]
+            var s = Build(() => Loc.T("app.title"), () => Loc.T("app.sub") + "   ·   " + Profile.CurrentName + (CrashFlag.Msg != "" ? "   ⚠ " + CrashFlag.Msg : "") + (UpdateCheck.Progress != "" ? "   ●" + UpdateCheck.Progress : UpdateCheck.Newer ? (Loc.Lang == "zh" ? "   ●有新版 v" + UpdateCheck.Latest + "(按 U 自動更新)" : "   ●New v" + UpdateCheck.Latest + " (press U to update)") : ""), new[]
             {
                 new Item(() => Loc.T("menu.start"),    ShowModes),
                 new Item(() => Loc.T("menu.settings"), () => { settingsBack = ShowMain; ShowSettings(false); }),
@@ -493,6 +493,8 @@ namespace FrcSim
                     RobotModels.Selected = list[(i + 1) % list.Count];
                     RefreshScreen();
                 }),
+                new Item(() => Z("玩家", "Player") + ":  " + Profile.CurrentName, () => { Profile.Next(); RefreshScreen(); }) { Sub = () => Z("按一下切換玩家;各玩家各自記教學進度與最佳分數", "Click to switch; each player keeps own tutorial & best scores") },
+                new Item(() => Z("新增玩家", "Add player"), () => { Profile.AddNew(); RefreshScreen(); }),
                 new Item(() => Z("手把設定  ▸", "Controllers  ▸"), () => ShowPadSetup(() => ShowSettings(game), () => ShowSettings(game))),
                 new Item(() => Z("聲音與回饋  ▸", "Sound & feedback  ▸"), () => ShowSoundSettings(game)),
                 new Item(() => Z("後製特效", "Post effects") + ":  " + (PostFX.Quality == 0 ? Z("關", "Off") : PostFX.Quality == 1 ? Z("基本", "Basic") : PostFX.Quality == 2 ? Z("泛光", "Bloom") : "AO"), () => { PostFX.Quality = (PostFX.Quality + 1) % 3; }),
@@ -533,10 +535,10 @@ namespace FrcSim
         Action lastControls;
 
         static string WnPath => System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Application.dataPath), "whatsnew.txt");
-        static bool WnUnseen() { try { return System.IO.File.Exists(WnPath) && Prefs.GetString("wnSeen", "") != UpdateCheck.Current; } catch { return false; } }
+        static bool WnUnseen() { try { return System.IO.File.Exists(WnPath) && Profile.GetString("wnSeen", "") != UpdateCheck.Current; } catch { return false; } }
         void ShowWhatsNew()
         { PreviewRobot.Want = false;
-            try { Prefs.SetString("wnSeen", UpdateCheck.Current); PlayerPrefs.Save(); } catch { }
+            try { Profile.SetString("wnSeen", UpdateCheck.Current); } catch { }
             string Body() { try { return System.IO.File.Exists(WnPath) ? System.IO.File.ReadAllText(WnPath, System.Text.Encoding.UTF8) : Z("(沒有更新紀錄)", "(no release notes)"); } catch { return ""; } }
             var s = Build(() => Z("更新內容", "What's new"), null, new[]
             {
@@ -591,7 +593,7 @@ namespace FrcSim
 
         void StartGame()
         {
-            if (Prefs.GetInt("tutSeen", 0) == 0 && !SuperSample.IsTestRun()) { ShowTutorial(); return; }   // 第一次:先看一頁教學
+            if (Profile.GetInt("tutSeen", 0) == 0 && !SuperSample.IsTestRun()) { ShowTutorial(); return; }   // 第一次:先看一頁教學
             Hide();
             GameSession.Begin(Rig);
         }
@@ -603,7 +605,7 @@ namespace FrcSim
                 "Goal: shoot FUEL into your HUB to score. HUBs take turns being active: glowing = scores, dim grey = no points right now.\n\nMove\n  • Keyboard: W A S D to move, Q / E to rotate\n  • Gamepad: left stick moves, right stick turns\n\nIntake & shoot\n  • I lowers/raises the intake; drive over fuel to collect\n  • Hold Space (or left click) to shoot — it auto-aims at the HUB\n\nMore\n  • C camera   M commentary   P auto paths   G minimap   Esc pause   F1 all keys");
             var s = Build(() => Z("怎麼玩(只會出現一次)", "How to play (shown once)"), null, new[]
             {
-                new Item(() => Z("知道了,開始!", "Got it — start!"), () => { Prefs.SetInt("tutSeen", 1); PlayerPrefs.Save(); StartGame(); }),
+                new Item(() => Z("知道了,開始!", "Got it — start!"), () => { Profile.SetInt("tutSeen", 1); StartGame(); }),
             }, ShowRobotSetup, content =>
             {
                 var tx = UiKit.Label("Tut", content, Body(), 18, UiTheme.Text, TextAnchor.UpperLeft);
@@ -718,6 +720,7 @@ namespace FrcSim
         }
     }
 }
+
 
 
 
