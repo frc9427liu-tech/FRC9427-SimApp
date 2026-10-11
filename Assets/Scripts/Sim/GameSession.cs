@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace FrcSim
 {
@@ -139,6 +139,7 @@ namespace FrcSim
             if (!string.IsNullOrEmpty(proj) && System.IO.File.Exists(System.IO.Path.Combine(proj, "gradlew.bat")))
             {
                 BindingMap.Load(proj);   // 讀專案 RobotContainer 的按鍵綁定(說明面板、單手把轉接用)
+                PathViz.Build(proj);     // 把專案的 PathPlanner 自動路線畫在地板上(P 開關)
                 Hal = robot.AddComponent<HalSim>();
                 Hal.StartRobot(proj);
                 var ms = robot.AddComponent<MechSim>();
@@ -208,3 +209,4 @@ namespace FrcSim
         }
     }
 }
+
