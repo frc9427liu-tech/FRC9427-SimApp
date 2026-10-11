@@ -69,6 +69,7 @@ namespace FrcSim
             for (int i = 0; i < 6; i++)
                 for (int j = 0; j < 3; j++)
                     Box($"Light{i}_{j}", new Vector3(2f + i * ((L - 4f) / 5f), 18.1f, 1.2f + j * (W - 2.4f) / 2f), new Vector3(3.5f, 0.15f, 0.5f), lightMat, false);
+            { var lp = new System.Collections.Generic.List<Vector3>(); for (int i = 0; i < 6; i++) for (int j = 0; j < 3; j++) lp.Add(new Vector3(2f + i * ((L - 4f) / 5f), 18.0f, 1.2f + j * (W - 2.4f) / 2f)); LightBeams.Build(root, lp, 0.4f); }   // 燈下淡淡光柱
         }
 
         public static void Clear()

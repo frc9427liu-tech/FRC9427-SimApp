@@ -80,11 +80,11 @@ namespace FrcSim
                 for (int i = 0; i < 6; i++)
                 {
                     float bx = L * (0.08f + i * 0.168f);
-                    Color bc = new Color(0.05f, 0.055f, 0.07f), accent = i % 2 == 0 ? new Color(0.12f, 0.32f, 1f) : new Color(0.95f, 0.2f, 0.22f);   // 深炭色布幔 + 底部細隊色條(不再是整片鮮豔色塊)
+                    Color bc = new Color(0.12f, 0.13f, 0.17f), accent = i % 2 == 0 ? new Color(0.12f, 0.32f, 1f) : new Color(0.95f, 0.2f, 0.22f);   // 深炭色布幔 + 底部細隊色條(不再是整片鮮豔色塊)
                     Vector3 bp = new Vector3(bx, 12.6f, edge + side * 8.5f);   // 掛在螢幕上方(從天花板垂下),不擋螢幕
-                    var bm = new Material(Shader.Find("Standard")); bm.SetColor("_Color", bc); bm.SetFloat("_Glossiness", 0.1f);
+                    var bm = new Material(Shader.Find("Unlit/Color")); bm.color = bc;   // 不受光:場館強光下 Standard 會把深色布幔打成灰色
                     Quad(bp, new Vector3(1.5f, 4.2f, 1f), face, bm, "Banner");
-                    var am = new Material(Shader.Find("Standard")); am.SetColor("_Color", accent); am.SetFloat("_Glossiness", 0.2f);
+                    var am = new Material(Shader.Find("Unlit/Color")); am.color = accent;
                     Quad(bp + new Vector3(0, -1.95f, -side * 0.012f), new Vector3(1.5f, 0.2f, 1f), face, am, "BannerStripe");
                     Quad(bp + new Vector3(0, 2.15f, 0), new Vector3(1.6f, 0.08f, 1f), face, frame, "BannerBar"); Quad(bp + new Vector3(0, 3.6f, 0), new Vector3(0.04f, 3.0f, 1f), face, frame, "BannerRope");
                     string[] bt = { "REBUILT", "9427", "FRC", "2026", "GP", "FIRST" };
@@ -109,4 +109,6 @@ namespace FrcSim
         }
     }
 }
+
+
 
