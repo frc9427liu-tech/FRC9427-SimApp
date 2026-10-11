@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.Rendering;
 
 namespace FrcSim
@@ -21,11 +21,11 @@ namespace FrcSim
         public Shader shader;                                // optional serialized reference
 
         [Header("Tonemap / grade")]
-        public float Exposure = 1.25f;
+        public float Exposure = 1.12f;
         [Range(0, 1)] public float AcesMix = 1f;
         [Range(0, 0.6f)] public float SCurve = 0.22f;
-        public float Saturation = 1.20f;
-        public Color ShadowTint = new Color(0.93f, 0.99f, 1.07f);
+        public float Saturation = 1.06f;
+        public Color ShadowTint = new Color(0.90f, 0.97f, 1.10f);
         public Color HighlightTint = new Color(1.05f, 1.00f, 0.93f);
 
         [Header("Vignette")]
