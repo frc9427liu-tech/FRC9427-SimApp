@@ -44,6 +44,21 @@ namespace FrcSim
                 Note = "官方入門機(BSD-3);用 SparkMax,暫不支援" },
         };
 
+        public static string NoteFor(Entry e)
+        {
+            if (Loc.Lang != "en") return e.Note;
+            switch (e.Id)
+            {
+                case "6901-Rebuilt": return "Driver: A intake, X spin-up, LT/RT shoot, LB auto-turn to HUB";
+                case "1710-Robot": return "Driver RT intakes & feeds; auto-aim turns the robot itself";
+                case "1405-Robot": return "Verified: operator picks shot speed with B/Y/A, driver LB intakes, RB shoots";
+                case "364-Fusion": return "Driver X intakes, RT shoots (auto-aim), LB stows intake";
+                case "4915-Artemis": return "Operator Start = auto-aim, then LT intake, RT shoot";
+                case "REV-ION-StarterBot": return "Official starter bot (BSD-3); uses SparkMax, not supported yet";
+                default: return e.Note;
+            }
+        }
+
         public static bool Installed(Entry e) { return File.Exists(Path.Combine(e.Dir, "gradlew.bat")); }
 
         // 選用這個隊伍時同時換上對應的 3D 模型:模型庫已下載就直接用;還沒下載就先用程序化外觀並背景下載,好了自動換上
@@ -141,3 +156,5 @@ namespace FrcSim
         }
     }
 }
+
+

@@ -381,7 +381,7 @@ namespace FrcSim
                     {
                         var lm = string.IsNullOrEmpty(en2.LibModel) ? null : ModelLibrary.Find(en2.LibModel);
                         string mdl = lm == null ? "" : Z("模型", "Model") + ": " + ModelLibrary.Name(lm) + (ModelLibrary.Installed(lm) ? "" : (lm.State == "…" ? Z("(下載中…)", "(downloading…)") : "")) + "   ·   ";
-                        return (en2.State == "…" ? OpenSourceCatalog.Busy(en2) : en2.State != "" ? en2.State : OpenSourceCatalog.Installed(en2) ? (Prefs.GetString("robotProject", "") == en2.Dir ? Z("使用中 ✓", "In use ✓") : Z("已下載,按一下使用", "Installed — click to use")) : Z("按一下下載", "Click to download")) + "   ·   " + mdl + en2.Note;
+                        return (en2.State == "…" ? OpenSourceCatalog.Busy(en2) : en2.State != "" ? en2.State : OpenSourceCatalog.Installed(en2) ? (Prefs.GetString("robotProject", "") == en2.Dir ? Z("使用中 ✓", "In use ✓") : Z("已下載,按一下使用", "Installed — click to use")) : Z("按一下下載", "Click to download")) + "   ·   " + mdl + OpenSourceCatalog.NoteFor(en2);
                     }
                 });
             }
@@ -678,6 +678,7 @@ namespace FrcSim
         }
     }
 }
+
 
 
 
