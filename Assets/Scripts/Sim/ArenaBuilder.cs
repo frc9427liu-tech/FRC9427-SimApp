@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace FrcSim
 {
@@ -58,8 +58,8 @@ namespace FrcSim
             {
                 float x = end < 0 ? -5.5f : L + 5.5f;
                 Box($"EndWall{end}", new Vector3(x, 4.5f, W / 2f), new Vector3(0.5f, 9f, W + 14f), end < 0 ? endBlue : endRed);
-                var banner = Look.GlowMaterial(end < 0 ? new Color(0.10f, 0.22f, 0.85f) : new Color(0.85f, 0.15f, 0.15f), 1.3f);
-                Box($"Banner{end}", new Vector3(x - end * 0.3f, 3.6f, W / 2f), new Vector3(0.1f, 1.6f, W * 0.7f), banner, false);
+                var banner = Look.GlowMaterial(end < 0 ? new Color(0.10f, 0.22f, 0.85f) : new Color(0.85f, 0.15f, 0.15f), 0.9f);
+                Box($"Banner{end}", new Vector3(x - end * 0.3f, 3.0f, W / 2f), new Vector3(0.08f, 0.28f, W * 0.55f), banner, false);   // 細亮條取代整片發光大色塊
             }
 
             Crowd.Build(root, L, W);

@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace FrcSim
 {
@@ -73,22 +73,40 @@ namespace FrcSim
                 {
                     Vector3 c = new Vector3(L * fx, 7.0f, wallZ - side * 0.02f);   // 抬高到觀眾頭上,才不會被後排人擋住
                     Quad(c + side * new Vector3(0, 0, 0.03f), new Vector3(10.6f, 3.9f, 1f), face, frame, "ScreenFrame");   // 框在螢幕後方(靠牆那側)
-                    Quad(c, new Vector3(10f, 3.3f, 1f), face, ScreenMat(new Color(0.1f, 0.35f, 1f), new Color(1f, 0.2f, 0.25f), 0.25f + 0.08f * si), "Screen");
+                    Quad(c, new Vector3(10f, 3.3f, 1f), face, ScreenMat(new Color(0.06f, 0.2f, 0.6f), new Color(0.62f, 0.13f, 0.17f), 0.25f + 0.08f * si), "Screen");
                     Text(root, slogans[si++ % slogans.Length], c - new Vector3(0, 0, side * 0.04f), face, 0.036f, new Color(1f, 1f, 1f, 0.96f), font, 120);
                 }
                 // 天花板垂下的橫幅(隊色交錯)
                 for (int i = 0; i < 6; i++)
                 {
                     float bx = L * (0.08f + i * 0.168f);
-                    Color bc = i % 2 == 0 ? new Color(0.08f, 0.2f, 0.85f) : new Color(0.85f, 0.14f, 0.14f);
+                    Color bc = new Color(0.05f, 0.055f, 0.07f), accent = i % 2 == 0 ? new Color(0.12f, 0.32f, 1f) : new Color(0.95f, 0.2f, 0.22f);   // 深炭色布幔 + 底部細隊色條(不再是整片鮮豔色塊)
                     Vector3 bp = new Vector3(bx, 12.6f, edge + side * 8.5f);   // 掛在螢幕上方(從天花板垂下),不擋螢幕
-                    var bm = new Material(Shader.Find("Standard")); bm.SetColor("_Color", bc); bm.SetFloat("_Glossiness", 0.15f);
+                    var bm = new Material(Shader.Find("Standard")); bm.SetColor("_Color", bc); bm.SetFloat("_Glossiness", 0.1f);
                     Quad(bp, new Vector3(1.5f, 4.2f, 1f), face, bm, "Banner");
+                    var am = new Material(Shader.Find("Standard")); am.SetColor("_Color", accent); am.SetFloat("_Glossiness", 0.2f);
+                    Quad(bp + new Vector3(0, -1.95f, -side * 0.012f), new Vector3(1.5f, 0.2f, 1f), face, am, "BannerStripe");
                     Quad(bp + new Vector3(0, 2.15f, 0), new Vector3(1.6f, 0.08f, 1f), face, frame, "BannerBar"); Quad(bp + new Vector3(0, 3.6f, 0), new Vector3(0.04f, 3.0f, 1f), face, frame, "BannerRope");
                     string[] bt = { "REBUILT", "9427", "FRC", "2026", "GP", "FIRST" };
                     Text(root, bt[i], bp - new Vector3(0, 0.3f, side * 0.02f), face, 0.03f, Color.white, font, 100);
                 }
             }
+            // 場地上空燈架:兩條深色桁架 + 一排發亮燈頭(場館質感,從全景/導播視角看得到)
+            {
+                var beamMat = new Material(Shader.Find("Standard")); beamMat.SetColor("_Color", new Color(0.05f, 0.055f, 0.065f)); beamMat.SetFloat("_Glossiness", 0.25f); beamMat.SetFloat("_Metallic", 0.6f);
+                var lampMat = new Material(Shader.Find("Unlit/Color")); lampMat.color = new Color(1f, 0.97f, 0.88f);
+                foreach (float bz in new[] { W * 0.22f, W * 0.78f })
+                {
+                    var beam = GameObject.CreatePrimitive(PrimitiveType.Cube); Object.Destroy(beam.GetComponent<Collider>()); beam.name = "LightBeam"; beam.transform.SetParent(root, false);
+                    beam.transform.position = new Vector3(L / 2f, 11.2f, bz); beam.transform.localScale = new Vector3(L * 0.92f, 0.22f, 0.32f); beam.GetComponent<Renderer>().sharedMaterial = beamMat; beam.GetComponent<Renderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                    for (int k = 0; k < 9; k++)
+                    {
+                        var lamp = GameObject.CreatePrimitive(PrimitiveType.Cube); Object.Destroy(lamp.GetComponent<Collider>()); lamp.name = "Lamp"; lamp.transform.SetParent(root, false);
+                        lamp.transform.position = new Vector3(L * (0.1f + k * 0.1f), 11.0f, bz); lamp.transform.localScale = new Vector3(0.9f, 0.08f, 0.42f); lamp.GetComponent<Renderer>().sharedMaterial = lampMat; lamp.GetComponent<Renderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                    }
+                }
+            }
         }
     }
 }
+
