@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -94,7 +94,7 @@ namespace FrcSim
             if (carpetData == null) ProcTex.Carpet(out carpetData, out carpetNorm);
             float L = SimConstants.FieldLength, W = SimConstants.FieldWidth;
             var m = new Material(Sh("FrcCarpet"));
-            m.SetColor("_Color", new Color(0.16f, 0.185f, 0.26f));
+            m.SetColor("_Color", new Color(0.115f, 0.135f, 0.20f));
             m.SetTexture("_DataTex", carpetData);
             m.SetFloat("_FineAmt", 0.10f); m.SetFloat("_MidAmt", 0.06f); m.SetFloat("_MacroAmt", 0.10f); m.SetFloat("_MidScale", 2.0f); m.SetFloat("_FineScale", 4.5f); m.SetFloat("_NormStrength", 0.3f);   // 地毯質感收斂:去掉迷彩感的大塊斑紋
             m.SetTexture("_NormTex", carpetNorm);

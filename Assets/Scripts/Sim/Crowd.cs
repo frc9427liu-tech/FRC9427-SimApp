@@ -40,7 +40,7 @@ namespace FrcSim
         static Mesh GetPrimitive(PrimitiveType t) { var g = GameObject.CreatePrimitive(t); var m = g.GetComponent<MeshFilter>().sharedMesh; Object.Destroy(g); return m; }
 
         // 觀眾衣服降飽和、略暗:避免整片看台像彩虹糖,紅藍隊色依然辨得出來(高級感)
-        static Color Muted(Color c) { Color.RGBToHSV(c, out float h, out float sat, out float v); var r = Color.HSVToRGB(h, sat * 0.58f, v * 0.86f); r.a = c.a; return r; }
+        static Color Muted(Color c) { Color.RGBToHSV(c, out float h, out float sat, out float v); var r = Color.HSVToRGB(h, sat * 0.34f, v * 0.68f); r.a = c.a; return r; }
         public static void Build(Transform parent, float L, float W)
         {
             var sh = Resources.Load<Shader>("Shaders/FrcCrowd");
@@ -100,4 +100,5 @@ namespace FrcSim
         void Update() { Shader.SetGlobalFloat("_FrcExcite", Juice.Excitement); }
     }
 }
+
 
