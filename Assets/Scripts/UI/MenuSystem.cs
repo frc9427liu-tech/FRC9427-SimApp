@@ -281,6 +281,7 @@ namespace FrcSim
             {
                 new Item(() => Z("練習模式(不限時)", "Practice (no time limit)"), () => { GameSession.PracticeMode = true; GameSession.VsAi = false; ShowPadSetup(ShowRobotSetup, ShowModes); }),
                 new Item(() => Z("模擬比賽(對戰 AI)", "Match vs AI"), ShowAiLevel),
+                new Item(() => Z("單人挑戰(160 秒,刷最高分)", "Solo score attack (160 s)"), () => { GameSession.PracticeMode = false; GameSession.VsAi = false; ShowPadSetup(ShowRobotSetup, ShowModes); }),
                 new Item(() => Loc.T("menu.back"),  ShowMain),
             }, ShowMain);
             Show(s, false);
@@ -698,6 +699,7 @@ namespace FrcSim
         }
     }
 }
+
 
 
 
