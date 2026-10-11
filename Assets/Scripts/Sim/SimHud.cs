@@ -35,7 +35,7 @@ namespace FrcSim
         void Start() { born = Time.unscaledTime; if (System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-f12test") >= 0) Invoke(nameof(TestShot), 8f); }
         void TestShot() { StartCoroutine(SaveShot()); }
 
-        float tutStart = -1f; bool tutDone, tutKey;
+        float tutStart = -1f; bool tutDone, tutKey; bool bestDone, bestNew; int bestPrev;
         string shotMsg = "", bannerPhase, bannerText = ""; float shotUntil, bannerUntil;
         System.Collections.IEnumerator SaveShot()
         {
@@ -295,6 +295,7 @@ namespace FrcSim
             if (Time.unscaledTime < shotUntil) { var sr = new Rect(cx - 220, H - 190, 440, 36); Panel(sr, 0.85f); GUI.Label(sr, shotMsg, Style(15, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold)); }
             if (Time.unscaledTime < padLostUntil) { var tr = new Rect(cx - 250, H - 130, 500, 44); Panel(tr, 0.9f); GUI.Label(tr, L("⚠ 手把掉線了,已暫停。請重新插上 USB", "⚠ Controller lost - paused. Re-plug USB"), Style(18, new Color(1f, 0.8f, 0.3f), TextAnchor.MiddleCenter, FontStyle.Bold)); }
 
+            if (!(ScoreManager.ClockOn && ScoreManager.Ended)) bestDone = false;
             // ---- 比賽結束:成績卡(含各距離命中率) + 再來一場 / 回主選單(手把 A / B,Enter 再來一場)
             if (ScoreManager.ClockOn && ScoreManager.Ended)
             {
@@ -306,7 +307,8 @@ namespace FrcSim
                 int bs = ScoreManager.BlueScore, rs = ScoreManager.RedScore;
                 string res = bs > rs ? L("勝利", "VICTORY") : bs < rs ? L("落敗", "DEFEAT") : L("平手", "DRAW");
                 Color rc2 = bs > rs ? new Color(0.4f, 1f, 0.55f) : bs < rs ? new Color(1f, 0.5f, 0.45f) : new Color(1f, 0.9f, 0.4f);
-                GUI.Label(new Rect(cr.x, cr.y + 22, cw, 30), L("比賽結束", "MATCH OVER"), Style(18, dim, TextAnchor.UpperCenter, FontStyle.Bold));
+                if (!bestDone) { bestDone = true; string bk = "best_" + (GameSession.VsAi ? GameSession.AiLevel : -1); bestPrev = Prefs.GetInt(bk, 0); bestNew = bs > bestPrev; if (bestNew && !SuperSample.IsTestRun()) { Prefs.SetInt(bk, bs); PlayerPrefs.Save(); } }
+                GUI.Label(new Rect(cr.x, cr.y + 22, cw, 30), L("比賽結束", "MATCH OVER") + (bestNew ? "   ·   " + L("★ 新紀錄!", "★ NEW BEST!") : bestPrev > 0 ? "   ·   " + L("你的最佳 ", "Your best ") + bestPrev : ""), Style(18, bestNew ? new Color(1f, 0.85f, 0.3f) : dim, TextAnchor.UpperCenter, FontStyle.Bold));
                 GUI.Label(new Rect(cr.x, cr.y + 54, cw, 70), res, Style(54, rc2, TextAnchor.UpperCenter, FontStyle.Bold));
                 GUI.Label(new Rect(cr.x, cr.y + 132, cw, 50), $"{L("藍", "BLUE")} {bs}  :  {rs} {L("紅", "RED")}", Style(34, Color.white, TextAnchor.UpperCenter, FontStyle.Bold));
                 if (Mech != null) { int sh = ShotLog.DrillShots, hi = ShotLog.DrillHits; GUI.Label(new Rect(cr.x, cr.y + 182, cw, 28), $"{L("你發射", "Shots")} {sh}    {L("進球", "Scored")} {hi}    {L("命中率", "Accuracy")} {(sh > 0 ? hi * 100 / sh : 0)}%    {L("吸球", "Collected")} {Mech.TotalCollected}", Style(16, dim, TextAnchor.UpperCenter)); }
@@ -418,6 +420,8 @@ namespace FrcSim
         }
     }
 }
+
+
 
 
 
