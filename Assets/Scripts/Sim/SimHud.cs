@@ -32,10 +32,38 @@ namespace FrcSim
         }
 
         bool wasPadOk = true, wasLoading; float padLostUntil;
-        void Start() { born = Time.unscaledTime; if (System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-f12test") >= 0) Invoke(nameof(TestShot), 8f); }
+        void Start() { born = Time.unscaledTime; if (System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-f12test") >= 0) Invoke(nameof(TestShot), 8f); if (System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-fakescore") >= 0) InvokeRepeating(nameof(FakeScore), 1f, 1.2f); }
         void TestShot() { StartCoroutine(SaveShot()); }
+        void FakeScore() { if (ScoreManager.Ended) return; ScoreManager.BlueScore += 2; if (Random.value < 0.5f) ScoreManager.RedScore += 1; }   // 測試旗標 -fakescore:模擬得分給結算折線圖截圖用
 
         float tutStart = -1f; bool tutDone, tutKey; bool bestDone, bestNew; int bestPrev;
+        readonly System.Collections.Generic.List<Vector3> chart = new System.Collections.Generic.List<Vector3>();   // (比賽秒數, 藍分, 紅分) 每秒取樣,結算折線圖用
+        float chartNext;
+        void SampleChart()
+        {
+            if (!ScoreManager.ClockOn) { chart.Clear(); return; }
+            float mt = ScoreManager.MatchTime;
+            if (chart.Count > 0 && mt < chart[chart.Count - 1].x - 1f) chart.Clear();   // 再來一場:時鐘倒回,清掉舊資料
+            if (!ScoreManager.Ended && Time.unscaledTime >= chartNext) { chartNext = Time.unscaledTime + 1f; chart.Add(new Vector3(mt, ScoreManager.BlueScore, ScoreManager.RedScore)); }
+        }
+        void DrawChart(Rect r, int maxScore)
+        {
+            var wt = Texture2D.whiteTexture; GUI.color = new Color(1f, 1f, 1f, 0.07f); GUI.DrawTexture(r, wt);
+            float tMax = Mathf.Max(160f, chart[chart.Count - 1].x), mx = Mathf.Max(1, maxScore);
+            for (int pass = 0; pass < 2; pass++)
+            {
+                GUI.color = pass == 0 ? new Color(0.35f, 0.6f, 1f, 0.95f) : new Color(1f, 0.4f, 0.4f, 0.95f);
+                for (int i = 1; i < chart.Count; i++)
+                {
+                    float x0 = r.x + chart[i - 1].x / tMax * r.width, x1 = r.x + chart[i].x / tMax * r.width;
+                    float v0 = pass == 0 ? chart[i - 1].y : chart[i - 1].z, v1 = pass == 0 ? chart[i].y : chart[i].z;
+                    float y0 = r.yMax - v0 / mx * (r.height - 4f) - 2f, y1 = r.yMax - v1 / mx * (r.height - 4f) - 2f;
+                    GUI.DrawTexture(new Rect(x0, y0 - 1f, Mathf.Max(1f, x1 - x0), 2f), wt);                       // 水平段
+                    if (Mathf.Abs(y1 - y0) > 0.5f) GUI.DrawTexture(new Rect(x1 - 1f, Mathf.Min(y0, y1) - 1f, 2f, Mathf.Abs(y1 - y0) + 2f), wt);   // 垂直段(得分瞬間)
+                }
+            }
+            GUI.color = Color.white;
+        }
         string shotMsg = "", bannerPhase, bannerText = ""; float shotUntil, bannerUntil;
         System.Collections.IEnumerator SaveShot()
         {
@@ -55,6 +83,7 @@ namespace FrcSim
         void Update()
         {
             fps = Mathf.Lerp(fps, 1f / Mathf.Max(Time.unscaledDeltaTime, 1e-4f), 0.05f);
+            SampleChart();
             if (Input.GetKeyDown(KeyCode.F3)) showDebug = !showDebug;
             if (tutStart >= 0f && Input.GetKeyDown(KeyCode.Space)) tutKey = true;
             if (Input.GetKeyDown(KeyCode.F12)) StartCoroutine(SaveShot());
@@ -300,7 +329,9 @@ namespace FrcSim
             if (ScoreManager.ClockOn && ScoreManager.Ended)
             {
                 int rows = 0; for (int q = 0; q < 5; q++) if (ShotLog.Att[q] > 0) rows++;
-                float extra = rows > 0 ? rows * 26f + 34f : 0f;
+                bool showChart = chart.Count > 3 && ScoreManager.BlueScore + ScoreManager.RedScore > 0;
+                float rowsH = rows > 0 ? rows * 26f + 34f : 0f;
+                float extra = rowsH + (showChart ? 96f : 0f);
                 float cw = 560, ch = 372 + extra;
                 var cr = new Rect(cx - cw / 2f, H / 2f - ch / 2f, cw, ch);
                 Panel(cr, 0.95f);
@@ -327,6 +358,7 @@ namespace FrcSim
                         ry += 26f;
                     }
                 }
+                if (showChart) { chart.Add(new Vector3(160f, ScoreManager.BlueScore, ScoreManager.RedScore)); DrawChart(new Rect(cr.x + 40, cr.y + 224f + rowsH, cw - 80, 70f), Mathf.Max(ScoreManager.BlueScore, ScoreManager.RedScore)); chart.RemoveAt(chart.Count - 1); }
                 if (GBtn(new Rect(cr.x + 40, cr.y + 256 + extra, 230, 56), L("再來一場  (A)", "Rematch  (A)"), true) || Pad.Down(Pad.A) || Input.GetKeyDown(KeyCode.Return)) GameSession.Rematch();
                 if (GBtn(new Rect(cr.x + cw - 270, cr.y + 256 + extra, 230, 56), L("回主選單  (B)", "Main menu  (B)"), false) || Pad.Down(Pad.B)) MenuSystem.GoMain();
             }
@@ -420,6 +452,8 @@ namespace FrcSim
         }
     }
 }
+
+
 
 
 
