@@ -224,11 +224,12 @@ namespace FrcSim
 
         void ShowMain()
         { PreviewRobot.Want = false;
-            var s = Build(() => Loc.T("app.title"), () => Loc.T("app.sub") + (UpdateCheck.Progress != "" ? "   ●" + UpdateCheck.Progress : UpdateCheck.Newer ? (Loc.Lang == "zh" ? "   ●有新版 v" + UpdateCheck.Latest + "(按 U 自動更新)" : "   ●New v" + UpdateCheck.Latest + " (press U to update)") : ""), new[]
+            var s = Build(() => Loc.T("app.title"), () => Loc.T("app.sub") + (CrashFlag.Msg != "" ? "   ⚠ " + CrashFlag.Msg : "") + (UpdateCheck.Progress != "" ? "   ●" + UpdateCheck.Progress : UpdateCheck.Newer ? (Loc.Lang == "zh" ? "   ●有新版 v" + UpdateCheck.Latest + "(按 U 自動更新)" : "   ●New v" + UpdateCheck.Latest + " (press U to update)") : ""), new[]
             {
                 new Item(() => Loc.T("menu.start"),    ShowModes),
                 new Item(() => Loc.T("menu.settings"), () => { settingsBack = ShowMain; ShowSettings(false); }),
                 new Item(() => Loc.T("menu.controls"), ShowControls),
+                new Item(() => Z("關於 / 致謝", "About / Credits"), ShowAbout),
                 new Item(() => Loc.T("menu.quit"),     Application.Quit),
             }, null);
             Show(s, false);
@@ -677,6 +678,7 @@ namespace FrcSim
         }
     }
 }
+
 
 
 
