@@ -508,14 +508,14 @@ namespace FrcSim
                 // 內容放在左側面板內(窄視窗也看得到),不再放到右邊 3D 畫面上
                 var kbT = UiKit.Label("KbT", content, Loc.T("ctl.kb"), 24, UiTheme.Accent, TextAnchor.UpperLeft);
                 UiKit.PlaceTL(kbT.rectTransform, 90, 300, 600, 32);
-                var kb = UiKit.Label("Kb", content, Loc.T("ctl.kb.body"), 19, UiTheme.Text, TextAnchor.UpperLeft);
-                kb.lineSpacing = 1.1f;
+                var kb = UiKit.Label("Kb", content, Loc.T("ctl.kb.body"), 17, UiTheme.Text, TextAnchor.UpperLeft);
+                kb.lineSpacing = 1.05f;
                 UiKit.PlaceTL(kb.rectTransform, 90, 334, 650, 320);
                 var pdT = UiKit.Label("PadT", content, Loc.T("ctl.pad"), 24, UiTheme.Accent, TextAnchor.UpperLeft);
-                UiKit.PlaceTL(pdT.rectTransform, 90, 668, 600, 32);
-                var pd = UiKit.Label("Pad", content, Loc.T("ctl.pad.body"), 19, UiTheme.Text, TextAnchor.UpperLeft);
-                pd.lineSpacing = 1.1f;
-                UiKit.PlaceTL(pd.rectTransform, 90, 702, 650, 230);
+                UiKit.PlaceTL(pdT.rectTransform, 90, 684, 600, 32);
+                var pd = UiKit.Label("Pad", content, Loc.T("ctl.pad.body"), 17, UiTheme.Text, TextAnchor.UpperLeft);
+                pd.lineSpacing = 1.05f;
+                UiKit.PlaceTL(pd.rectTransform, 90, 716, 650, 210);
                 // 語言切換時更新內文
                 lastControls = () =>
                 {
@@ -678,6 +678,7 @@ namespace FrcSim
         }
     }
 }
+
 
 
 
