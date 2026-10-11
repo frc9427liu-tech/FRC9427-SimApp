@@ -27,6 +27,14 @@ namespace FrcSim
             // 短邊
             Strip("EndB", new Vector3(x0, y, W / 2f), new Vector3(t, 0.01f, z1 - z0), blue);
             Strip("EndR", new Vector3(x1, y, W / 2f), new Vector3(t, 0.01f, z1 - z0), red);
+            // 看台前緣冷白細光(像階梯式座席的踏面燈),兩側各一條
+            var cool = Look.GlowMaterial(new Color(0.75f, 0.85f, 1f), 1.1f);
+            foreach (int side in new[] { -1, 1 })
+            {
+                float edge = side < 0 ? 0f : W;
+                Strip("StandGlow", new Vector3(L / 2f, 0.07f, edge + side * 3.38f), new Vector3(L + 10f, 0.03f, 0.05f), cool);
+                for (int i = 1; i < 10; i += 3) Strip("StandStep", new Vector3(L / 2f, 0.42f * i + 0.05f, edge + side * (3.5f + i * 0.85f - 0.02f)), new Vector3(L + 10f, 0.025f, 0.04f), cool);
+            }
             // 場中央細環
             var ring = new GameObject("CenterRing"); ring.transform.SetParent(root, false);
             var lr = ring.AddComponent<LineRenderer>(); lr.useWorldSpace = true; lr.loop = true; lr.widthMultiplier = 0.035f; lr.sharedMaterial = white; lr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off; lr.alignment = LineAlignment.TransformZ;
@@ -36,3 +44,4 @@ namespace FrcSim
         }
     }
 }
+
