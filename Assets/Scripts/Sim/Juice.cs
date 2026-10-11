@@ -160,6 +160,7 @@ namespace FrcSim
                 fly = m.FlywheelRps;
             }
             SfxBus.SetLoop("intake", "intake_loop", rps > 6f ? 0.10f + 0.10f * Mathf.Clamp01(rps / 40f) : 0f, Mathf.Clamp(0.5f + rps / 40f * 0.7f, 0.4f, 2f));
+            { float spd = play ? m.Drive.Speed : 0f; SfxBus.SetLoop("drive", "drive_loop", spd > 0.15f ? 0.035f + 0.06f * Mathf.Clamp01(spd / 4f) : 0f, Mathf.Clamp(0.7f + spd * 0.16f, 0.6f, 1.7f)); }   // 車身移動聲:隨速度升調/變大
             SfxBus.SetLoop("fly", "fly_loop", fly > 4f ? 0.08f + 0.10f * Mathf.Clamp01(fly / 80f) : 0f, Mathf.Clamp(0.4f + fly / 75f, 0.4f, 2.5f));
             SfxBus.SetLoop("crowd", "crowd_loop", play ? 0.03f + 0.07f * Mathf.Clamp01(excitement) : 0f, 1f + 0.10f * excitement, SfxGroup.Amb);
             SfxBus.SetLoop("music", "music_loop", play ? 0.35f : 0.6f, ScoreManager.Phase == "END GAME" ? 1.05f : 1f, SfxGroup.Music);
@@ -211,3 +212,4 @@ namespace FrcSim
         }
     }
 }
+

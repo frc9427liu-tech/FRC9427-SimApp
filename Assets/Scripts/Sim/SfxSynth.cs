@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -18,7 +18,7 @@ namespace FrcSim
         {
             {"ding",0.5f},{"ballin",0.65f},{"thump",0.3f},{"shoot",0.14f},{"ballhit",0.10f},{"bump",0.35f},{"ramp",0.4f},{"pluck",0.12f},{"beep",0.16f},
             {"buzzer",1.6f},{"tick",0.05f},{"uiclick",0.06f},{"stinger_start",1.0f},{"stinger_end",1.3f},{"stinger_win",1.7f},
-            {"stinger_lose",1.7f},{"roar",2.4f},{"intake_loop",1f},{"fly_loop",1f},{"crowd_loop",4f},{"music_loop",8f}
+            {"stinger_lose",1.7f},{"roar",2.4f},{"intake_loop",1f},{"fly_loop",1f},{"drive_loop",1f},{"crowd_loop",4f},{"music_loop",8f}
         };
         public static IEnumerable<string> Names { get { return Lens.Keys; } }
 
@@ -126,10 +126,25 @@ namespace FrcSim
                         d[i] = (Mathf.Sin(TAU * (62f + 40f * Mathf.Exp(-t * 25f)) * t) * e1 + Mathf.Sin(TAU * (52f + 30f * Mathf.Exp(-t2 * 25f)) * t2) * e2 + lp * 1.1f * (Mathf.Exp(-t * 20f) + 0.7f * (t > 0.09f ? Mathf.Exp(-t2 * 22f) : 0f))) * Atk(t, 0.002f); }
                     break;
                 }
-                case "pluck":  // rising blip (collect)
-                    for (int i = 0; i < n; i++) { float t = i * dt; ph += TAU * (450f + 650f * (1f - Mathf.Exp(-t * 60f))) * dt;
-                        d[i] = Mathf.Sin(ph) * Mathf.Exp(-t * 28f) * Atk(t, 0.002f); }
+                case "pluck":  // 吸球:泡棉球被滾輪擠進車內的「噗呲」——低通噪音(擠壓)+ 低頻悶響(球落入),沒有電子音
+                {
+                    float a = Lp(650f, sr), a2 = Lp(2200f, sr);
+                    for (int i = 0; i < n; i++) { float t = i * dt; lp += a * (Nz() - lp); lp2 += a2 * (Nz() - lp2);
+                        float squeeze = lp * 2.4f * Mathf.Exp(-Mathf.Pow((t - 0.025f) * 38f, 2f));
+                        float thud = Mathf.Sin(TAU * (150f - 55f * Mathf.Min(1f, t * 14f)) * t) * 0.8f * Mathf.Exp(-t * 34f) * (t > 0.03f ? 1f : t / 0.03f);
+                        float rub = (lp2 - lp) * 0.5f * Mathf.Exp(-t * 55f);
+                        d[i] = (squeeze + thud + rub) * Atk(t, 0.002f); }
                     break;
+                }
+                case "drive_loop":   // 驅動馬達+齒輪:90Hz 諧波低鳴 + 540Hz 齒輪細嗡 + 地毯摩擦底噪(1 秒整數週期;音調/音量隨車速)
+                {
+                    float a = Lp(900f, sr);
+                    for (int i = 0; i < n; i++) { float t = i * dt; float sv = 0f;
+                        for (int k = 1; k <= 5; k++) sv += Mathf.Sin(TAU * 90f * k * t + k * 0.9f) / (k * 1.3f);
+                        sv += 0.22f * Mathf.Sin(TAU * 540f * t) * (0.85f + 0.15f * Mathf.Sin(TAU * 6f * t));
+                        lp += a * (Nz() - lp); d[i] = sv + lp * 0.45f; }
+                    break;
+                }
                 case "beep":   // FRC-style countdown tone, soft-square
                 {
                     float len = n * dt;
