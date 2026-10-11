@@ -17,7 +17,7 @@ namespace FrcSim
     //   找不到差異包(或失敗)時退回「開啟下載頁」,讓使用者手動下載完整版。
     public class UpdateCheck : MonoBehaviour
     {
-        public const string Current = "0.5.67";
+        public const string Current = "0.5.68";
         const string Repo = "frc9427liu-tech/FRC9427-SimApp";
         const string ReleasesApi = "https://api.github.com/repos/" + Repo + "/releases?per_page=30";
         public const string Page = "https://github.com/" + Repo + "/releases/latest";
@@ -39,6 +39,7 @@ namespace FrcSim
         {
             dataPath = Application.dataPath; installDir = Path.GetDirectoryName(dataPath);
             if (Array.IndexOf(Environment.GetCommandLineArgs(), "-batchmode") >= 0) return;   // 自動測試不連網
+            if (SuperSample.IsTestRun() && Array.IndexOf(Environment.GetCommandLineArgs(), "-autoupdate") < 0) return;   // 測試啟動不查更新:否則大量測試會用光 GitHub API 每小時 60 次額度,使用者就收不到更新通知
             new Thread(Check) { IsBackground = true }.Start();
         }
 
@@ -63,6 +64,26 @@ namespace FrcSim
                 if (r != null) r.Timeout = 30000;
                 return r;
             }
+        }
+
+        // 備援:github.com/<repo>/releases/latest 會 302 轉到 /releases/tag/vX.Y.Z,從 Location 取版本號(不算 API 額度)
+        static void CheckViaRedirect()
+        {
+            try
+            {
+                var rq = (System.Net.HttpWebRequest)System.Net.WebRequest.Create(Page);
+                rq.AllowAutoRedirect = false; rq.UserAgent = "FRC9427-Sim/" + Current; rq.Timeout = 20000;
+                using (var rs = (System.Net.HttpWebResponse)rq.GetResponse())
+                {
+                    string loc = rs.Headers["Location"] ?? "";
+                    var m = Regex.Match(loc, @"/tag/v?([0-9]+(?:\.[0-9]+){1,3})");
+                    if (!m.Success) return;
+                    var latest = new Version(m.Groups[1].Value); var cur = new Version(Current);
+                    Latest = latest.ToString(); Newer = latest > cur; ChainOk = false;   // 沒有差異包清單:按 U 會開下載頁
+                    Status = Newer ? "update available (redirect)" : "up to date (redirect)";
+                }
+            }
+            catch (Exception e) { Status = Status + " / redirect failed: " + e.Message; }
         }
 
         static void Check()
@@ -96,7 +117,7 @@ namespace FrcSim
                 Status = Newer ? "update available" : "up to date";
                 if (Newer && Array.IndexOf(Environment.GetCommandLineArgs(), "-autoupdate") >= 0) StartUpdate();   // 測試用:發現新版就直接更新
             }
-            catch (Exception e) { Status = "check failed: " + e.Message; }   // 沒網路/被限流:略過
+            catch (Exception e) { Status = "check failed: " + e.Message; CheckViaRedirect(); }   // API 被限流/失敗:退回只看「最新版」頁面的轉址(不吃 API 額度),至少能提示有新版
         }
 
         // 按 U:能自動更新就自動更新,否則開下載頁
@@ -235,6 +256,8 @@ Start-Process -FilePath $Exe -WorkingDirectory $Dst
 ";
     }
 }
+
+
 
 
 
