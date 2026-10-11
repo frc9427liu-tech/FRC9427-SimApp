@@ -32,7 +32,7 @@ namespace FrcSim
         static string TeamLabel(string n)
         {
             n = n.Replace("_", " ");
-            switch (n.Split(' ')[0]) { case "971": return "971 Mixtape"; case "604": return "604 Quixilver"; case "3928": return "3928 Neutrino"; case "48": return "48 E.L.I.T.E."; case "1678": return "1678 Citrus Circuits"; case "2910": return "2910 Jack in the Bot"; case "6328": return "6328 Mech. Advantage"; case "967": return "967"; }
+            switch (n.Split(' ')[0]) { case "971": return "971 Mixtape"; case "604": return "604 Quixilver"; case "3928": return "3928 Neutrino"; case "48": return "48 E.L.I.T.E."; case "1678": return "1678 Citrus Circuits"; case "2910": return "2910 Jack in the Bot"; case "6328": return "6328 Mech. Advantage"; case "967": return "967"; case "4930": return "4930 Electric Mayhem"; }
             return n;
         }
 
@@ -76,6 +76,7 @@ namespace FrcSim
         }
     }
 }
+
 
 
 
