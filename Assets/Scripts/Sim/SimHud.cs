@@ -281,7 +281,7 @@ namespace FrcSim
                 GUI.Label(rb, "● " + L("慢動作回放", "SLOW-MO REPLAY"), Style(13, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold));
             }
             // 新手提示:第一次進比賽顯示 12 秒操作重點(按任意常用鍵或時間到就收起);測試旗標 -tuttest 強制顯示
-            if (tutStart < 0f && ((Prefs.GetInt("tutSeen", 0) == 0 && !SuperSample.IsTestRun()) || System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-tuttest") >= 0) && !MenuSystem.Blocking) tutStart = Time.unscaledTime;
+            if (tutStart < 0f && ((false) || System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-tuttest") >= 0) && !MenuSystem.Blocking) tutStart = Time.unscaledTime;
             if (tutStart >= 0f && !tutDone)
             {
                 float tt = Time.unscaledTime - tutStart; float ta = Mathf.Clamp01(Mathf.Min(tt * 2f, (12f - tt) * 1.5f));
@@ -452,6 +452,7 @@ namespace FrcSim
         }
     }
 }
+
 
 
 

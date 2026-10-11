@@ -21,9 +21,6 @@ namespace FrcSim
         public static readonly M[] All =
         {
             new M { Id = "as_kitbot2026", ZhName = "2026 KitBot(FIRST 官方)", EnName = "2026 KitBot (FIRST official)", Tag = "default-assets-v2", Zip = "Robot_2026FRCKitBotV2.zip", Credit = "FIRST / AdvantageScope assets" },
-            new M { Id = "as_crabbot", ZhName = "CrabBot", EnName = "CrabBot", Tag = "default-assets-v2", Zip = "Robot_CrabBotV4.zip", Pitch = -90f, YawAdd = 0f, Credit = "FRC 6328 / AdvantageScope assets" },
-            new M { Id = "as_duckbot", ZhName = "DuckBot", EnName = "DuckBot", Tag = "default-assets-v2", Zip = "Robot_DuckBotV4.zip", Pitch = -90f, YawAdd = 0f, Credit = "FRC 6328 / AdvantageScope assets" },
-            new M { Id = "as_frogbot", ZhName = "FrogBot", EnName = "FrogBot", Tag = "default-assets-v2", Zip = "Robot_FrogBotV2.zip", Credit = "FRC 6328 / AdvantageScope assets" },
             new M { Id = "as_bananasplit", ZhName = "BananaSplit(6328)", EnName = "BananaSplit (6328)", Tag = "frc-6328-assets-v2", Zip = "Robot_BananaSplitV4.zip", YawAdd = 180f, Credit = "FRC 6328 / AdvantageScope assets" },
             new M { Id = "as_manta", ZhName = "Manta(6328)", EnName = "Manta (6328)", Tag = "frc-6328-assets-v2", Zip = "Robot_MantaV1.zip", YawAdd = 180f, Credit = "FRC 6328 / AdvantageScope assets" },
             new M { Id = "as_presto", ZhName = "Presto(6328)", EnName = "Presto (6328)", Tag = "frc-6328-assets-v2", Zip = "Robot_PrestoV3.zip", Credit = "FRC 6328 / AdvantageScope assets" },

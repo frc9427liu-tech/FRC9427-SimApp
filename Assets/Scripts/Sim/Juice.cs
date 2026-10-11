@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace FrcSim
 {
@@ -87,7 +87,7 @@ namespace FrcSim
             if (mine)
             {
                 ScorePop = 1f;
-                JuiceFX.AddTrauma(0.12f, 0.5f); JuiceFX.FovPunch(1.2f);
+                JuiceFX.AddTrauma(0.22f, 0.6f); JuiceFX.FovPunch(1.6f); Rumble.Pulse(Pad.DriverIndex, 0.35f, 0.25f, 0.18f);
                 Rumble.Driver(0f, 0.35f, 0.08f);
                 
             }
@@ -99,7 +99,7 @@ namespace FrcSim
             Fx.Muzzle(pos, dir);
             if (mine)
             {
-                JuiceFX.AddTrauma(0.035f, 0.22f); JuiceFX.Kick(-dir * 0.015f);
+                JuiceFX.AddTrauma(0.06f, 0.3f); JuiceFX.Kick(-dir * 0.02f);
                 Rumble.Operator(0.2f, 0.4f, 0.07f);
             }
         }
@@ -193,13 +193,13 @@ namespace FrcSim
         static void OnPhase(string from, string to)
         {
             if (from == null) return;                      // first frame: no sound
-            if (to == "TRANSITION") { SfxBus.Play("buzzer", 0.45f, 1.5f); SfxBus.Duck(0.5f, 0.8f); }
+            if (to == "TRANSITION") { SfxBus.Play("buzzer", 0.28f, 1.5f); SfxBus.Duck(0.5f, 0.8f); }
             else if (to.StartsWith("SHIFT")) { SfxBus.Play("beep", 0.4f, 0.75f); }
             else if (to == "END GAME") { SfxBus.Play("stinger_end", 0.8f, 1f, 0f, SfxGroup.Music); SfxBus.Duck(0.45f, 1.4f); JuiceFX.AddTrauma(0.2f, 0.3f); }
             else if (to == "SCORING GRACE")
             {
-                SfxBus.Play("buzzer", 1f); SfxBus.Duck(0.3f, 2.0f); 
-                JuiceFX.AddTrauma(0.35f, 0.5f); Rumble.Pulse(Pad.DriverIndex, 0.6f, 0.4f, 0.5f);
+                SfxBus.Play("buzzer", 0.4f); SfxBus.Duck(0.3f, 2.0f); 
+                JuiceFX.AddTrauma(0.55f, 0.7f); Rumble.Pulse(Pad.DriverIndex, 0.8f, 0.6f, 0.7f);
             }
             else if (to == "MATCH OVER")
             {

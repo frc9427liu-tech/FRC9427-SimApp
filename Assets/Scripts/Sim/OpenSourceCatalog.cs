@@ -21,7 +21,7 @@ namespace FrcSim
         public const string Root = @"C:\FRC\opensource";
         public static readonly Entry[] All =
         {
-            new Entry { Id = "6901-Rebuilt", LibModel = "as_frogbot", Model = "proc:0.72,0.74,0.55,#1E8CFF", Team = "FRC 6901", Repo = "https://github.com/frc-6901/2026-Rebuilt.git", Status = "ok",
+            new Entry { Id = "6901-Rebuilt", LibModel = "as_kitbot2026", Model = "proc:0.72,0.74,0.55,#1E8CFF", Team = "FRC 6901", Repo = "https://github.com/frc-6901/2026-Rebuilt.git", Status = "ok",
                 Note = "操作:駕駛 A 開/關吸球、X 預熱射手、LT/RT 射擊、↓ 放吸球臂 ↑ 收起、LB 自動轉向 HUB",
                 PatchFile = @"src\main\java\frc\robot\RobotContainer.java",
                 PatchFind = @"//\s*(drivetrain\.setDefaultCommand\(drivetrain\.applyRequest\(\(\) ->)\s*//\s*(getDriverInput\(\)\)\);)", PatchReplace = "$1 $2" },
@@ -29,9 +29,9 @@ namespace FrcSim
                 Note = "操作:駕駛 RT 吸球並出球(它的狀態機控制);自動瞄準會讓車自己轉。已自動切到硬體 IO",
                 PatchFile = @"src\main\java\frc\robot\RobotContainer.java",
                 PatchFind = @"switch \(Mode\.currentMode\) \{", PatchReplace = "switch (CurrentMode.REAL) {" },
-            new Entry { Id = "1405-Robot", LibModel = "as_duckbot", Model = "proc:0.76,0.76,0.58,#FF6A00", Team = "FRC 1405", Repo = "https://github.com/FRC-Team-1405/2026Robot.git", Status = "ok",
+            new Entry { Id = "1405-Robot", LibModel = "as_kitbot2026", Model = "proc:0.76,0.76,0.58,#FF6A00", Team = "FRC 1405", Repo = "https://github.com/FRC-Team-1405/2026Robot.git", Status = "ok",
                 Note = "實測可用:操作手先按 B/Y/A 選射速,駕駛 LB 吸球、RB 射擊" },
-            new Entry { Id = "364-Fusion", LibModel = "as_crabbot", Model = "proc:0.64,0.64,0.62,#8A3BFF", Team = "FRC 364", Repo = "https://github.com/TeamFusion364/2026RobotCode.git", Status = "ok",
+            new Entry { Id = "364-Fusion", LibModel = "as_kitbot2026", Model = "proc:0.64,0.64,0.62,#8A3BFF", Team = "FRC 364", Repo = "https://github.com/TeamFusion364/2026RobotCode.git", Status = "ok",
                 Note = "操作:駕駛 X 吸球、RT 射擊(砲塔自動瞄準)、LB 收回吸球。已自動把 simMode 改成 REAL",
                 PatchFile = @"src\main\java\frc\robot\Constants.java",
                 PatchFind = @"Mode simMode = Mode\.SIM;", PatchReplace = "Mode simMode = Mode.REAL;" },
@@ -156,5 +156,6 @@ namespace FrcSim
         }
     }
 }
+
 
 

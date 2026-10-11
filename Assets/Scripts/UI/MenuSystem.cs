@@ -97,6 +97,7 @@ namespace FrcSim
             if (startMenu == "setup") { ShowRobotSetup(); yield break; } if (startMenu == "pad") { ShowPadSetup(ShowRobotSetup, ShowMain); yield break; }
             if (startMenu == "controls") { ShowControls(); yield break; }
             if (startMenu == "about") { ShowAbout(); yield break; }
+            if (startMenu == "tutorial") { ShowTutorial(); yield break; }
             if (startMenu == "whatsnew") { ShowWhatsNew(); yield break; }
             if (startMenu == "pause") { ShowPause(); yield break; }
             if (startMenu == "settings") { settingsBack = ShowMain; ShowSettings(false); yield break; }
@@ -390,7 +391,7 @@ namespace FrcSim
             }
             return l.ToArray();
         }        Item ItReal() => new Item(() => Loc.T("setup.real") + ":  " + Loc.T(Prefs.GetInt("useRealCode", 0) == 1 ? "on" : "off"), () => { Prefs.SetInt("useRealCode", Prefs.GetInt("useRealCode", 0) == 1 ? 0 : 1); PlayerPrefs.Save(); });
-        Item ItCtl() => new Item(() => Loc.T("setup.ctl") + ":  " + Loc.T(Prefs.GetInt("tankMode", 1) == 1 ? "ctl.tank" : "ctl.swerve"), () => { Prefs.SetInt("tankMode", Prefs.GetInt("tankMode", 1) == 1 ? 0 : 1); PlayerPrefs.Save(); });
+        Item ItCtl() => new Item(() => Loc.T("setup.ctl") + ":  " + (Prefs.GetInt("useRealCode", 0) == 1 && !string.IsNullOrEmpty(Prefs.GetString("robotProject", "")) ? Z("依機器人程式自動", "Auto (from robot code)") : Loc.T(Prefs.GetInt("tankMode", 1) == 1 ? "ctl.tank" : "ctl.swerve")), () => { if (Prefs.GetInt("useRealCode", 0) == 1 && !string.IsNullOrEmpty(Prefs.GetString("robotProject", ""))) return; Prefs.SetInt("tankMode", Prefs.GetInt("tankMode", 1) == 1 ? 0 : 1); PlayerPrefs.Save(); });
         Item ItSpeed() => new Item(() => Loc.T("setup.speed") + ":  " + SettingsStore.MaxSpeedChoice.ToString("0.0") + " m/s", () => { SettingsStore.SpeedIndex = (SettingsStore.SpeedIndex + 1) % SettingsStore.SpeedOptions.Length; });
         Item ItAccel() => new Item(() => Loc.T("setup.accel") + ":  " + SettingsStore.AccelChoice.ToString("0") + " m/s²", () => { SettingsStore.AccelIndex = (SettingsStore.AccelIndex + 1) % SettingsStore.AccelOptions.Length; });
         Item ItAutoHP() => new Item(() => Z("人類球員自動放球", "Auto human player") + ":  " + Loc.T(Prefs.GetInt("autoHP", 1) == 1 ? "on" : "off"), () => { Prefs.SetInt("autoHP", Prefs.GetInt("autoHP", 1) == 1 ? 0 : 1); PlayerPrefs.Save(); });
@@ -590,8 +591,26 @@ namespace FrcSim
 
         void StartGame()
         {
+            if (Prefs.GetInt("tutSeen", 0) == 0 && !SuperSample.IsTestRun()) { ShowTutorial(); return; }   // 第一次:先看一頁教學
             Hide();
             GameSession.Begin(Rig);
+        }
+
+        void ShowTutorial()
+        { PreviewRobot.Want = false;
+            string Body() => Z(
+                "目標:把球(FUEL)射進自己的 HUB 得分。HUB 會輪流啟動:發亮=可得分,暗灰=現在不算分。\n\n移動\n  • 鍵盤 W A S D 移動、Q / E 旋轉\n  • 手把:左搖桿移動、右搖桿轉向\n\n收球與射擊\n  • I 放下/收起吸球手臂,開到球上自動吸\n  • 按住 空白鍵(或滑鼠左鍵)射擊,會自動瞄準 HUB\n\n其他\n  • C 切換視角   M 旁白   P 自動路線   G 小地圖   Esc 暫停   F1 全部按鍵",
+                "Goal: shoot FUEL into your HUB to score. HUBs take turns being active: glowing = scores, dim grey = no points right now.\n\nMove\n  • Keyboard: W A S D to move, Q / E to rotate\n  • Gamepad: left stick moves, right stick turns\n\nIntake & shoot\n  • I lowers/raises the intake; drive over fuel to collect\n  • Hold Space (or left click) to shoot — it auto-aims at the HUB\n\nMore\n  • C camera   M commentary   P auto paths   G minimap   Esc pause   F1 all keys");
+            var s = Build(() => Z("怎麼玩(只會出現一次)", "How to play (shown once)"), null, new[]
+            {
+                new Item(() => Z("知道了,開始!", "Got it — start!"), () => { Prefs.SetInt("tutSeen", 1); PlayerPrefs.Save(); StartGame(); }),
+            }, ShowRobotSetup, content =>
+            {
+                var tx = UiKit.Label("Tut", content, Body(), 18, UiTheme.Text, TextAnchor.UpperLeft);
+                tx.lineSpacing = 1.12f; tx.horizontalOverflow = HorizontalWrapMode.Wrap; tx.verticalOverflow = VerticalWrapMode.Truncate;
+                UiKit.PlaceTL(tx.rectTransform, 90, 300, 650, 600);
+            }, 940f);
+            Show(s, false);
         }
 
         void Resume()
@@ -699,6 +718,8 @@ namespace FrcSim
         }
     }
 }
+
+
 
 
 

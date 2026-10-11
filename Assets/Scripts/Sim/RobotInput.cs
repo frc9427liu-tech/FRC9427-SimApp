@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace FrcSim
 {
@@ -40,6 +40,7 @@ namespace FrcSim
             float rot = 0f;
             if (Input.GetKey(KeyCode.Q) || Input.GetKey(KeyCode.JoystickButton4) || Pad.Held(Pad.LB)) rot += 1f; // 逆時針
             if (Input.GetKey(KeyCode.E) || Input.GetKey(KeyCode.JoystickButton5) || Pad.Held(Pad.RB)) rot -= 1f; // 順時針
+            if (Prefs.GetInt("tankMode", 1) != 1 && !(GameSession.Hal != null && GameSession.Hal.Connected)) rot = Mathf.Clamp(rot - Deadband(Pad.RX), -1f, 1f);   // 標準操控:右搖桿左右 = 轉向
 
             // LEO 坦克模式:左/右搖桿各控一側輪(死區 0.08 + 平方,照 LEO DriveSubsystem.tankDrive)
             bool tank = Prefs.GetInt("tankMode", 1) == 1;
@@ -138,3 +139,5 @@ namespace FrcSim
         }
     }
 }
+
+

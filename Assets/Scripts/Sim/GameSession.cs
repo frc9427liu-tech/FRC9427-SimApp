@@ -102,6 +102,7 @@ namespace FrcSim
             // 真實機器人程式(設定畫面選的專案;沒選就用內建行為)
             // 預設關閉:真實程式模式還在實驗(閉環時序不穩),內建行為才是穩定版
             string proj = projectOverride ?? (Prefs.GetInt("useRealCode", 0) == 1 ? Prefs.GetString("robotProject", "") : "");
+            if (projectOverride == null && !string.IsNullOrEmpty(proj)) { Prefs.SetInt("tankMode", IsTankProfile(proj) ? 1 : 0); PlayerPrefs.Save(); }   // 操控方式由機器人程式決定(不讓使用者選):坦克設定檔=坦克,其他=標準全向
             bool tankMode = Prefs.GetInt("tankMode", 1) == 1;
             if (projectOverride == null && tankMode && !string.IsNullOrEmpty(proj) && !IsTankProfile(proj)) proj = "";   // 坦克模式只跑有坦克設定檔的專案(如 LEO)
             if (string.IsNullOrEmpty(proj) && Prefs.GetInt("useRealCode", 0) == 1 && !tankMode)
