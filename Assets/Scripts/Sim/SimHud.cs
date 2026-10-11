@@ -247,12 +247,9 @@ namespace FrcSim
                 // 儲球圓點(40 顆 = 2 排 20 點)
                 int cap = RobotMechanisms.Capacity, held = Mech.Held;
                 GUI.Label(new Rect(cx0 + 18, cy0 + 62, 120, 20), L("儲球", "FUEL") + $"  {held}/{cap}", Style(13, dim, TextAnchor.UpperLeft, FontStyle.Bold));
-                float dx = cx0 + 18, dy2 = cy0 + 84; int perRow = 20; float dsz = 10f, gap = (cw0 - 36f - perRow * dsz) / (perRow - 1);
-                for (int i = 0; i < cap; i++)
-                {
-                    var dr = new Rect(dx + (i % perRow) * (dsz + gap), dy2 + (i / perRow) * 14f, dsz, dsz);
-                    Rounded(dr, i < held ? new Color(1f, 0.86f, 0.12f, 1f) : new Color(1f, 1f, 1f, 0.14f), dsz / 2f);
-                }
+                float dx = cx0 + 18, dy2 = cy0 + 90; float trackW = cw0 - 36f;
+                Rounded(new Rect(dx, dy2, trackW, 8f), new Color(1f, 1f, 1f, 0.14f), 4f);
+                if (held > 0) Rounded(new Rect(dx, dy2, Mathf.Max(8f, trackW * held / (float)cap), 8f), new Color(1f, 0.86f, 0.12f, 1f), 4f);   // 儲球:一條細進度條取代 40 個圓點(減少雜訊)
                 // 飛輪轉速條 + 數字
                 float fy = cy0 + 116f;
                 GUI.Label(new Rect(cx0 + 18, fy - 2, 120, 20), L("飛輪", "FLYWHEEL"), Style(13, dim, TextAnchor.UpperLeft, FontStyle.Bold));
@@ -398,7 +395,7 @@ namespace FrcSim
             if (GameSession.Hal != null && GameSession.Hal.Connected && ScoreManager.ClockOn && ScoreManager.MatchTime < 20f)
             {
                 Panel(new Rect(cx - 280, 90, 560, 30), 0.75f);
-                GUI.Label(new Rect(cx - 280, 93, 560, 26), L("自動階段:你的機器人程式自己跑,手把暫時無效 — 按 N 跳過", "AUTO: your robot code is driving, sticks disabled — press N to skip"), Style(15, new Color(1f, 0.9f, 0.4f), TextAnchor.UpperCenter, FontStyle.Bold));
+                GUI.Label(new Rect(cx - 280, 93, 560, 26), L("自動階段:你的機器人程式自己跑,手把暫時無效 — 按 N 跳過", "AUTO: your robot code is driving, sticks disabled — press N to skip"), Style(15, new Color(1f, 0.84f, 0.04f), TextAnchor.UpperCenter, FontStyle.Bold));
             }
 
             // ---- 真實程式載入中:整個遊戲凍結,顯示進度 %(載入完才開始計時、才能動)
@@ -452,6 +449,7 @@ namespace FrcSim
         }
     }
 }
+
 
 
 
