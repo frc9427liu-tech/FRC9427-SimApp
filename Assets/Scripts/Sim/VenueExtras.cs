@@ -43,6 +43,7 @@ namespace FrcSim
     // 場館牆面:大型 LED 影片看板(動態流動色彩 + 標語)與天花板垂下的橫幅
     public static class VenueScreens
     {
+        public static Transform RigRoot;   // 上空燈架:高機位(全景/俯視)視角要隱藏,由 ArenaBuilder 掛到 ScoreCube.Overhead 底下
         static Material Font3D(Font f) { var ts = Resources.Load<Shader>("Shaders/FrcText3D"); if (ts == null || f == null) return null; var m = new Material(ts); m.mainTexture = f.material.mainTexture; return m; }
         static void Text(Transform p, string s, Vector3 pos, Quaternion rot, float size, Color c, Font f, int fs = 100)
         {
@@ -93,15 +94,16 @@ namespace FrcSim
             }
             // 場地上空燈架:兩條深色桁架 + 一排發亮燈頭(場館質感,從全景/導播視角看得到)
             {
+                RigRoot = new GameObject("LightRig").transform; RigRoot.SetParent(root, false);
                 var beamMat = new Material(Shader.Find("Standard")); beamMat.SetColor("_Color", new Color(0.05f, 0.055f, 0.065f)); beamMat.SetFloat("_Glossiness", 0.25f); beamMat.SetFloat("_Metallic", 0.6f);
                 var lampMat = new Material(Shader.Find("Unlit/Color")); lampMat.color = new Color(1f, 0.97f, 0.88f);
                 foreach (float bz in new[] { W * 0.22f, W * 0.78f })
                 {
-                    var beam = GameObject.CreatePrimitive(PrimitiveType.Cube); Object.Destroy(beam.GetComponent<Collider>()); beam.name = "LightBeam"; beam.transform.SetParent(root, false);
+                    var beam = GameObject.CreatePrimitive(PrimitiveType.Cube); Object.Destroy(beam.GetComponent<Collider>()); beam.name = "LightBeam"; beam.transform.SetParent(RigRoot, false);
                     beam.transform.position = new Vector3(L / 2f, 11.2f, bz); beam.transform.localScale = new Vector3(L * 0.92f, 0.22f, 0.32f); beam.GetComponent<Renderer>().sharedMaterial = beamMat; beam.GetComponent<Renderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
                     for (int k = 0; k < 9; k++)
                     {
-                        var lamp = GameObject.CreatePrimitive(PrimitiveType.Cube); Object.Destroy(lamp.GetComponent<Collider>()); lamp.name = "Lamp"; lamp.transform.SetParent(root, false);
+                        var lamp = GameObject.CreatePrimitive(PrimitiveType.Cube); Object.Destroy(lamp.GetComponent<Collider>()); lamp.name = "Lamp"; lamp.transform.SetParent(RigRoot, false);
                         lamp.transform.position = new Vector3(L * (0.1f + k * 0.1f), 11.0f, bz); lamp.transform.localScale = new Vector3(0.9f, 0.08f, 0.42f); lamp.GetComponent<Renderer>().sharedMaterial = lampMat; lamp.GetComponent<Renderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
                     }
                 }
@@ -109,6 +111,7 @@ namespace FrcSim
         }
     }
 }
+
 
 
 

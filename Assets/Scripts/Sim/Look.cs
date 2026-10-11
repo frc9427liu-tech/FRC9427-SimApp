@@ -174,11 +174,22 @@ namespace FrcSim
     // LED ring on the HUB rim. Placeholder geometry: a square ring at the opening height; align with the real hex opening if wanted.
     public class HubGlow : MonoBehaviour
     {
-        Material mat;
+        Material mat; Color baseCol; bool isBlue;
+        // HUB 啟動狀態可視化:啟動時隊色微微呼吸發亮,未啟動(輪替中/比賽結束)時暗灰,一眼看出現在哪邊能得分
+        void Update()
+        {
+            if (mat == null) return;
+            bool act = !ScoreManager.ClockOn || (isBlue ? ScoreManager.BlueActive : ScoreManager.RedActive);
+            if (ScoreManager.ClockOn && ScoreManager.Ended) act = false;
+            Color col = act ? baseCol : Color.Lerp(baseCol, new Color(0.35f, 0.36f, 0.4f), 0.65f);
+            float k = act ? 3f + 0.7f * Mathf.Sin(Time.time * 3f) : 0.45f;
+            mat.SetColor("_Color", col); mat.SetFloat("_Intensity", k);
+        }
         public static HubGlow Create(Transform parent, Vector3 hubCenterXZ, float size, float rimY, Color c)
         {
             var go = new GameObject("HubGlow"); go.transform.SetParent(parent, false);
             var hg = go.AddComponent<HubGlow>();
+            hg.baseCol = c; hg.isBlue = c.b > c.r;
             hg.mat = Look.GlowMaterial(c, 3f);
             float s = size - 0.1f, t = 0.035f;
             void Strip(string n, Vector3 off, Vector3 scale)
