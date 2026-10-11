@@ -38,10 +38,11 @@ namespace FrcSim
             // 場中央細環
             var ring = new GameObject("CenterRing"); ring.transform.SetParent(root, false);
             var lr = ring.AddComponent<LineRenderer>(); lr.useWorldSpace = true; lr.loop = true; lr.widthMultiplier = 0.035f; lr.sharedMaterial = white; lr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off; lr.alignment = LineAlignment.TransformZ;
-            int n = 72; lr.positionCount = n; float rad = 1.4f;
+            int n = 72; lr.positionCount = n; float rad = 2.45f;
             for (int i = 0; i < n; i++) { float a = i / (float)n * Mathf.PI * 2f; lr.SetPosition(i, new Vector3(L / 2f + Mathf.Cos(a) * rad, 0.012f, W / 2f + Mathf.Sin(a) * rad)); }
             ring.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
         }
     }
 }
+
 

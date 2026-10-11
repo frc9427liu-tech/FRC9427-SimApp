@@ -22,6 +22,11 @@ New-Item -ItemType Directory -Force $relDir | Out-Null
 $cs = Get-Content (Join-Path $root 'Assets\Scripts\Sim\UpdateCheck.cs') -Raw
 if ($cs -notmatch "Current = `"$([regex]::Escape($Version))`"") { throw "UpdateCheck.cs 的 Current 不是 $Version,先改好再重新打包。" }
 
+# 0. 更新內容檔(遊戲內「更新內容」頁讀它):新版本放最前面,保留最近 8 筆
+$wn = Join-Path $build 'whatsnew.txt'
+$old = @(); if (Test-Path $wn) { $old = @((Get-Content $wn -Raw -Encoding UTF8) -split "`n`n" | Where-Object { $_.Trim() -ne '' -and -not $_.StartsWith("v$Version ") }) }
+$entry = "v$Version  -  $Notes"
+(@($entry) + $old | Select-Object -First 8) -join "`n`n" | Set-Content $wn -Encoding UTF8
 # 1. 暫存要發佈的檔案(排除測試輸出與 log)
 robocopy $build $stage /E /XF padtest.txt selftest.txt leotest.txt halsimtest.txt realtest.txt fieldtest.txt balltest.txt walltest.txt outpostdump.txt *.log /XD logs _update /NFL /NDL /NJH /NJS | Out-Null
 Copy-Item (Join-Path $root 'Tools\使用說明.txt') (Join-Path $stage '使用說明.txt') -Force
@@ -74,3 +79,4 @@ git -C $root push -q 2>$null
 
 # 7. 建立 Release
 gh release create "v$Version" $fullZip $deltaZip -R frc9427liu-tech/FRC9427-SimApp --title "FRC 9427 模擬器 v$Version (Windows)" --notes $Notes --target unity-sim
+

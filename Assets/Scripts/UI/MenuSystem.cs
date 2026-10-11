@@ -97,6 +97,7 @@ namespace FrcSim
             if (startMenu == "setup") { ShowRobotSetup(); yield break; } if (startMenu == "pad") { ShowPadSetup(ShowRobotSetup, ShowMain); yield break; }
             if (startMenu == "controls") { ShowControls(); yield break; }
             if (startMenu == "about") { ShowAbout(); yield break; }
+            if (startMenu == "whatsnew") { ShowWhatsNew(); yield break; }
             if (startMenu == "pause") { ShowPause(); yield break; }
             if (startMenu == "settings") { settingsBack = ShowMain; ShowSettings(false); yield break; }
             if (startMenu == "modes") { ShowModes(); yield break; }
@@ -230,6 +231,7 @@ namespace FrcSim
                 new Item(() => Loc.T("menu.settings"), () => { settingsBack = ShowMain; ShowSettings(false); }),
                 new Item(() => Loc.T("menu.controls"), ShowControls),
                 new Item(() => Z("關於 / 致謝", "About / Credits"), ShowAbout),
+                new Item(() => (WnUnseen() ? "● " : "") + Z("更新內容", "What's new"), ShowWhatsNew),
                 new Item(() => Loc.T("menu.quit"),     Application.Quit),
             }, null);
             Show(s, false);
@@ -528,6 +530,24 @@ namespace FrcSim
         }
         Action lastControls;
 
+        static string WnPath => System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Application.dataPath), "whatsnew.txt");
+        static bool WnUnseen() { try { return System.IO.File.Exists(WnPath) && Prefs.GetString("wnSeen", "") != UpdateCheck.Current; } catch { return false; } }
+        void ShowWhatsNew()
+        { PreviewRobot.Want = false;
+            try { Prefs.SetString("wnSeen", UpdateCheck.Current); PlayerPrefs.Save(); } catch { }
+            string Body() { try { return System.IO.File.Exists(WnPath) ? System.IO.File.ReadAllText(WnPath, System.Text.Encoding.UTF8) : Z("(沒有更新紀錄)", "(no release notes)"); } catch { return ""; } }
+            var s = Build(() => Z("更新內容", "What's new"), null, new[]
+            {
+                new Item(() => Loc.T("menu.back"), ShowMain),
+            }, ShowMain, content =>
+            {
+                var tx = UiKit.Label("Wn", content, Body(), 17, UiTheme.Text, TextAnchor.UpperLeft);
+                tx.lineSpacing = 1.1f; tx.horizontalOverflow = HorizontalWrapMode.Wrap; tx.verticalOverflow = VerticalWrapMode.Truncate;
+                UiKit.PlaceTL(tx.rectTransform, 90, 320, 640, 590);
+            }, 940f);
+            Show(s, false);
+        }
+
         void ShowAbout()
         { PreviewRobot.Want = false;
             string Body() => Z(
@@ -678,6 +698,7 @@ namespace FrcSim
         }
     }
 }
+
 
 
 
