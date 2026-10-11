@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.UI;
@@ -33,7 +33,7 @@ namespace FrcSim
         public static GlassStyle Card() => new GlassStyle();
         public static GlassStyle HudPanel() => new GlassStyle { tint = new Color(.055f, .075f, .110f, .46f), refract = 7f, dispersion = .30f, rim = .9f, bevel = 12f, rimWidth = 1.2f, shadow = .30f, shadowOffset = 6f, pad = 20f };
         public static GlassStyle HudCard() => new GlassStyle { tint = new Color(.055f, .075f, .110f, .46f), tintAdapt = .24f, refract = 14f, bevel = 20f, rimWidth = 1.4f, shadow = .45f, shadowOffset = 14f, pad = 44f };
-        public static GlassStyle Pill() => new GlassStyle { overlay = true, tint = new Color(1, 1, 1, .10f), selTint = new Color(.25f, .62f, 1f, .62f), refract = 0, dispersion = 0, rim = .75f, bevel = 10f, rimWidth = 1.2f, shadow = 0, shadowOffset = 0, pad = 4f, tintAdapt = 0 };
+        public static GlassStyle Pill() => new GlassStyle { overlay = true, tint = new Color(1, 1, 1, .10f), selTint = new Color(.30f, .60f, 1f, .34f), refract = 0, dispersion = 0, rim = .75f, bevel = 10f, rimWidth = 1.2f, shadow = 0, shadowOffset = 0, pad = 4f, tintAdapt = 0 };
         public static GlassStyle PillPrimary() { var s = Pill(); s.tint = new Color(.25f, .62f, 1f, .55f); s.selTint = new Color(.32f, .68f, 1f, .85f); s.rim = 1f; return s; }
         public static GlassStyle BarTrack() { var s = Pill(); s.tint = new Color(1, 1, 1, .22f); s.rim = .35f; s.bevel = 6f; s.rimWidth = 1f; s.pad = 2f; return s; }
         public static GlassStyle BarFill(Color c) { var s = Pill(); s.tint = new Color(c.r, c.g, c.b, .95f); s.rim = .6f; s.bevel = 6f; s.rimWidth = 1f; s.pad = 2f; return s; }
@@ -311,3 +311,4 @@ namespace FrcSim
         }
     }
 }
+
