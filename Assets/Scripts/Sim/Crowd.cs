@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 namespace FrcSim
@@ -39,6 +39,8 @@ namespace FrcSim
         }
         static Mesh GetPrimitive(PrimitiveType t) { var g = GameObject.CreatePrimitive(t); var m = g.GetComponent<MeshFilter>().sharedMesh; Object.Destroy(g); return m; }
 
+        // 觀眾衣服降飽和、略暗:避免整片看台像彩虹糖,紅藍隊色依然辨得出來(高級感)
+        static Color Muted(Color c) { Color.RGBToHSV(c, out float h, out float sat, out float v); var r = Color.HSVToRGB(h, sat * 0.58f, v * 0.86f); r.a = c.a; return r; }
         public static void Build(Transform parent, float L, float W)
         {
             var sh = Resources.Load<Shader>("Shaders/FrcCrowd");
@@ -86,7 +88,7 @@ namespace FrcSim
                         else sc = neutral[rng.Next(neutral.Length)];
                         float scl = 0.92f + (float)rng.NextDouble() * 0.2f;
                         mList.Add(Matrix4x4.TRS(new Vector3(x + (float)(rng.NextDouble() - 0.5) * 0.08f, h + 0.05f, z), Quaternion.Euler(0f, yaw + (float)(rng.NextDouble() - 0.5) * 14f, 0f), Vector3.one * scl));
-                        shirt.Add(sc); skin.Add(skins[rng.Next(skins.Length)]); phase.Add((float)rng.NextDouble());
+                        shirt.Add(Muted(sc)); skin.Add(skins[rng.Next(skins.Length)]); phase.Add((float)rng.NextDouble());
                         if (mList.Count == 1000) Flush();
                     }
                 }
@@ -98,3 +100,4 @@ namespace FrcSim
         void Update() { Shader.SetGlobalFloat("_FrcExcite", Juice.Excitement); }
     }
 }
+
