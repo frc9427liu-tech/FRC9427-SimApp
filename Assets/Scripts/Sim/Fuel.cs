@@ -87,8 +87,11 @@ namespace FrcSim
             root = null;
         }
 
+        const int MaxFuel = 1400;   // 安全上限:長時間狂射時(實際比賽遠低於此)回收最舊的靜止球,避免幀時間越跑越慢
         public static Fuel Spawn(Vector3 pos, Vector3 vel, Collider ignoreRobot = null)
         {
+            if (All.Count >= MaxFuel)
+                for (int i = 0; i < All.Count; i++) { var o = All[i]; if (o != null && o.TryGetComponent<Rigidbody>(out var orb) && orb.IsSleeping()) { Remove(o); break; } }
             var g = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             g.name = "Fuel";
             g.transform.SetParent(root, false);

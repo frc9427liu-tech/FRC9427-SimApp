@@ -172,6 +172,7 @@ namespace FrcSim
         void OnGUI()
         {
             if (Drive == null) return;
+            if (MenuSystem.Blocking) return;   // 暫停/設定選單開著時 HUD 全部隱藏,避免左下角速度卡與提示列蓋住選單選項
             bool hasBtn = (ScoreManager.ClockOn && ScoreManager.Ended) || (GameSession.Drill && Mech != null);
             if (Event.current.type != EventType.Repaint && !hasBtn) return;   // Layout/KeyDown 等事件 HUD 沒事做(全是 Rect 定位),省掉每幀 2~3 倍的 OnGUI 成本
             if (Event.current.type == EventType.Repaint) UiGlass.HudFrame = Time.frameCount;
