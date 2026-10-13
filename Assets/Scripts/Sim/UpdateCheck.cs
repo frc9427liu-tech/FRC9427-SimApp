@@ -17,7 +17,7 @@ namespace FrcSim
     //   找不到差異包(或失敗)時退回「開啟下載頁」,讓使用者手動下載完整版。
     public class UpdateCheck : MonoBehaviour
     {
-        public const string Current = "0.5.69";
+        public const string Current = "0.5.77";
         const string Repo = "frc9427liu-tech/FRC9427-SimApp";
         const string ReleasesApi = "https://api.github.com/repos/" + Repo + "/releases?per_page=30";
         public const string Page = "https://github.com/" + Repo + "/releases/latest";
@@ -38,6 +38,12 @@ namespace FrcSim
         void Start()
         {
             dataPath = Application.dataPath; installDir = Path.GetDirectoryName(dataPath);
+            try
+            {   // 上次更新套用失敗 → apply.ps1 已還原舊版並留下訊息:這次啟動告訴使用者
+                string ef = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "FRC9427-Sim", "update-error.txt");
+                if (File.Exists(ef)) { Progress = (Loc.Lang == "en" ? "Last update failed and was rolled back: " : "上次更新失敗,已還原到舊版:") + File.ReadAllText(ef).Trim(); File.Delete(ef); }
+            }
+            catch (Exception) { }
             if (Array.IndexOf(Environment.GetCommandLineArgs(), "-batchmode") >= 0) return;   // 自動測試不連網
             if (SuperSample.IsTestRun() && Array.IndexOf(Environment.GetCommandLineArgs(), "-autoupdate") < 0) return;   // 測試啟動不查更新:否則大量測試會用光 GitHub API 每小時 60 次額度,使用者就收不到更新通知
             new Thread(Check) { IsBackground = true }.Start();
@@ -114,6 +120,7 @@ namespace FrcSim
                 Latest = latest.ToString();
                 Newer = latest > cur;
                 ChainOk = Newer && found.Count > 0 && found.TrueForAll(s => s.Url != null);
+                if (arr.Count >= 30 && found.Count >= arr.Count - 1) ChainOk = false;   // 落後太多:API 只回最近 30 筆,中間的版本可能不在清單裡 → 不走鏈式更新,改開下載頁(避免漏檔)
                 Status = Newer ? "update available" : "up to date";
                 if (Newer && Array.IndexOf(Environment.GetCommandLineArgs(), "-autoupdate") >= 0) StartUpdate();   // 測試用:發現新版就直接更新
             }
@@ -163,12 +170,12 @@ namespace FrcSim
                             if (e.FullName == "_delete.txt")
                             {
                                 using (var rd = new StreamReader(e.Open(), Encoding.UTF8))
-                                    foreach (var line in rd.ReadToEnd().Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)) deletes.Add(line.Trim());
+                                    foreach (var line in rd.ReadToEnd().Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)) { string dl = line.Trim(); if (!SafeRel(dl.Replace('/', Path.DirectorySeparatorChar), InstallDir)) throw new Exception("不安全的刪除路徑 " + dl); deletes.Add(dl); }
                                 continue;
                             }
                             if (e.FullName.EndsWith("/")) continue;
                             string rel = e.FullName.Replace('/', Path.DirectorySeparatorChar);
-                            if (rel.Contains("..")) throw new Exception("不安全的路徑 " + e.FullName);
+                            if (!SafeRel(rel, stage)) throw new Exception("不安全的路徑 " + e.FullName);
                             string dest = Path.Combine(stage, rel);
                             Directory.CreateDirectory(Path.GetDirectoryName(dest));
                             using (var src = e.Open()) using (var dst = File.Create(dest)) src.CopyTo(dst);
@@ -234,28 +241,63 @@ namespace FrcSim
 
         static ZipArchive ZipFile_Open(string path) => new ZipArchive(new FileStream(path, FileMode.Open, FileAccess.Read), ZipArchiveMode.Read);
 
+        // 套用腳本(v2):覆蓋前先備份「會被蓋掉的舊檔」;robocopy 失敗就還原備份、寫 update-error.txt(下次啟動提示)、仍啟動舊版;成功才刪暫存。
+        // 注意:這段是 C# 逐字字串,腳本裡只能用單引號(雙引號要寫成兩個)。
         const string ApplyScript = @"param($ProcId,$Src,$Dst,$Exe,$Work)
 try { Wait-Process -Id $ProcId -Timeout 60 -ErrorAction SilentlyContinue } catch {}
 Start-Sleep -Seconds 1
+$errFile = Join-Path (Split-Path $Work -Parent) 'update-error.txt'
+$bak = Join-Path $Work 'backup'
+New-Item -ItemType Directory -Force $bak | Out-Null
+$srcFull = (Resolve-Path $Src).Path.TrimEnd('\')
+$added = @()
+Get-ChildItem $Src -Recurse -File | ForEach-Object {
+    $rel = $_.FullName.Substring($srcFull.Length + 1)
+    $t = Join-Path $Dst $rel
+    if (Test-Path $t) { $b = Join-Path $bak $rel; New-Item -ItemType Directory -Force (Split-Path $b -Parent) | Out-Null; try { Copy-Item $t $b -Force } catch {} } else { $added += $t }
+}
 $ok = $false
 for ($i = 0; $i -lt 5 -and -not $ok; $i++) {
     robocopy $Src $Dst /E /IS /IT /R:2 /W:1 /NFL /NDL /NJH /NJS | Out-Null
     if ($LASTEXITCODE -lt 8) { $ok = $true } else { Start-Sleep -Seconds 2 }
 }
+if (-not $ok) {
+    robocopy $bak $Dst /E /IS /IT /R:2 /W:1 /NFL /NDL /NJH /NJS | Out-Null
+    foreach ($f in $added) { try { if (Test-Path $f) { [System.IO.File]::Delete($f) } } catch {} }
+    'file copy failed (locked by antivirus or another program?); rolled back to the previous version.' | Set-Content $errFile -Encoding UTF8
+    try { [System.IO.Directory]::Delete($Work, $true) } catch {}
+    Start-Process -FilePath $Exe -WorkingDirectory $Dst
+    exit 1
+}
 $del = Join-Path $Work '_delete.txt'
-if ($ok -and (Test-Path $del)) {
+if (Test-Path $del) {
     foreach ($line in (Get-Content $del)) {
-        if ($line -and -not $line.Contains('..')) {
+        if ($line -and -not $line.Contains('..') -and -not [System.IO.Path]::IsPathRooted($line) -and -not $line.Contains(':')) {
             $t = Join-Path $Dst $line
             try { if (Test-Path $t) { [System.IO.File]::Delete($t) } } catch {}
         }
     }
 }
+if (Test-Path $errFile) { try { Remove-Item $errFile -Force } catch {} }
 try { [System.IO.Directory]::Delete($Work, $true) } catch {}
 Start-Process -FilePath $Exe -WorkingDirectory $Dst
 ";
+
+        // 解壓路徑安全檢查:只允許安裝資料夾內的相對路徑(擋 .. / 絕對路徑 / 磁碟機代號 / NTFS 資料流 / 開頭分隔符)
+        static bool SafeRel(string rel, string root)
+        {
+            if (string.IsNullOrEmpty(rel) || rel.Contains("..") || rel.Contains(":") || Path.IsPathRooted(rel) || rel.StartsWith("\\") || rel.StartsWith("/")) return false;
+            string full = Path.GetFullPath(Path.Combine(root, rel)), r = Path.GetFullPath(root).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+            return full.StartsWith(r, StringComparison.OrdinalIgnoreCase);
+        }
     }
 }
+
+
+
+
+
+
 
 
 

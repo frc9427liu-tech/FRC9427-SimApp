@@ -9,6 +9,8 @@ New-Item -ItemType Directory -Force $out | Out-Null
 Add-Type -AssemblyName System.Drawing
 
 $cases = @(
+    @{ n = 'menu-main';     a = @('-menu','main') },
+    @{ n = 'menu-picker';   a = @('-menu','picker') },
     @{ n = 'menu-setup';    a = @('-menu','setup') },
     @{ n = 'menu-settings'; a = @('-menu','settings') },
     @{ n = 'menu-modes';    a = @('-menu','modes') },
@@ -44,6 +46,8 @@ foreach ($c in $cases) {
 $lines += "---`n失敗 $fail / $($cases.Count)"
 $lines | Set-Content (Join-Path $out 'report.txt') -Encoding utf8
 $lines
+
+
 
 
 

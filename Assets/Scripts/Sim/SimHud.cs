@@ -7,11 +7,12 @@ namespace FrcSim
     public class SimHud : MonoBehaviour
     {
         public SwerveDrive Drive;
+        bool coachInit; int coachStep, coachShots; Vector2 coachStart; float coachDoneT;
         public CameraRig Rig;
         public RobotMechanisms Mech;
         float fps;
         float born;
-        bool showDebug, showHelp;
+        bool showDebug, showHelp, dbgArgDone;
         Camera hudCam;
         static bool Zh => Loc.Lang == "zh";   // Loc.Lang 已走 Prefs 記憶體快取
         static string L(string zh, string en) => Zh ? zh : en;
@@ -36,7 +37,7 @@ namespace FrcSim
         void TestShot() { StartCoroutine(SaveShot()); }
         void FakeScore() { if (ScoreManager.Ended) return; ScoreManager.BlueScore += 2; if (Random.value < 0.5f) ScoreManager.RedScore += 1; }   // 測試旗標 -fakescore:模擬得分給結算折線圖截圖用
 
-        float tutStart = -1f; bool tutDone, tutKey; bool bestDone, bestNew; int bestPrev; bool showPad; float padWriteT;
+        float tutStart = -1f; bool tutDone, tutKey; bool bestDone, bestNew; int bestPrev, accXp, accRp; bool showPad; float padWriteT;
         readonly System.Collections.Generic.List<Vector3> chart = new System.Collections.Generic.List<Vector3>();   // (比賽秒數, 藍分, 紅分) 每秒取樣,結算折線圖用
         float chartNext;
         void SampleChart()
@@ -86,7 +87,7 @@ namespace FrcSim
             SampleChart();
             if (Input.GetKeyDown(KeyCode.F2)) showPad = !showPad;
             if (Time.unscaledTime >= padWriteT) { padWriteT = Time.unscaledTime + 0.25f; try { System.IO.File.WriteAllText(System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Application.dataPath), "padlive.txt"), Time.time.ToString("0.0") + "s  " + Pad.Raw() + "  pose=" + (Drive != null ? Drive.Pose2d.ToString("0.00") : "-") + "\n"); } catch { } }   // 即時手把狀態寫到檔案(KaiBot 在同一台電腦可讀,用來幫忙診斷手把)
-            if (Input.GetKeyDown(KeyCode.F3)) showDebug = !showDebug;
+            if (Input.GetKeyDown(KeyCode.F3)) showDebug = !showDebug; if (!dbgArgDone) { dbgArgDone = true; if (System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-f3") >= 0) showDebug = true; }
             if (tutStart >= 0f && Input.GetKeyDown(KeyCode.Space)) tutKey = true;
             if (Input.GetKeyDown(KeyCode.F12)) StartCoroutine(SaveShot());
             if (Input.GetKeyDown(KeyCode.G) && !MenuSystem.Blocking) Prefs.SetInt("minimap", Prefs.GetInt("minimap", 1) == 1 ? 0 : 1);
@@ -219,13 +220,13 @@ namespace FrcSim
             var cam = hudCam;
             if (cam != null)
             {
-                Vector3 sp = cam.WorldToScreenPoint(Drive.transform.position + Vector3.up * 1.3f);
+                Vector3 sp = cam.WorldToScreenPoint(Drive.transform.position + Vector3.up * 0.55f);   // 高度 1.3→0.55m:俯視鏡頭下 1.3m 會被投影到離車很遠的地方(試玩回報標記浮在 HUB 上)
                 if (SuperSample.Scale > 1.01f) { sp.x /= SuperSample.Scale; sp.y /= SuperSample.Scale; }   // 超取樣時相機像素是螢幕的 Scale 倍
-                if (sp.z > 0f)
+                if (sp.z > 1.6f)   // 鏡頭貼太近(第一人稱/貼車)就不標
                 {
                     var ys = Style(16, new Color(1f, 0.92f, 0.2f), TextAnchor.MiddleCenter, FontStyle.Bold);
                     var shadow = Style(16, Color.black, TextAnchor.MiddleCenter, FontStyle.Bold);
-                    var rc = new Rect(sp.x / sc - 40, (Screen.height - sp.y) / sc - 14 - 30, 80, 28);
+                    var rc = new Rect(sp.x / sc - 40, (Screen.height - sp.y) / sc - 14 - 18, 80, 28);
                     GUI.Label(new Rect(rc.x + 1.2f, rc.y + 1.2f, rc.width, rc.height), L("▼ 你", "▼ YOU"), shadow);
                     GUI.Label(rc, L("▼ 你", "▼ YOU"), ys);
                 }
@@ -233,9 +234,10 @@ namespace FrcSim
 
             // ---- 左下:機器人狀態卡(車速大字 / 儲球圓點 / 飛輪錶 / 射擊預測)
             float cx = W / 2f;
+            if (Account.IsGuest) GUI.Label(new Rect(16f, H - 70f, 360f, 20f), L("訪客 Guest — 不會儲存遊戲紀錄", "Guest — progress is not saved"), Style(13, new Color(1f, 0.78f, 0.45f, 0.9f)));
             if (Mech != null)
             {
-                float cw0 = 330f, ch0 = showDebug ? 236f : 172f, cx0 = 16f, cy0 = H - ch0 - 78f;
+                float cw0 = 330f, ch0 = showDebug ? 256f : 172f, cx0 = 16f, cy0 = H - ch0 - 78f;
                 var card = new Rect(cx0, cy0, cw0, ch0); Panel(card, 0.62f);
                 // 車速:大字
                 GUI.Label(new Rect(cx0 + 18, cy0 + 8, 150, 52), $"{Drive.Speed:0.0}", Style(44, Color.white, TextAnchor.UpperLeft, FontStyle.Bold));
@@ -268,9 +270,28 @@ namespace FrcSim
                 if (Mech.ShotHint != "")
                 {
                     Color hc = Mech.ShotWillScore ? new Color(0.4f, 1f, 0.5f) : new Color(1f, 0.7f, 0.25f);
-                    var hr = new Rect(cx - 150, H - 128, 300, 30); Panel(hr, 0.6f);
-                    GUI.Label(hr, Mech.ShotHint + "   " + L("吸球器", "intake") + " " + (Mech.IntakeDown ? L("放下", "down") : L("收起", "up")) + (Mech.Feeding ? L(" · 送球", " · feed") : "") + (Mech.Ejecting ? L(" · 吐球", " · eject") : ""), Style(15, hc, TextAnchor.MiddleCenter, FontStyle.Bold));
+                    string hintTxt = Mech.ShotHint + "   " + L("吸球器", "intake") + " " + (Mech.IntakeDown ? L("放下", "down") : L("收起", "up")) + (Mech.Feeding ? L(" · 送球", " · feed") : "") + (Mech.Ejecting ? L(" · 吐球", " · eject") : "");
+                    var hst = Style(15, hc, TextAnchor.MiddleCenter, FontStyle.Bold);
+                    float hw = Mathf.Clamp(hst.CalcSize(new GUIContent(hintTxt)).x + 48f, 300f, W - 40f);   // 寬度隨文字(原本固定 300,長提示兩端被切掉)
+                    var hr = new Rect(cx - hw / 2f, H - 128, hw, 30); Panel(hr, 0.6f);
+                    GUI.Label(hr, hintTxt, hst);
                 }
+            }
+            if (showDebug && Mech != null && Mech.Sim != null && GameSession.Hal != null && GameSession.Hal.Connected)
+            {   // 「程式→行為」對照:你的操作(送進機器人程式的搖桿/按鍵)→ 程式輸出的馬達行為,證明畫面上的動作都來自真實 Java 程式
+                var hal = GameSession.Hal; var pr = new Rect(W - 346f, 196f, 330f, 214f); Panel(pr, 0.66f);
+                GUI.Label(new Rect(pr.x + 14, pr.y + 8, pr.width - 24, 22), L("程式 → 行為(真實機器人程式)", "CODE → BEHAVIOR (real robot code)"), Style(14, new Color(0.45f, 0.8f, 1f), TextAnchor.UpperLeft, FontStyle.Bold));
+                string btn = ""; for (int i = 0; i < hal.Buttons.Length; i++) if (hal.Buttons[i]) btn += (btn == "" ? "" : "+") + "B" + (i + 1);
+                GUI.Label(new Rect(pr.x + 14, pr.y + 34, pr.width - 24, 20), $"{L("搖桿", "stick")} L({hal.Axes[0]:0.0},{hal.Axes[1]:0.0}) R({hal.Axes[4]:0.0},{hal.Axes[5]:0.0}) LT {hal.Axes[2]:0.0} RT {hal.Axes[3]:0.0}", Style(12, dim));
+                GUI.Label(new Rect(pr.x + 14, pr.y + 54, pr.width - 24, 20), $"{L("按鍵", "buttons")} {(btn == "" ? "-" : btn)}", Style(12, dim));
+                string[] rows = {
+                    $"{L("底盤", "Drivetrain")}   {Drive.Speed:0.0} m/s   {L("輸出", "out")} {Mathf.Clamp01(Drive.Speed / Mathf.Max(0.1f, SimConstants.MaxSpeed)) * 100f:0}%",
+                    $"{L("Intake 手臂", "Intake arm")}   {Mech.ArmExt * 100f:0} cm   {(Mech.IntakeDown ? L("放下", "down") : L("收起", "up"))}",
+                    $"{L("滾輪", "Roller")}   {Mech.RollerSigned:0.0} rps   {(Mech.Ejecting ? L("吐球", "eject") : Mech.RollerRps > 8f ? L("吸球", "intake") : "-")}",
+                    $"{L("飛輪", "Flywheel")}   {Mech.FlywheelRps:0.0} rps   {(Mech.Shooting ? L("發射中", "firing") : "-")}",
+                    $"{L("仰角板", "Hood")}   {Mech.HoodDeg:0.0}°   {L("砲塔", "Turret")} {Mech.TurretRad * Mathf.Rad2Deg:0}°",
+                };
+                for (int i = 0; i < rows.Length; i++) GUI.Label(new Rect(pr.x + 14, pr.y + 82 + i * 24, pr.width - 24, 22), rows[i], Style(14, Color.white, TextAnchor.UpperLeft));
             }
             GUI.Label(new Rect(16, H - 74, 300, 20), L("F1 按鍵說明   F3 詳細數據", "F1 help   F3 details"), Style(12, new Color(1f, 1f, 1f, 0.55f)));
             DrawMinimap(W);
@@ -352,7 +373,9 @@ namespace FrcSim
                 int bs = ScoreManager.BlueScore, rs = ScoreManager.RedScore;
                 string res = bs > rs ? L("勝利", "VICTORY") : bs < rs ? L("落敗", "DEFEAT") : L("平手", "DRAW");
                 Color rc2 = bs > rs ? new Color(0.4f, 1f, 0.55f) : bs < rs ? new Color(1f, 0.5f, 0.45f) : new Color(1f, 0.9f, 0.4f);
-                if (!bestDone) { bestDone = true; string bk = "best_" + (GameSession.VsAi ? GameSession.AiLevel : -1); bestPrev = Profile.GetInt(bk, 0); bestNew = bs > bestPrev; if (bestNew && !SuperSample.IsTestRun()) { Profile.SetInt(bk, bs); } }
+                if (!bestDone) { bestDone = true; string bk = "best_" + (GameSession.VsAi ? GameSession.AiLevel : -1); bestPrev = Profile.GetInt(bk, 0); bestNew = bs > bestPrev; if (bestNew && !SuperSample.IsTestRun()) { Profile.SetInt(bk, bs); } if (!SuperSample.IsTestRun() && !Account.IsGuest) Account.RecordMatch(bs, rs, GameSession.VsAi, GameSession.AiLevel, out accXp, out accRp); }
+                if (Account.IsGuest) GUI.Label(new Rect(cr.x, cr.y + 4, cw, 20), L("訪客 Guest — 不會儲存遊戲紀錄(經驗/段位/戰績)", "Guest — progress is not saved (XP / rank / record)"), Style(13, new Color(1f, 0.78f, 0.45f), TextAnchor.UpperCenter));
+                else GUI.Label(new Rect(cr.x, cr.y + 4, cw, 20), $"+{accXp} XP   {(accRp >= 0 ? "+" : "")}{accRp} RP   ·   Lv.{Account.Level}  {Account.TierName(Loc.Lang == "zh")} {Account.Division}", Style(13, new Color(0.7f, 0.85f, 1f), TextAnchor.UpperCenter));
                 GUI.Label(new Rect(cr.x, cr.y + 22, cw, 30), L("比賽結束", "MATCH OVER") + (bestNew ? "   ·   " + L("★ 新紀錄!", "★ NEW BEST!") : bestPrev > 0 ? "   ·   " + L("你的最佳 ", "Your best ") + bestPrev : ""), Style(18, bestNew ? new Color(1f, 0.85f, 0.3f) : dim, TextAnchor.UpperCenter, FontStyle.Bold));
                 GUI.Label(new Rect(cr.x, cr.y + 54, cw, 70), res, Style(54, rc2, TextAnchor.UpperCenter, FontStyle.Bold));
                 GUI.Label(new Rect(cr.x, cr.y + 132, cw, 50), $"{L("藍", "BLUE")} {bs}  :  {rs} {L("紅", "RED")}", Style(34, Color.white, TextAnchor.UpperCenter, FontStyle.Bold));
@@ -408,6 +431,26 @@ namespace FrcSim
                 GUI.Label(new Rect(cx - nw / 2f + 12, 128, nw - 24, 44), GameSession.Notice, ns);
             }
 
+            // ---- 新手練習場教練:一步一步提示(移動 → 放吸球手臂 → 射擊 → 進球)
+            if (GameSession.Rookie && Drive != null && Mech != null)
+            {
+                if (!coachInit) { coachInit = true; coachStart = Drive.Pose2d; coachShots = Mech.ShotsFired; }
+                if (Input.GetKeyDown(KeyCode.K)) coachStep = 5;   // K 跳過教練
+                if (coachStep == 0 && (Drive.Pose2d - coachStart).magnitude > 1.5f) coachStep = 1;
+                if (coachStep == 1 && Mech.IntakeDown) coachStep = 2;
+                if (coachStep == 2 && Mech.ShotsFired > coachShots) { coachStep = 3; coachDoneT = Time.time; }
+                if (coachStep == 3 && ScoreManager.BlueScore > 0) { coachStep = 4; coachDoneT = Time.time; }
+                if (coachStep == 3 && Time.time - coachDoneT > 8f) { coachStep = 4; coachDoneT = Time.time; }
+                if (coachStep < 5 && !(coachStep == 4 && Time.time - coachDoneT > 12f))
+                {
+                    string[] zh = { "第 1 步:用 W A S D 移動機器人(手把:左搖桿),先開出去 2 公尺", "第 2 步:按 I 放下吸球手臂,開到球上就會自動吸", "第 3 步:對著發亮的 HUB,按住 空白鍵 射擊(會自動瞄準)", "球飛出去了!進洞才算分,多試幾次", "進球了!對手是超爛 AI,放心練。按 Esc 可暫停/離開,F1 看全部按鍵" };
+                    string[] en = { "Step 1: Move with W A S D (gamepad: left stick) — drive out about 2 m", "Step 2: Press I to lower the intake, then drive over fuel to collect it", "Step 3: Face the glowing HUB and hold Space to shoot (auto-aims)", "Shot fired! It only scores if it goes in — keep trying", "Scored! The opponent is a terrible AI — practice freely. Esc pauses/exits, F1 lists all keys" };
+                    float cw = Mathf.Min(W - 20, 900);
+                    Panel(new Rect(cx - cw / 2f, 178, cw, 44), 0.85f);
+                    GUI.Label(new Rect(cx - cw / 2f + 12, 184, cw - 24, 36), L(zh[coachStep] + "   (K 跳過)", en[coachStep] + "   (K = skip)"), Style(18, new Color(0.55f, 0.95f, 0.7f), TextAnchor.UpperLeft, FontStyle.Bold));
+                }
+            }
+
             // ---- 真實程式模式的 AUTO 階段:機器人程式自己跑,手把無效(符合真實比賽),提示並可按 N 跳過
             if (GameSession.Hal != null && GameSession.Hal.Connected && ScoreManager.ClockOn && ScoreManager.MatchTime < 20f)
             {
@@ -444,7 +487,7 @@ namespace FrcSim
             bool help = showHelp || Time.unscaledTime - born < 15f;
             if (help)
             {
-                bool tank = Prefs.GetInt("tankMode", 1) == 1;
+                bool tank = Prefs.GetInt("tankMode", 0) == 1;
                 string t1 = tank
                     ? L("手把:左/右搖桿 = 左/右側輪   A 放手臂   駕駛 RT 滾輪(單手把用 B)   操作 RT 發射(到速自動送球)   RB 強制送球   十字鍵左右 砲塔   十字鍵上 收手臂   Start 暫停",
                         "Pad: L/R stick = left/right side   A arm   B roller   RT shoot   RB feed   D-pad L/R turret   Start pause")
@@ -466,6 +509,8 @@ namespace FrcSim
         }
     }
 }
+
+
 
 
 

@@ -9,3 +9,10 @@ Tools/step2glb/node_modules/
 *.csproj
 *.sln
 *.log
+
+# graft's local graph cache — regenerable, not committed (run `graft build`).
+/graft/
+
+# Google OAuth client (local builds only)
+Assets/Resources/google-client.txt
+Assets/Resources/google-client.txt.meta

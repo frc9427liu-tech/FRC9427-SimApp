@@ -15,7 +15,7 @@ namespace FrcSim
         readonly float[] started = new float[Voices];
         readonly Dictionary<string, float> lastPlay = new Dictionary<string, float>();
         static readonly Dictionary<string, float> MinGap = new Dictionary<string, float>
-        { {"ballhit",0.02f},{"shoot",0.04f},{"pluck",0.045f},{"ding",0.05f},{"tick",0.03f},{"bump",0.10f},{"uiclick",0.03f} };
+        { {"ballhit",0.02f},{"ballfloor",0.02f},{"ballwall",0.02f},{"ballmetal",0.02f},{"shoot",0.04f},{"pluck",0.045f},{"ding",0.05f},{"tick",0.03f},{"bump",0.10f},{"uiclick",0.03f} };
 
         class LoopV { public AudioSource src; public float vol, pitch = 1f, tVol, tPitch = 1f; public SfxGroup g; }
         readonly Dictionary<string, LoopV> loops = new Dictionary<string, LoopV>();

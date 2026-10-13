@@ -87,7 +87,7 @@ namespace FrcSim
             if (mine)
             {
                 ScorePop = 1f;
-                JuiceFX.AddTrauma(0.22f, 0.6f); JuiceFX.FovPunch(1.6f); Rumble.Pulse(Pad.DriverIndex, 0.35f, 0.25f, 0.18f);
+                JuiceFX.AddTrauma(0.12f, 0.3f); JuiceFX.FovPunch(0.8f); Rumble.Pulse(Pad.DriverIndex, 0.35f, 0.25f, 0.18f);   // 進球震動弄小小的(撞車才是主要震動)
                 Rumble.Driver(0f, 0.35f, 0.08f);
                 
             }
@@ -110,12 +110,22 @@ namespace FrcSim
             Fx.Collect(pos);
             if (mine) Rumble.Driver(0f, 0.12f, 0.04f);
         }
-        public static void OnBallImpact(Vector3 pos, float v)
+        // 依撞到的東西選音色:球/機器人=泡棉噗、地面=低悶、護欄=啪、金屬框=噹
+        public static string BallSound(Collision c)
+        {
+            var o = c.collider; if (o == null) return "ballhit";
+            if (o.GetComponentInParent<Fuel>() != null || o.attachedRigidbody != null) return "ballhit";
+            string n = o.name.ToLowerInvariant();
+            if (n.Contains("hub") || n.Contains("tower") || n.Contains("upright") || n.Contains("post") || n.Contains("trench")) return "ballmetal";
+            if (c.contactCount > 0 && c.GetContact(0).normal.y > 0.7f) return "ballfloor";
+            return "ballwall";
+        }
+        public static void OnBallImpact(Vector3 pos, float v, string snd = "ballhit")
         {
             float now = Time.unscaledTime; if (now < nextBall) return; nextBall = now + 0.02f;   // global cap 50/s
             float vol = Mathf.Clamp01(v / 7f) * 0.55f * Atten(pos);
             if (vol < 0.02f) return;
-            SfxBus.Play("ballhit", vol, 0.85f + Random.value * 0.35f, Pan(pos));
+            SfxBus.Play(snd, vol, 0.85f + Random.value * 0.35f, Pan(pos));
             if (v > 4f) Fx.Dust(pos);
         }
         public static void OnRobotBump(SwerveDrive d, Vector3 pos, float v)
@@ -126,7 +136,8 @@ namespace FrcSim
             Fx.Bump(pos, k);
             if (mine)
             {
-                JuiceFX.AddTrauma(0.15f + 0.45f * k, 0.8f);
+                // 撞車畫面震動(跟車視角):以前最小 trauma 0.15 平方後只有 2%,幾乎看不到 → 提高底限與上限;沒接手把(沒有震動馬達)時再加強一點
+                JuiceFX.AddTrauma((0.35f + 0.55f * k) * (Pad.DriverOnline ? 1f : 1.2f), 1f);
                 Rumble.Driver(0.3f + 0.7f * k, 0.2f + 0.5f * k, 0.12f + 0.2f * k);
                 if (k > 0.7f) HitStop(0.04f);
             }
@@ -160,7 +171,7 @@ namespace FrcSim
                 fly = m.FlywheelRps;
             }
             SfxBus.SetLoop("intake", "intake_loop", rps > 6f ? 0.10f + 0.10f * Mathf.Clamp01(rps / 40f) : 0f, Mathf.Clamp(0.5f + rps / 40f * 0.7f, 0.4f, 2f));
-            { float spd = play ? m.Drive.Speed : 0f; SfxBus.SetLoop("drive", "drive_loop", spd > 0.15f ? 0.035f + 0.06f * Mathf.Clamp01(spd / 4f) : 0f, Mathf.Clamp(0.7f + spd * 0.16f, 0.6f, 1.7f)); }   // 車身移動聲:隨速度升調/變大
+            { float spd = play ? Mathf.Max(m.Drive.Speed, Mathf.Abs(m.Drive.Omega) * 0.35f) : 0f; SfxBus.SetLoop("drive", "drive_loop", spd > 0.1f ? 0.12f + 0.26f * Mathf.Clamp01(spd / 4f) : 0f, Mathf.Clamp(0.7f + spd * 0.16f, 0.6f, 1.7f)); }   // 音量從 0.035~0.095 提高到 0.12~0.38(使用者反映聽不到),轉彎原地自轉也有聲   // 車身移動聲:隨速度升調/變大
             SfxBus.SetLoop("fly", "fly_loop", fly > 4f ? 0.08f + 0.10f * Mathf.Clamp01(fly / 80f) : 0f, Mathf.Clamp(0.4f + fly / 75f, 0.4f, 2.5f));
             SfxBus.SetLoop("crowd", "crowd_loop", play ? 0.03f + 0.07f * Mathf.Clamp01(excitement) : 0f, 1f + 0.10f * excitement, SfxGroup.Amb);
             SfxBus.SetLoop("music", "music_loop", play ? 0.35f : 0.6f, ScoreManager.Phase == "END GAME" ? 1.05f : 1f, SfxGroup.Music);

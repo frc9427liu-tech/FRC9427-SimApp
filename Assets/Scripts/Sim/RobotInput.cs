@@ -16,7 +16,12 @@ namespace FrcSim
         static float PadAxis(string name) { try { return Input.GetAxisRaw(name); } catch (System.Exception) { return 0f; } }
 
         static float TankShape(float v) { v = Mathf.Abs(v) < 0.08f ? 0f : v; return Mathf.Sign(v) * v * v; }
+        public static bool FeelEasy => Prefs.GetInt("feelEasy", 0) == 1;   // 設定:手感模式 0=忠實(照真程式) 1=順手
+        static float FeelComp(float v) { if (!FeelEasy) return v; float a = Mathf.Abs(v); return a < 0.08f ? 0f : Mathf.Sign(v) * Mathf.Sqrt(a); }
+        static float SoftShape(float v) { float a = Mathf.Abs(v); if (a < 0.08f) return 0f; return Mathf.Sign(v) * Mathf.Pow(Mathf.Min(1f, (a - 0.08f) / 0.92f), 1.3f); }
         static float Deadband(float v, float d = 0.08f) => Mathf.Abs(v) < d ? 0f : v;
+
+        static float StickCurve(float v) { return Mathf.Sign(v) * Mathf.Pow(Mathf.Abs(v), 1.6f); }   // 搖桿輸出曲線:小幅度更細膩、推到底仍是 1
 
         void Update()
         {
@@ -32,29 +37,48 @@ namespace FrcSim
             // 第二台機器人用方向鍵,所以這裡要扣掉方向鍵對 Horizontal/Vertical 軸的貢獻(WASD 與手把仍有效)
             float arrowV = (Input.GetKey(KeyCode.UpArrow) ? 1f : 0f) - (Input.GetKey(KeyCode.DownArrow) ? 1f : 0f);
             float arrowH = (Input.GetKey(KeyCode.RightArrow) ? 1f : 0f) - (Input.GetKey(KeyCode.LeftArrow) ? 1f : 0f);
-            float fwd = Mathf.Clamp(Input.GetAxisRaw("Vertical") - arrowV + Pad.LY, -1f, 1f);        // W/上 = +1,手把左搖桿上 = +1
-            float strafeRight = Mathf.Clamp(Input.GetAxisRaw("Horizontal") - arrowH + Pad.LX, -1f, 1f);
-            fwd = Deadband(fwd);
-            strafeRight = Deadband(strafeRight);
+            float kbF0 = (Input.GetKey(KeyCode.W) ? 1f : 0f) - (Input.GetKey(KeyCode.S) ? 1f : 0f), kbH0 = (Input.GetKey(KeyCode.D) ? 1f : 0f) - (Input.GetKey(KeyCode.A) ? 1f : 0f);   // 鍵盤只讀 WASD:Unity 舊版 Horizontal/Vertical 軸也會讀手把左搖桿,和 Pad.LX/LY 疊加會讓搖桿靈敏度變兩倍(手感怪)
+            // 左搖桿:圓形死區(0.10)+ 重新縮放 + 對「向量長度」套曲線,斜推不會被各軸壓扁、也不會有一大塊死區後突然跳速
+            Vector2 ls = new Vector2(Pad.LX, Pad.LY);
+            float lm = ls.magnitude;
+            if (lm < 0.10f) ls = Vector2.zero;
+            else { float m = Mathf.Min(1f, (lm - 0.10f) / 0.88f); ls = ls / lm * Mathf.Pow(m, 1.3f); }
+            float fwd = Mathf.Clamp(kbF0 + ls.y, -1f, 1f);        // W/上 = +1,手把左搖桿上 = +1
+            float strafeRight = Mathf.Clamp(kbH0 + ls.x, -1f, 1f);
+            fwd = Deadband(fwd, 0.02f);
+            strafeRight = Deadband(strafeRight, 0.02f);
 
             float rot = 0f;
             if (Input.GetKey(KeyCode.Q) || Input.GetKey(KeyCode.JoystickButton4) || Pad.Held(Pad.LB)) rot += 1f; // 逆時針
             if (Input.GetKey(KeyCode.E) || Input.GetKey(KeyCode.JoystickButton5) || Pad.Held(Pad.RB)) rot -= 1f; // 順時針
-            if (Prefs.GetInt("tankMode", 1) != 1 && !(GameSession.Hal != null && GameSession.Hal.Connected)) rot = Mathf.Clamp(rot - Deadband(Pad.RX), -1f, 1f);   // 標準操控:右搖桿左右 = 轉向
+            if (Prefs.GetInt("tankMode", 0) != 1 && !(GameSession.Hal != null && GameSession.Hal.Connected)) rot = Mathf.Clamp(rot - Deadband(Pad.RX), -1f, 1f);   // 標準操控:右搖桿左右 = 轉向
 
             // LEO 坦克模式:左/右搖桿各控一側輪(死區 0.08 + 平方,照 LEO DriveSubsystem.tankDrive)
-            bool tank = Prefs.GetInt("tankMode", 1) == 1;
+            bool tank = Prefs.GetInt("tankMode", 0) == 1;
             float tankL = 0f, tankR = 0f, rawL = 0f, rawR = 0f;
             if (tank)
             {
                 float kbF = (Input.GetKey(KeyCode.W) ? 1f : 0f) - (Input.GetKey(KeyCode.S) ? 1f : 0f);
                 float kbR = (Input.GetKey(KeyCode.D) ? 1f : 0f) - (Input.GetKey(KeyCode.A) ? 1f : 0f);
-                rawL = Mathf.Clamp(Pad.LY + kbF + kbR, -1f, 1f);
-                rawR = Mathf.Clamp(Pad.RY + kbF - kbR, -1f, 1f);
-                tankL = TankShape(rawL);
-                tankR = TankShape(rawR);
-                // 內建模式也套 LEO 的加速度限制(kSlewRatePerSec = 4/秒),才看得出起步/煞車的慣性
-                float slewStep = 4f * Time.deltaTime;
+                if (Prefs.GetInt("easyTank", 1) == 1)
+                {
+                    // 簡易操控(預設):左搖桿 = 移動(上下=前後、左右=轉彎),右搖桿左右也能轉;再換算成左右輪,真實程式拿到的仍是原本的坦克軸
+                    float turn = Mathf.Clamp(Pad.LX + Pad.RX + kbR, -1f, 1f);
+                    float drv = Mathf.Clamp(Pad.LY + kbF, -1f, 1f);
+                    float sc = Mathf.Max(1f, Mathf.Abs(drv) + Mathf.Abs(turn));   // 全推前+全推轉時不超過 1,保持比例
+                    rawL = (drv + turn) / sc; rawR = (drv - turn) / sc;
+                }
+                else
+                {
+                    rawL = Mathf.Clamp(Pad.LY + kbF + kbR, -1f, 1f);
+                    rawR = Mathf.Clamp(Pad.RY + kbF - kbR, -1f, 1f);
+                }
+                // 內建操控(沒跑真實程式):溫和曲線(死區 0.08 後重新縮放、^1.3),起步立刻有速度;不再平方(平方會讓推一半只剩 25% 速度,使用者回報「啟動超慢」)
+                bool realLive = GameSession.Hal != null && GameSession.Hal.Connected;
+                tankL = realLive ? TankShape(rawL) : SoftShape(rawL);
+                tankR = realLive ? TankShape(rawR) : SoftShape(rawR);
+                // 內建模式的加速度限制:跑真實程式時照 LEO(kSlewRatePerSec = 4/秒);純內建操控放寬到 10/秒(0.1 秒到全速)
+                float slewStep = (realLive ? 4f : 10f) * Time.deltaTime;
                 slewL = Mathf.MoveTowards(slewL, tankL, slewStep); slewR = Mathf.MoveTowards(slewR, tankR, slewStep);
                 tankL = slewL; tankR = slewR;
                 Drive.FieldCentric = false;   // 坦克:往前 = 車頭(intake)方向,不是場地方向
@@ -75,7 +99,7 @@ namespace FrcSim
                 bool kA = Input.GetKey(KeyCode.I), kB = Input.GetKey(KeyCode.O), kUp = Input.GetKey(KeyCode.U);
                 for (int i = 0; i < 6; i++) { h.Axes[i] = 0f; h.Axes2[i] = 0f; }
                 for (int i = 0; i < h.Buttons.Length; i++) { h.Buttons[i] = false; h.Buttons2[i] = false; }
-                h.Axes[1] = -rawL; h.Axes[5] = -rawR;
+                h.Axes[1] = -FeelComp(rawL); h.Axes[5] = -FeelComp(rawR);   // 手感模式「順手」:LEO 程式會把搖桿平方,這裡先開根號預補償,推一半就是約一半速度;「忠實」原樣送出
                 bool dual = Pad2.Separate;
                 bool kBrt = kB && BindingMap.IntakeOnDriverRT, kBbtn = kB && !BindingMap.IntakeOnDriverRT;
                 if (dual)
@@ -139,5 +163,7 @@ namespace FrcSim
         }
     }
 }
+
+
 
 

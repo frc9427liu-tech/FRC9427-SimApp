@@ -11,11 +11,12 @@ namespace FrcSim
         IEnumerator Start()
         {
             var sb = new StringBuilder();
+            Prefs.Isolated = true;   // padtest 會改 tankMode/easyTank:只在記憶體,不動使用者的存檔
             sb.AppendLine("real XInput: " + Pad.Raw());
             yield return new WaitForSeconds(1.0f);
             var d = GameSession.Drive; var m = GameSession.Mech;
             while (FuelManager.All.Count > 0) FuelManager.Remove(FuelManager.All[FuelManager.All.Count - 1]);
-            Prefs.SetInt("tankMode", 1);
+            Prefs.SetInt("tankMode", 1); Prefs.SetInt("easyTank", 0);   // 這段測「左右搖桿各控一側輪」的經典坦克;簡易操控(預設)另測
             d.SetPose(new Vector2(6f, 4f), 0f); yield return new WaitForSeconds(0.3f);
             Vector2 p0 = d.Pose2d; float h0 = d.HeadingRad;
             Pad.SetFake(true, ly: 1f, ry: 1f); yield return new WaitForSeconds(1.5f);
@@ -24,6 +25,12 @@ namespace FrcSim
             p0 = d.Pose2d; h0 = d.HeadingRad;
             Pad.SetFake(true, ly: -1f, ry: 1f); yield return new WaitForSeconds(1.0f);
             sb.AppendLine($"tank left back/right fwd 1s: moved {(d.Pose2d - p0).magnitude:0.00} m, heading change {Mathf.DeltaAngle(h0 * Mathf.Rad2Deg, d.HeadingRad * Mathf.Rad2Deg):0.0} deg");
+            // 簡易操控(預設):左搖桿推一半,0.5 秒後速度應 >= 1.0 m/s(舊的平方曲線+4/s 限速只有約 0.3)
+            Prefs.SetInt("easyTank", 1); Pad.SetFake(true); yield return new WaitForSeconds(1.0f);
+            d.SetPose(new Vector2(6f, 4f), 0f); yield return new WaitForSeconds(0.3f);
+            Pad.SetFake(true, ly: 0.5f); yield return new WaitForSeconds(0.5f);
+            float sp = d.Speed; Pad.SetFake(true); yield return new WaitForSeconds(0.8f);
+            sb.AppendLine($"easy tank half stick 0.5s: speed={sp:0.00} m/s (expect >= 1.0) {(sp >= 1.0f ? "PASS" : "FAIL")}");
             Pad.SetFake(true, buttons: Pad.A); yield return new WaitForSeconds(0.5f);
             sb.AppendLine($"A held: IntakeDown={m.IntakeDown}");
             Pad.SetFake(true); yield return new WaitForSeconds(0.5f);

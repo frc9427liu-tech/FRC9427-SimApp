@@ -10,6 +10,7 @@ namespace FrcSim
         public SwerveDrive Drive;
         public RobotMechanisms Mech;
         public int Level = 1;
+        public bool Blue;   // Demo 自動展示:同一套 AI 開藍方(玩家那台)
 
         enum St { Collect, GoShoot, Shoot, Defend }
         St st = St.Collect;
@@ -33,6 +34,7 @@ namespace FrcSim
             Level = Mathf.Clamp(Level, 0, 3);
             speed = Speed[Level]; shootAt = ShootAt[Level]; spread = Spread[Level]; think = Think[Level];
             Mech.SpreadDeg = spread; Mech.FireInterval = FireInt[Level]; Mech.CollectPerSec = CollectRate[Level];
+            if (GameSession.Rookie) { speed = 0.22f; shootAt = 3; spread = 16f; think = 2.2f; Mech.SpreadDeg = 16f; Mech.FireInterval = 0.8f; Mech.CollectPerSec = 0.4f; }   // 新手練習場:又慢又愛亂射
             hub = Mech.TargetHub;
             aiTest = System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-aitest") >= 0;
             if (aiTest) { log = new System.Text.StringBuilder(); var ca = System.Environment.GetCommandLineArgs(); int si = System.Array.IndexOf(ca, "-aitestsec"); if (si >= 0 && si + 1 < ca.Length) float.TryParse(ca[si + 1], out aiEnd); }
@@ -48,7 +50,7 @@ namespace FrcSim
 
             Vector2 p = Drive.Pose2d;
             Vector2 want = Vector2.zero; float wantHeading = Drive.HeadingRad; bool turn = false;
-            bool active = !ScoreManager.ClockOn || ScoreManager.RedActive;   // HUB 沒啟動時射了不算分:改成繼續撿球
+            bool active = !ScoreManager.ClockOn || (Blue ? ScoreManager.BlueActive : ScoreManager.RedActive);   // HUB 沒啟動時射了不算分:改成繼續撿球
 
             if (Time.time >= nextThink)
             {
@@ -58,7 +60,7 @@ namespace FrcSim
                 if (st == St.Shoot && (Mech.Held <= 0 || !active)) { st = St.Collect; hasTarget = false; lastShootEnd = Time.time; }
                 if (st == St.GoShoot && Mech.Held <= 0) { st = St.Collect; hasTarget = false; }
                 // 防守(困難以上):自己的 HUB 沒啟動、對手有球又啟動時,去擋玩家與 HUB 之間(最多 6 秒,之後 10 秒內不再擋)
-                if (Level >= 2 && GameSession.Drive != null && GameSession.Mech != null)
+                if (!Blue && Level >= 2 && GameSession.Drive != null && GameSession.Mech != null)
                 {
                     bool blueActive = !ScoreManager.ClockOn || ScoreManager.BlueActive;
                     int ph = GameSession.Mech.Held;
@@ -182,11 +184,12 @@ namespace FrcSim
             {
                 if (f == null) continue;
                 var q = new Vector2(f.transform.position.x, f.transform.position.z);
-                if (f.transform.position.y > 0.35f || f.transform.position.x < 6.5f || f.transform.position.x > hub.x + 0.8f) continue;                    // 還在空中/架上
+                float fx = f.transform.position.x;
+                if (f.transform.position.y > 0.35f || (Blue ? (fx > L - 6.5f || fx < hub.x - 0.8f) : (fx < 6.5f || fx > hub.x + 0.8f))) continue;   // 紅:x 6.5..HUB+0.8;藍(Demo)鏡射                    // 還在空中/架上
                 bool nearHub = false; foreach (var h in hubs) if ((q - h).magnitude < 1.5f) nearHub = true;
                 if (nearHub) continue;                                            // HUB 腳下不去撿(會卡住)
-                if (q.x < 0.5f || q.x > L - 0.5f || q.y < 0.5f || q.y > W - 0.5f) continue;   // 貼牆的不撿
-                float d = (q - p).magnitude + (q.x < L / 2f ? 2.5f : 0f);       // 偏好自己這半邊與中立區
+                if (q.x < 0.5f || q.x > L - 0.5f || q.y < 0.95f || q.y > W - 0.95f) continue;   // 貼牆的不撿(y 方向留 0.95m:車身半寬 0.4+護欄,0.5 會卡牆)   // 貼牆的不撿
+                float d = (q - p).magnitude + ((Blue ? q.x > L / 2f : q.x < L / 2f) ? 2.5f : 0f);       // 偏好自己這半邊與中立區
                 if (d < best) { best = d; target = q; hasTarget = true; }
             }
         }
@@ -196,7 +199,7 @@ namespace FrcSim
             // 離自己 HUB 約 2.8m、在己方聯盟區那一側;依目前位置選靠近的角度(±40°)
             Vector2 toMe = p - hub;
             float ang = Mathf.Atan2(toMe.y, toMe.x);   // 從 HUB 看過去的方位
-            float baseAng = 0f;                         // 真實規則:只能從己方聯盟區射(紅方 HUB 靠右牆那一側 = +x),中立區那面有球網擋板
+            float baseAng = Blue ? Mathf.PI : 0f;                        // 真實規則:只能從己方聯盟區射(紅方 HUB 靠右牆那一側 = +x),中立區那面有球網擋板
             float delta = Mathf.Clamp(Wrap(ang - baseAng), -0.7f, 0.7f);
             float a = baseAng + delta;
             return hub + new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * 2.8f;

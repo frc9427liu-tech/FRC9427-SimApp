@@ -20,7 +20,37 @@ namespace FrcSim
             var go = new GameObject("PreviewRobot"); I = go.AddComponent<PreviewRobot>();
         }
 
-        public static float Dist = 2.7f;   // 滾輪縮放:鏡頭距離(公尺)
+        void Start() { if (System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-carswitchtest") >= 0) StartCoroutine(CarSwitchTest()); }
+
+        // -carswitchtest -menu picker:循環切換全部車款 2 輪,量「切換到車載入完成」的時間、場上 PreviewCar 數量(洩漏)、記憶體成長。結果 carswitchtest.txt。
+        // PASS:每次 <= 4.0 s、PreviewCar 恆為 1、記憶體成長 < 400MB。
+        System.Collections.IEnumerator CarSwitchTest()
+        {
+            var sb = new System.Text.StringBuilder(); yield return new WaitForSecondsRealtime(8f);
+            var list = new System.Collections.Generic.List<string> { "" }; list.AddRange(RobotModels.List());
+            long mem0 = System.GC.GetTotalMemory(true); float worst = 0f; int maxCars = 0; bool ok = true;
+            for (int round = 0; round < 2; round++)
+                foreach (var f in list)
+                {
+                    float t0 = Time.realtimeSinceStartup; RobotModels.Selected = f;
+                    string want = string.IsNullOrEmpty(f) ? "proc:0.72,0.74,0.55,#28B0FF" : f;
+                    while (Time.realtimeSinceStartup - t0 < 10f) { if (car != null && shown == want && enterT >= 0f && car.GetComponentInChildren<Renderer>() != null) break; yield return null; }
+                    float dt = Time.realtimeSinceStartup - t0; worst = Mathf.Max(worst, dt);
+                    yield return null;   // 等舊車的 Destroy 在這個影格結束時生效,再數數量
+                    int n = 0; foreach (var go in FindObjectsByType<Transform>(FindObjectsSortMode.None)) if (go.name == "PreviewCar") n++;
+                    maxCars = Mathf.Max(maxCars, n);
+                    sb.AppendLine($"r{round} {(f == "" ? "(builtin)" : f)}: ready in {dt:0.00}s  PreviewCar objects={n}");
+                    if (dt > 4f || n != 1) ok = false;
+                    yield return new WaitForSecondsRealtime(0.3f);
+                }
+            long mem1 = System.GC.GetTotalMemory(true); float growMB = (mem1 - mem0) / 1048576f; if (growMB > 400f) ok = false;
+            sb.AppendLine($"worst={worst:0.00}s maxCars={maxCars} managedMemGrowth={growMB:0.0}MB");
+            sb.AppendLine(ok ? "PASS" : "FAIL");
+            System.IO.File.WriteAllText(System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Application.dataPath), "carswitchtest.txt"), sb.ToString());
+            Application.Quit();
+        }
+
+        public static float Dist = 2.3f;   // 2.7→2.3:預覽車更大(Apple 評審:車只占畫面 1/4);再近會壓到卡片條   // 滾輪縮放:鏡頭距離(公尺)
         public static float DragDeg;   // 滑鼠左鍵在右側空白處拖曳 = 轉動檢視角度
         GUIStyle nameSt, subSt; string dims = ""; float dimsT;
         void OnGUI()
@@ -38,9 +68,9 @@ namespace FrcSim
                 dims = any ? Mathf.Max(bb.size.x, bb.size.z).ToString("0.00") + " × " + Mathf.Min(bb.size.x, bb.size.z).ToString("0.00") + " × " + bb.size.y.ToString("0.00") + " m" : "";
             }
             if (dims != "") mdl = mdl + "   ·   " + dims;
-            var r = new Rect(Screen.width * 0.45f, Screen.height - 130 * sc, Screen.width * 0.52f, 56 * sc);
+            var r = new Rect(Screen.width * 0.45f, 34 * sc, Screen.width * 0.52f, 56 * sc);   // 移到右上角:原本在右下,和選車卡片條/說明列互相壓住
             GUI.color = new Color(0, 0, 0, 0.5f); GUI.Label(new Rect(r.x + 2, r.y + 2, r.width, r.height), team, nameSt); GUI.color = Color.white; GUI.Label(r, team, nameSt);
-            GUI.color = new Color(1, 1, 1, 0.75f); GUI.Label(new Rect(r.x, r.y + 40 * sc, r.width, 24 * sc), mdl + "   ·   " + Loc.T("hint.drag"), subSt); GUI.color = Color.white;
+            GUI.color = new Color(1, 1, 1, 0.75f); GUI.Label(new Rect(r.x, r.y + 56 * sc, r.width, 24 * sc), mdl + "   ·   " + Loc.T("hint.drag"), subSt); GUI.color = Color.white;
         }
 
         void Update()
@@ -60,7 +90,9 @@ namespace FrcSim
             if (car != null)
             {
                 enterT += Time.unscaledDeltaTime;
-                float k = Mathf.Clamp01(enterT / 1.15f), ease = 1f - Mathf.Pow(1f - k, 3f);
+                if (enterT > 0.15f && enterT < 1.3f && Input.anyKeyDown) enterT = 1.3f;   // 任何按鍵/點擊直接跳過進場動畫(換車要連續按時不用等)
+                float k = Mathf.Clamp01(Mathf.Max(enterT, 0f) / 1.3f), ease = 1f - Mathf.Pow(1f - k, 3f);
+                ease += 0.035f * Mathf.Sin(k * Mathf.PI) * (1f - k);   // 到位前微微衝過頭再回彈(煞車感)
                 Vector3 start = restPos + new Vector3(-9f, 0f, 1.5f);
                 car.transform.position = Vector3.Lerp(start, restPos, ease);
                 car.transform.rotation = Quaternion.Euler(0f, Mathf.Lerp(18f, 0f, ease), 0f);   // 滑進來時車頭略偏,到位後轉正
@@ -73,9 +105,9 @@ namespace FrcSim
             int my = token;
             restPos = Center + Vector3.up * 0.13f;
             car = new GameObject("PreviewCar"); car.transform.position = restPos + new Vector3(-9f, 0f, 1.5f);
-            enterT = 0f;
+            enterT = -100f;   // 模型載入完才開始開進場(否則載入要 1 秒以上,動畫在看不到的地方跑完,車直接「蹦」出來)
             float yaw = (file.StartsWith("proc:")) ? 0f : ModelLibrary.Is(file) ? ModelLibrary.Yaw(file) : (file == "kepler.glb") ? 90f : PlayerPrefs.GetFloat("modelYaw", 0f);
-            RobotModels.Attach(car.transform, file, yaw, ok => { if (my != token && car != null) { } }, false);
+            RobotModels.Attach(car.transform, file, yaw, ok => { if (my == token && car != null) enterT = 0f; }, false);
         }
 
         void Clear() { token++; if (car != null) Destroy(car); car = null; shown = "\u0001"; }

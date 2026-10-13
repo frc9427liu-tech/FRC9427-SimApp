@@ -90,7 +90,7 @@ namespace FrcSim
                     Debug.Log($"[RobotModels] Instantiate returned {inst}");
                     if (inst)
                     {
-                        cadModel = file.StartsWith("team_"); Fix(root, robot, yawDeg, red); cadModel = false; doubleSide = file.StartsWith("team_"); CombineByMaterial(root); doubleSide = false;
+                        cadModel = file.StartsWith("team_"); Fix(root, robot, yawDeg, red); cadModel = false; doubleSide = file.StartsWith("team_"); if (System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-cadraw") < 0) CombineByMaterial(root); doubleSide = false;   // -cadraw:診斷用,不合併/不做雙面,直接看 glTFast 原始網格的光照
                         ok = true;
                     }
                     else UnityEngine.Object.Destroy(root);
@@ -104,7 +104,9 @@ namespace FrcSim
         static readonly Dictionary<int, Material> matCache = new Dictionary<int, Material>();
 
         // 把整個模型依材質合併成少數幾個 Mesh(模型不會動,只會跟著車走),draw call 從幾百降到十幾個;不可讀的 Mesh 就略過
-        static bool cadModel;
+        static bool cadModel, dumpedMat;
+        static readonly float CadK = ParseCadK();   // -cadk <倍率>:診斷用,調 CAD 反照率亮度(預設 1)
+        static float ParseCadK() { var a = System.Environment.GetCommandLineArgs(); int i = System.Array.IndexOf(a, "-cadk"); float v; return i >= 0 && i + 1 < a.Length && float.TryParse(a[i + 1], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out v) ? v : 0.7f; }   // 預設 0.7:選單預覽可讀,遊戲俯視頂面不過白
         static bool doubleSide;   // CAD 匯入的薄板模型(Standard 材質剔除背面會破洞):合併時補一份反向面
 
         static void DoubleSide(Mesh m)
@@ -112,11 +114,13 @@ namespace FrcSim
             var v = m.vertices; var n = m.normals; var t = m.triangles; int vc = v.Length;
             var nv = new Vector3[vc * 2]; var nn = new Vector3[vc * 2];
             System.Array.Copy(v, nv, vc); System.Array.Copy(v, 0, nv, vc, vc);
-            for (int i = 0; i < vc; i++) { nn[i] = n.Length == vc ? n[i] : Vector3.up; nn[vc + i] = -nn[i]; }
+            for (int i = 0; i < vc; i++) { nn[i] = n.Length == vc ? n[i] : Vector3.up; nn[vc + i] = nn[i]; }   // 反向面沿用原法線:CAD 的三角形繞向常和法線相反,取負會讓看得到的那一面朝光反側 → 全黑
             var nt = new int[t.Length * 2]; System.Array.Copy(t, nt, t.Length);
             for (int i = 0; i < t.Length; i += 3) { nt[t.Length + i] = t[i] + vc; nt[t.Length + i + 1] = t[i + 2] + vc; nt[t.Length + i + 2] = t[i + 1] + vc; }
             var uv = m.uv; Vector2[] nuv = null; if (uv.Length == vc) { nuv = new Vector2[vc * 2]; System.Array.Copy(uv, nuv, vc); System.Array.Copy(uv, 0, nuv, vc, vc); }
             m.Clear(); m.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32; m.vertices = nv; m.normals = nn; if (nuv != null) m.uv = nuv; m.triangles = nt;
+            Debug.Log($"[RobotModels] DoubleSide verts={vc} normals={n.Length} firstN={(n.Length > 0 ? n[0].ToString("0.00") : "-")}");
+            m.RecalculateNormals();   // 一律用三角形繞向重算(Onshape 的 glb 沒有法線,CombineMeshes 可能補出零向量):正反兩份各自朝外
         }
 
         static void CombineByMaterial(GameObject root)
@@ -147,7 +151,7 @@ namespace FrcSim
                     var go = new GameObject("Combined");
                     go.transform.SetParent(root.transform, false);
                     go.AddComponent<MeshFilter>().sharedMesh = mesh;
-                    var mr = go.AddComponent<MeshRenderer>(); mr.sharedMaterial = kv.Key; mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
+                    var mr = go.AddComponent<MeshRenderer>(); mr.sharedMaterial = kv.Key; mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On; if (doubleSide) mr.receiveShadows = false;   // 雙面薄板自己接收陰影會有一大片黑斑(陰影痘),CAD 車不接收陰影
                 }
                 foreach (var r in used) r.enabled = false;
                 Debug.Log($"[RobotModels] combined {used.Count} renderers into {groups.Count} meshes");
@@ -165,20 +169,22 @@ namespace FrcSim
                 {
                     var m = mats[i];
                     Color c = new Color(0.6f, 0.62f, 0.66f);
+                    if (m != null && !dumpedMat) { dumpedMat = true; var sh = m.shader; var sbp = new System.Text.StringBuilder("[RobotModels] mat shader=" + sh.name + " props:"); for (int pi = 0; pi < sh.GetPropertyCount(); pi++) if (sh.GetPropertyType(pi) == UnityEngine.Rendering.ShaderPropertyType.Color) sbp.Append(' ').Append(sh.GetPropertyName(pi)).Append('=').Append(m.GetColor(sh.GetPropertyName(pi)).ToString("0.00")); Debug.Log(sbp.ToString()); }
                     if (m != null)
                     {
                         if (m.HasProperty("baseColorFactor")) c = m.GetColor("baseColorFactor");
                         else if (m.HasProperty("_BaseColor")) c = m.GetColor("_BaseColor");
                         else if (m.HasProperty("_Color")) c = m.GetColor("_Color");
                     }
-                    c.a = 1f; if (cadModel) c = new Color(c.r * 0.3f, c.g * 0.3f, c.b * 0.3f, 1f);   // CAD 匯入件原色偏亮,場館強光下頂面會過曝成白
+                    c.a = 1f; if (cadModel) { float lum = 0.3f * c.r + 0.59f * c.g + 0.11f * c.b; float tgt = CadK * (GameSession.Active ? 0.65f : 1f) * (0.17f + 0.40f * lum); /* 比賽中(俯視、後製提亮)再暗一點,車頂才不會白掉 */ float sc = lum > 0.001f ? Mathf.Min(4f, tgt / lum) : 1f; c = new Color(Mathf.Clamp01(c.r * sc), Mathf.Clamp01(c.g * sc), Mathf.Clamp01(c.b * sc), 1f); if (lum <= 0.001f) c = new Color(tgt, tgt, tgt, 1f); }   // 亮度重新映射:暗件提亮、亮件壓低(場景有薄霧/亮度提升,亮件會變白、暗件會變黑)   // GetColor 已是顯示用色(不再做 gamma、不再整體 ×0.3:那會讓每個零件都變近黑且顏色全擠成同一個);只把過亮的壓到亮度 0.55 防頂面過曝
                     if (red && c.b > c.r + 0.15f && c.b > c.g) c = new Color(c.b, c.g * 0.4f, c.r * 0.6f, 1f);   // 紅方:藍色保險桿改紅色
-                    { Color32 c32 = c; int key = (c32.r << 16) | (c32.g << 8) | c32.b | (cadModel ? 1 << 24 : 0); if (!matCache.TryGetValue(key, out var cm)) { cm = cadModel ? FieldBuilder.MakeMat(c, 0.06f, 0f) : FieldBuilder.MakeMat(c); matCache[key] = cm; } mats[i] = cm; }   // 同色共用材質,才能合批
+                    { Color32 c32 = c; int key = (c32.r << 16) | (c32.g << 8) | c32.b | (cadModel ? 1 << 24 : 0); if (!matCache.TryGetValue(key, out var cm)) { if (cadModel) { cm = new Material(Look.Sh("FrcCad", "FrcSim/Cad")); cm.SetColor("_Color", c); if (cm.shader.name != "FrcSim/Cad") { cm.color = c; } } else cm = FieldBuilder.MakeMat(c); matCache[key] = cm; /* CAD 用專屬 shader(固定半球假光,不吃場景燈光);找不到 shader 時退回 Standard */ } mats[i] = cm; }   // CAD:自發光墊底(背光面/選單預覽不會全黑,受光面仍由 0.3 倍底色控制不過曝);同色共用材質,才能合批   // 同色共用材質,才能合批
                 }
                 r.sharedMaterials = mats;
                 r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
             }
 
+            Debug.Log($"[RobotModels] matCache={matCache.Count} cad={cadModel}");
             Debug.Log($"[RobotModels] Fix: renderers={root.GetComponentsInChildren<Renderer>(true).Length} meshFilters={root.GetComponentsInChildren<MeshFilter>(true).Length} children={root.transform.childCount} active={root.activeInHierarchy}");
             root.transform.localRotation = Quaternion.Euler(0f, yawDeg, 0f) * fixPre;
             // 貼地置中:底部對齊車底,XZ 置中於機器人中心

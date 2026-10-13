@@ -39,6 +39,12 @@ namespace FrcSim
         {
             float dt = Mathf.Min(Time.unscaledDeltaTime, 0.05f);
             float motion = JuiceSettings.Shake;
+            if (CameraRig.ActiveMode != 1 && Time.timeScale != 0f && motion > 0f)
+            {
+                // 只有「跟車視角」才有畫面震動;操縱者/俯瞰/導播等其他視角不震(手把震動仍照常)
+                trauma = 0f; kickOff = kickVel = Vector3.zero; fovOff = fovVel = 0f; speedFov = 0f;
+                return;
+            }
             if (Time.timeScale == 0f || motion <= 0f)
             {
                 trauma = 0f; kickOff = kickVel = Vector3.zero; fovOff = fovVel = 0f; speedFov = 0f;

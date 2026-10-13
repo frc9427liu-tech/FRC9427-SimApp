@@ -57,8 +57,8 @@ namespace FrcSim
                     return;
                 }
                 if (System.Array.IndexOf(a, "-installtest") >= 0) { new GameObject("InstallTest").AddComponent<InstallTest>(); return; }
-                { int mi = System.Array.IndexOf(a, "-model"); if (mi >= 0 && mi + 1 < a.Length) { Prefs.SetString("robotModel", a[mi + 1]); PlayerPrefs.DeleteKey("modelYaw"); } }
-                { int li0 = System.Array.IndexOf(a, "-lang"); if (li0 >= 0 && li0 + 1 < a.Length) Loc.Lang = a[li0 + 1]; }
+                { int mi = System.Array.IndexOf(a, "-model"); if (mi >= 0 && mi + 1 < a.Length) { Prefs.SetStringTransient("robotModel", a[mi + 1]); } }   // 只在記憶體,不寫登錄檔
+                { int li0 = System.Array.IndexOf(a, "-lang"); if (li0 >= 0 && li0 + 1 < a.Length) Prefs.SetStringTransient("lang", a[li0 + 1]); }
                 { int my = System.Array.IndexOf(a, "-modelyaw"); if (my >= 0 && my + 1 < a.Length) PlayerPrefs.SetFloat("modelYaw", float.Parse(a[my + 1])); }
                 int pti = System.Array.IndexOf(a, "-projtest");
                 if (pti >= 0 && pti + 1 < a.Length) { GameSession.Begin(rig, false, a[pti + 1]); new GameObject("ProjTest").AddComponent<ProjTest>(); return; }
@@ -108,6 +108,18 @@ namespace FrcSim
                 return;
             }
 
+            if (System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-drivetest") >= 0)
+            {
+                GameSession.Begin(rig);
+                new GameObject("DriveTest").AddComponent<DriveTest>();
+                return;
+            }
+            if (System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-intaketest") >= 0)
+            {
+                GameSession.Begin(rig);
+                new GameObject("IntakeTest").AddComponent<IntakeTest>();
+                return;
+            }
             if (System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-balltest") >= 0)
             {
                 GameSession.Begin(rig);

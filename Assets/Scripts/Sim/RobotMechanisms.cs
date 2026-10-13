@@ -217,14 +217,24 @@ namespace FrcSim
 
         void Collect()
         {
-            if (CollectPerSec > 0f && Time.time < nextCollect) return;
-            Vector3 center = transform.TransformPoint(new Vector3(SimConstants.BumperLength / 2f + 0.22f, 0.05f, 0f));
-            var hits = Physics.OverlapBox(center, new Vector3(0.28f, 0.14f, 0.34f), transform.rotation);
+            // 不是磁鐵:只有滾輪前緣約 18cm 內的球才受影響。滾輪位置 = 保險桿前緣 + 手臂伸出量;球先被滾輪「拉」著往車內滾,碰到滾輪才算吸入。
+            float bh = SimConstants.BumperLength / 2f, rollerX = bh + ArmExt;
+            float xMin = bh - 0.05f, xMax = rollerX + 0.18f;
+            Vector3 center = transform.TransformPoint(new Vector3((xMin + xMax) / 2f, 0.05f, 0f));
+            var hits = Physics.OverlapBox(center, new Vector3((xMax - xMin) / 2f, 0.14f, 0.32f), transform.rotation);
+            Vector3 fwd = transform.TransformDirection(Vector3.right);
             foreach (var h in hits)
             {
                 if (Held >= Capacity) break;
                 var f = h.GetComponent<Fuel>();
                 if (f == null) continue;
+                float lx = transform.InverseTransformPoint(f.transform.position).x;
+                if (lx > rollerX + 0.06f)
+                {   // 還沒碰到滾輪:滾輪把它往車內拉(速度 = 車速 + 往後 1.8 m/s)
+                    var frb = f.GetComponent<Rigidbody>();
+                    if (frb != null && Drive != null) { var dv = new Vector3(Drive.Velocity.x, frb.linearVelocity.y, Drive.Velocity.y); frb.linearVelocity = dv - fwd * 1.8f; }
+                    continue;
+                }
                 Held++; TotalCollected++;
                 if (CollectPerSec > 0f) nextCollect = Time.time + 1f / CollectPerSec;
                 SpawnAbsorb(f.transform.position);
@@ -342,6 +352,13 @@ namespace FrcSim
             if (!crossed) ShotHint = Loc.Lang == "en" ? "ball can't reach HUB height" : "球飛不到 HUB 高度";
             else if (inside) ShotHint = Loc.Lang == "en" ? "predicted: in" : "預測進球";
             else ShotHint = along < 0f ? (Loc.Lang == "en" ? $"short {Mathf.Abs(along):0.0} m" : $"太短 {Mathf.Abs(along):0.0} m") : (Loc.Lang == "en" ? $"long {along:0.0} m" : $"太長 {along:0.0} m");
+            // 補上「為什麼射了不會得分」的規則原因(不是彈道問題時使用者才不會以為壞了)
+            if (this == GameSession.Mech && ScoreManager.ClockOn)
+            {
+                bool en = Loc.Lang == "en";
+                if (!ScoreManager.BlueActive) ShotHint = (en ? "your HUB is inactive (shift) · " : "你的 HUB 目前未啟動(輪替) · ") + ShotHint;
+                else if (pos.x > SimConstants.AllianceZoneDepth + 0.3f) ShotHint = (en ? "outside your alliance zone · " : "不在己方聯盟區(球網擋板) · ") + ShotHint;
+            }
             arc.enabled = true;
             arc.positionCount = arcPts.Count;
             arc.SetPositions(arcPts.ToArray());

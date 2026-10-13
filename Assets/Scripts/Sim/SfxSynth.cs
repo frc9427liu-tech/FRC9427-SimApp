@@ -16,7 +16,7 @@ namespace FrcSim
 
         static readonly Dictionary<string, float> Lens = new Dictionary<string, float>
         {
-            {"ding",0.5f},{"ballin",0.65f},{"thump",0.3f},{"shoot",0.14f},{"ballhit",0.10f},{"bump",0.35f},{"ramp",0.4f},{"pluck",0.12f},{"beep",0.16f},
+            {"ding",0.5f},{"ballin",0.65f},{"thump",0.3f},{"shoot",0.14f},{"ballhit",0.10f},{"ballfloor",0.14f},{"ballwall",0.09f},{"ballmetal",0.11f},{"bump",0.35f},{"ramp",0.4f},{"pluck",0.12f},{"beep",0.16f},
             {"buzzer",1.6f},{"tick",0.05f},{"uiclick",0.06f},{"stinger_start",1.0f},{"stinger_end",1.3f},{"stinger_win",1.7f},
             {"stinger_lose",1.7f},{"roar",2.4f},{"intake_loop",1f},{"fly_loop",1f},{"drive_loop",1f},{"crowd_loop",4f},{"music_loop",8f}
         };
@@ -109,6 +109,27 @@ namespace FrcSim
                     float a = Lp(900f, sr);
                     for (int i = 0; i < n; i++) { float t = i * dt; lp += a * (Nz() - lp);
                         d[i] = (lp * 2.2f * Mathf.Exp(-t * 55f) + Mathf.Sin(TAU * (230f - 70f * Mathf.Min(1f, t * 20f)) * t) * 0.7f * Mathf.Exp(-t * 48f)) * Atk(t, 0.0012f); }
+                    break;
+                }
+                case "ballfloor": // 球落地(地毯):更低更悶的「噗」,衰減稍慢
+                {
+                    float a = Lp(520f, sr);
+                    for (int i = 0; i < n; i++) { float t = i * dt; lp += a * (Nz() - lp);
+                        d[i] = (lp * 1.8f * Mathf.Exp(-t * 38f) + Mathf.Sin(TAU * (150f - 45f * Mathf.Min(1f, t * 14f)) * t) * 0.8f * Mathf.Exp(-t * 30f)) * Atk(t, 0.0015f); }
+                    break;
+                }
+                case "ballwall": // 球打到 polycarbonate 護欄:稍亮的「啪」,帶一點板子共鳴
+                {
+                    float a = Lp(2400f, sr);
+                    for (int i = 0; i < n; i++) { float t = i * dt; lp += a * (Nz() - lp);
+                        d[i] = (lp * 1.6f * Mathf.Exp(-t * 70f) + Mathf.Sin(TAU * 420f * t) * 0.35f * Mathf.Exp(-t * 60f) + Mathf.Sin(TAU * 180f * t) * 0.4f * Mathf.Exp(-t * 40f)) * Atk(t, 0.0008f); }
+                    break;
+                }
+                case "ballmetal": // 球打到 HUB/立柱金屬框:短促「噹」帶泛音
+                {
+                    float a = Lp(3200f, sr);
+                    for (int i = 0; i < n; i++) { float t = i * dt; lp += a * (Nz() - lp);
+                        d[i] = (lp * 0.9f * Mathf.Exp(-t * 90f) + Mathf.Sin(TAU * 640f * t) * 0.45f * Mathf.Exp(-t * 32f) + Mathf.Sin(TAU * 1330f * t) * 0.2f * Mathf.Exp(-t * 45f)) * Atk(t, 0.0006f); }
                     break;
                 }
                 case "bump":   // 機器人互撞/撞牆:保險桿布面的悶響(低頻 50~120Hz 的「咚」 + 低中頻布料拍擊),不是金屬聲

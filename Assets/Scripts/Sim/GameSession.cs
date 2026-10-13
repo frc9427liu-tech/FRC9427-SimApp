@@ -6,6 +6,7 @@ namespace FrcSim
     public static class GameSession
     {
         public static bool Active;
+        public static bool Demo;   // 自動展示模式(AI 幫玩家開車,作品集 demo 用)
         public static float StartTime;
         public static string Notice = "";        // 開局時要提醒使用者的訊息(例如專案沒有模擬設定檔)
         public static float NoticeUntil;
@@ -15,7 +16,8 @@ namespace FrcSim
 
         static GameObject robot, robot2, score, hud;
         public static bool PracticeMode;      // 練習模式:沒有比賽時鐘(不限時、不結束)
-        public static bool VsAi;               // 模擬比賽:紅方機器人由 AI 操作
+        public static bool Rookie;             // 新手練習場:對手是超弱 AI,並顯示步驟教練
+        public static bool VsAi;             // 模擬比賽:紅方機器人由 AI 操作
         public static int AiLevel { get => Prefs.GetInt("aiLevel", 1); set { Prefs.SetInt("aiLevel", Mathf.Clamp(value, 0, 3)); PlayerPrefs.Save(); } }
         public static CameraRig LastRig;
         public static int AiTestLevel = -1;   // 測試用:-vsai N(不寫入玩家設定)
@@ -61,6 +63,8 @@ namespace FrcSim
             BindingMap.Loaded = false; BindingMap.IntakeOnDriverRT = false; BindingMap.List.Clear();
             { var ca = System.Environment.GetCommandLineArgs(); int vi = System.Array.IndexOf(ca, "-vsai"); if (vi >= 0 && vi + 1 < ca.Length) { VsAi = true; int.TryParse(ca[vi + 1], out AiTestLevel); } }
             if (Active) return;
+            if (projectOverride == null) { var rca = System.Environment.GetCommandLineArgs(); int rpi = System.Array.IndexOf(rca, "-realproject"); if (rpi >= 0 && rpi + 1 < rca.Length) projectOverride = rca[rpi + 1]; }   // 測試/截圖用:-realproject <資料夾> 直接跑真實程式(不動使用者設定)
+            if (System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-demo") >= 0) { Demo = true; VsAi = true; }   // 測試/展示:-demo 直接自動展示
             Active = true;
             StartTime = Time.time;
             SimConstants.MaxSpeed = SettingsStore.MaxSpeedChoice;   // 開始前選的最高車速
@@ -83,6 +87,12 @@ namespace FrcSim
             Mech.RobotCollider = robot.GetComponent<Collider>();
             Mech.TurretVisual = turretVis;
             Mech.ArmVisual = armVis;
+            if (Demo)
+            {   // 自動展示:玩家那台交給 AI(最高難度、藍方),使用者不用操作
+                var pin = robot.GetComponent<RobotInput>(); if (pin != null) pin.enabled = false;
+                var pai = robot.AddComponent<Robot2AI>(); pai.Drive = Drive; pai.Mech = Mech; pai.Level = 3; pai.Blue = true;
+                Debug.Log("[Demo] player AI attached, hub=" + Mech.TargetHub + " fieldCentric=" + Drive.FieldCentric);
+            }
 
             // 第二台機器人(紅方,內建行為,方向鍵操控)
             if (Prefs.GetInt("secondRobot", 1) == 1)
@@ -102,8 +112,9 @@ namespace FrcSim
             // 真實機器人程式(設定畫面選的專案;沒選就用內建行為)
             // 預設關閉:真實程式模式還在實驗(閉環時序不穩),內建行為才是穩定版
             string proj = projectOverride ?? (Prefs.GetInt("useRealCode", 0) == 1 ? Prefs.GetString("robotProject", "") : "");
+            if (Prefs.GetInt("ctlMig1", 0) == 0) { Prefs.SetInt("ctlMig1", 1); if (string.IsNullOrEmpty(Prefs.GetString("robotProject", ""))) Prefs.SetInt("tankMode", 0); PlayerPrefs.Save(); }   // 一次性遷移:沒選機器人程式的人預設改標準操控(以前預設坦克,左搖桿只控左輪,手感怪)
             if (projectOverride == null && !string.IsNullOrEmpty(proj)) { Prefs.SetInt("tankMode", IsTankProfile(proj) ? 1 : 0); PlayerPrefs.Save(); }   // 操控方式由機器人程式決定(不讓使用者選):坦克設定檔=坦克,其他=標準全向
-            bool tankMode = Prefs.GetInt("tankMode", 1) == 1;
+            bool tankMode = Prefs.GetInt("tankMode", 0) == 1;
             if (projectOverride == null && tankMode && !string.IsNullOrEmpty(proj) && !IsTankProfile(proj)) proj = "";   // 坦克模式只跑有坦克設定檔的專案(如 LEO)
             if (string.IsNullOrEmpty(proj) && Prefs.GetInt("useRealCode", 0) == 1 && !tankMode)
             {
@@ -135,7 +146,7 @@ namespace FrcSim
                         : (Loc.Lang == "en" ? "No simulation profile yet (Sim\\" + SimProject.Profile(chosen) + ".mech.json); using built-in behavior. See docs/ARCHITECTURE.md" : "這個專案還沒有模擬設定檔(Sim\\" + SimProject.Profile(chosen) + ".mech.json),目前只能用內建行為;見 docs/ARCHITECTURE.md");
                 }
                 else if (string.IsNullOrEmpty(proj) && string.IsNullOrEmpty(chosen)) Notice = Loc.Lang == "en" ? "No robot project chosen — using built-in behavior (Robot setup → Robot code)" : "還沒選機器人程式專案,使用內建行為(機器人設定 → 機器人程式)";
-                if (Notice != "") { NoticeUntil = Time.time + 12f; Debug.LogWarning("[GameSession] " + Notice); }
+                if (Notice != "") { NoticeUntil = Time.time + 5f; Debug.LogWarning("[GameSession] " + Notice); }
             }
             if (!string.IsNullOrEmpty(proj) && System.IO.File.Exists(System.IO.Path.Combine(proj, "gradlew.bat")))
             {
@@ -174,6 +185,7 @@ namespace FrcSim
             var input = robot.AddComponent<RobotInput>();
             input.Drive = Drive;
             input.Mech = Mech;
+            if (Demo) input.enabled = false;   // 自動展示:玩家輸入關掉,由 AI 開車
             if (AutoDrillTest) { PracticeMode = true; StartDrill(); }
 
             if (selfTest)
@@ -196,7 +208,7 @@ namespace FrcSim
         public static void End(CameraRig rig)
         {
             if (!Active) return;
-            Active = false;
+            Active = false; Demo = false;
             Time.timeScale = 1f;
             if (robot != null) Object.Destroy(robot);
             if (robot2 != null) Object.Destroy(robot2);
@@ -210,4 +222,7 @@ namespace FrcSim
         }
     }
 }
+
+
+
 

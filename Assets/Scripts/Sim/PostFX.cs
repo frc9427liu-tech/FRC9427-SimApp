@@ -10,9 +10,11 @@ namespace FrcSim
     public class PostFX : MonoBehaviour
     {
         public static PostFX Instance;
+        static readonly int ArgQ = ParseArgQ();
+        static int ParseArgQ() { var a = System.Environment.GetCommandLineArgs(); int i = System.Array.IndexOf(a, "-postfx"); int v; return i >= 0 && i + 1 < a.Length && int.TryParse(a[i + 1], out v) ? Mathf.Clamp(v, 0, 3) : -1; }
         public static int Quality
         {
-            get => Prefs.GetInt("postfx", 2);
+            get => ArgQ >= 0 ? ArgQ : Prefs.GetInt("postfx", 2);   // -postfx N:測試/診斷用,只覆蓋本次執行,不寫存檔
             set { Prefs.SetInt("postfx", Mathf.Clamp(value, 0, 3)); PlayerPrefs.Save(); if (Instance != null) Instance.Refresh(); }
         }
         public static bool Active => Instance != null && Instance.mat != null && Quality > 0;

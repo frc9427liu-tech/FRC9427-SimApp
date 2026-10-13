@@ -28,8 +28,8 @@ namespace FrcSim
             return Mathf.Sign(f) * (Mathf.Abs(f) - dead) / (1f - dead);
         }
 
-        public float LX => Norm(Cur.LX, 0.2f);
-        public float LY => Norm(Cur.LY, 0.2f);   // 上 = +1
+        public float LX => Norm(Cur.LX, 0.06f);   // 左搖桿只做極小死區,真正的圓形死區在 RobotInput(0.2 的軸向死區疊上去會讓小幅度推不動)
+        public float LY => Norm(Cur.LY, 0.06f);   // 上 = +1
         public float RX => Norm(Cur.RX, 0.2f);
         public float RY => Norm(Cur.RY, 0.2f);
         public float LT => Cur.LT / 255f > 0.1f ? Cur.LT / 255f : 0f;

@@ -11,7 +11,7 @@ namespace FrcSim
         public bool Scored;
         public float ShotDist = -1f;
         public float RimT = -9f;   // 最後一次在 HUB 上方(高於計分帶)的時間:球必須先從上方進來才算進球,側面穿牆不算
-        void OnCollisionEnter(Collision c) { float v = c.relativeVelocity.magnitude; if (v < 0.8f) return; Juice.OnBallImpact(transform.position, v); }   // 玩家發射時離 HUB 的距離(統計用,進球後清掉)
+        void OnCollisionEnter(Collision c) { float v = c.relativeVelocity.magnitude; if (v < 0.8f) return; Juice.OnBallImpact(transform.position, v, Juice.BallSound(c)); }   // 玩家發射時離 HUB 的距離(統計用,進球後清掉)
         public float IgnoreRobotUntil;
         public Collider RobotCollider;
         public Collider Col;
