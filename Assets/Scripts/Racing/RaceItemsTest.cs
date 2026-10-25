@@ -513,7 +513,8 @@ namespace FrcSim
             yield return RunUntil(() => hitLog.Count > 0, 2f);
             float t = runT;
             bool hit = hitLog.Count == 1 && hitLog[0][0] == b && hitLog[0][1] == a && hitKinds[0] == ItemKind.Bumper && b.Stunned;
-            Report("I9a bumper hits car 25 m ahead (stun)", hit && t > 0.3f && t < 1.2f, "hit=" + hit + " time=" + t.ToString("F2") + " s stunned=" + b.Stunned);
+            Report("I9a bumper hits car 25 m ahead (stun)", hit && t > 0.3f && t < 1.2f, "hit=" + hit + " time=" + t.ToString("F2") + " s stunned=" + b.Stunned
+                + " hitLog=" + hitLog.Count + (hitLog.Count > 0 ? " victimIsB=" + (hitLog[0][0] == b) + " byIsA=" + (hitLog[0][1] == a) + " kind=" + hitKinds[0] : ""));
 
             yield return Reset();
 
