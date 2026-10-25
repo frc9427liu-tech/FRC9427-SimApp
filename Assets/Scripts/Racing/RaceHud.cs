@@ -254,6 +254,10 @@ namespace FrcSim
             return Color.HSVToRGB(((int)k * 0.137f) % 1f, 0.55f, 1f);
         }
         // 道具圖示字:中文取第一字;香蕉類用「蕉 / Bn」避免三連香蕉皮和香蕉皮同字看不出差別時以名稱區分
+        static Texture2D ItemIcon(ItemKind k)
+        {
+            return k == ItemKind.None ? null : RaceShaders.Tex("ui_item_" + k.ToString().ToLowerInvariant(), false);
+        }
         static string ItemGlyph(ItemKind k, string lab)
         {
             if (k == ItemKind.Oil) return Loc.Lang == "en" ? "B" : "蕉";
@@ -288,10 +292,16 @@ namespace FrcSim
                 if (shown == ItemKind.None) shown = ItemKind.Boost;
                 var col = ItemColor(shown); float bob = rolling ? Mathf.Sin(Time.unscaledTime * 30f) * 3f : 0f;
                 var disc = new Rect(r.center.x - 38f, r.y + 20f + bob, 76f, 76f);
-                Rounded(new Rect(disc.x - 3f, disc.y - 3f, disc.width + 6f, disc.height + 6f), new Color(1f, 1f, 1f, 0.85f), 41f);
-                Rounded(disc, col, 38f);
                 string lab = rolling ? "?" : ItemLabel(k);
-                GUI.Label(disc, rolling ? "?" : ItemGlyph(k, lab), Style(rolling ? 52 : 44, new Color(0.1f, 0.12f, 0.2f), TextAnchor.MiddleCenter, FontStyle.Bold));
+                var icon = ItemIcon(shown);
+                if (icon != null)
+                    GUI.DrawTexture(new Rect(r.center.x - 50f, r.y + 6f + bob, 100f, 100f), icon, ScaleMode.ScaleToFit, true);   // MK 式:道具就是一張圖案
+                else
+                {
+                    Rounded(new Rect(disc.x - 3f, disc.y - 3f, disc.width + 6f, disc.height + 6f), new Color(1f, 1f, 1f, 0.85f), 41f);
+                    Rounded(disc, col, 38f);
+                    GUI.Label(disc, rolling ? "?" : ItemGlyph(k, lab), Style(rolling ? 52 : 44, new Color(0.1f, 0.12f, 0.2f), TextAnchor.MiddleCenter, FontStyle.Bold));
+                }
                 GUI.Label(new Rect(r.x, r.yMax - 40f, r.width, 30f), rolling ? Z("抽選中…", "Rolling…") : lab, Style(lab.Length > 5 && Loc.Lang == "en" ? 17 : 21, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold));
                 int c = rolling ? 1 : RaceItems.Charges(p);
                 if (c > 1) { var cb = new Rect(r.xMax - 40f, r.y - 8f, 46f, 36f); Rounded(cb, RacePalette.Gold, 18f); GUI.Label(cb, "x" + c, Style(22, new Color(0.2f, 0.12f, 0.02f), TextAnchor.MiddleCenter, FontStyle.Bold)); }
@@ -315,9 +325,14 @@ namespace FrcSim
             if (!has2) return;
             var shown = roll2 ? ItemTable.Order[(int)(Time.unscaledTime * 14f) % ItemTable.Order.Length] : k2;
             var disc = new Rect(r.x + 12f, r.y + 8f, 40f, 40f);
-            Rounded(disc, ItemColor(shown), 20f);
             string lab = roll2 ? "?" : ItemLabel(k2);
-            GUI.Label(disc, roll2 ? "?" : ItemGlyph(k2, lab), Style(26, new Color(0.1f, 0.12f, 0.2f), TextAnchor.MiddleCenter, FontStyle.Bold));
+            var icon2 = ItemIcon(shown);
+            if (icon2 != null) GUI.DrawTexture(new Rect(r.x + 7f, r.y + 3f, 50f, 50f), icon2, ScaleMode.ScaleToFit, true);
+            else
+            {
+                Rounded(disc, ItemColor(shown), 20f);
+                GUI.Label(disc, roll2 ? "?" : ItemGlyph(k2, lab), Style(26, new Color(0.1f, 0.12f, 0.2f), TextAnchor.MiddleCenter, FontStyle.Bold));
+            }
             if (!roll2)
             {
                 GUI.Label(new Rect(r.x - 8f, r.yMax - 16f, r.width + 16f, 16f), lab, Style(12, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold));

@@ -201,7 +201,8 @@ namespace FrcSim
             BuildCheckpointMarks(track, marks);
 
             TrackTheme th = TrackTheme.Current ?? TrackTheme.Get(0);
-            Material roadMat = RaceShaders.Road(th.Asphalt, 0.15f, 0.14f);
+            Color roadCol = Color.Lerp(th.Asphalt, new Color(0.95f, 0.92f, 0.88f), 0.62f);   // MK 式:路面是明亮暖灰,不是黑柏油
+            Material roadMat = RaceShaders.Road(roadCol, 0.15f, 0.14f);
             if (roadMat != null && roadMat.HasProperty("_Guide")) roadMat.SetColor("_Guide", GuideColor(track.Theme));
             AddPart(root.transform, meshes, "Road", road, th.Asphalt, 0.05f, null, roadMat);
             AddPart(root.transform, meshes, "Shoulder", shoulder, th.Sand, 0.05f, null, RaceShaders.Road(th.Sand, 0f, 0f, 0.09f));

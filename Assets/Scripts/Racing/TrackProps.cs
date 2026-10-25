@@ -488,8 +488,9 @@ namespace FrcSim
         static void RoadDetails(Ctx c)
         {
             RaceTrack tr = c.tr; float L = c.L;
-            Color wear = Color.Lerp(c.th.Asphalt, Color.white, 0.14f);
-            Color skid = Color.Lerp(c.th.Asphalt, Dark, 0.6f);
+            Color roadBase = Color.Lerp(c.th.Asphalt, new Color(0.95f, 0.92f, 0.88f), 0.62f);   // 與 TrackMeshBuilder 的路面色一致(補丁/輪痕才不會變成一塊塊深色方塊)
+            Color wear = Color.Lerp(roadBase, Color.white, 0.10f);
+            Color skid = Color.Lerp(roadBase, Dark, 0.45f);
             RaceMeshAcc aw = c.b.A(wear), ak = c.b.A(skid);
             const float yW = 0.085f, yC = 0.087f, yS = 0.088f;   // 都低於標線 0.09,所以線畫在上面
             int before = aw.TriCount + ak.TriCount;
