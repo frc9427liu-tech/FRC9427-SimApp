@@ -272,7 +272,8 @@ namespace FrcSim
             if (maxDy >= 0.05f) errs.Add("height mismatch " + maxDy.ToString("0.000"));
             if (maxSlopeDeg > 12f) errs.Add("slope " + maxSlopeDeg.ToString("0.0") + " deg > 12");
             if (roadBad > 0) errs.Add(roadBad + " road points not Road");
-            if (minW < 11.5f || maxW > 12.5f) errs.Add("width " + minW + ".." + maxW + " (expect ~12)");
+            float wTarget = 12f * RaceTrack.RoadWidthMul;
+            if (minW < wTarget - 0.5f || maxW > wTarget + 0.5f) errs.Add("width " + minW + ".." + maxW + " (expect ~" + wTarget.ToString("0.0") + ")");
 
             // 不自交:弧長相差 > 80 m 的兩點,中心線距離要大於路寬 + 護欄空間
             float minClear = float.MaxValue;
