@@ -722,7 +722,18 @@ namespace FrcSim
                 ground = Color.Lerp(ground, new Color(0.30f, 0.20f, 0.18f), crack * 0.55f);   // 裂縫區的焦黑地殼
             }
 
-            float tone = 0.95f + 0.10f * nC;
+            // 地面更有層次:草地稍微去螢光、加大明暗起伏(MK 的草是深淺不一的草叢,不是一整片螢光綠)
+            if (lk.Kind != LookKind.Snow && lk.Kind != LookKind.Volcano && lk.Kind != LookKind.Desert)
+            {
+                float g = ground.r * 0.299f + ground.g * 0.587f + ground.b * 0.114f;
+                ground = Color.Lerp(ground, new Color(g, g, g), 0.24f);
+                ground = new Color(ground.r * 0.88f, ground.g * 0.9f, ground.b * 0.84f, 1f);
+                float chk = ((Mathf.FloorToInt(x / 9f) + Mathf.FloorToInt(z / 9f)) & 1) == 0 ? 1.07f : 0.93f;   // 草皮割草格紋(很淡),遠看也有層次
+                ground = new Color(ground.r * chk, ground.g * chk, ground.b * chk, 1f);
+                ground = Color.Lerp(ground, new Color(ground.r * 0.78f, ground.g * 0.9f, ground.b * 0.7f), Sm(0.35f, 0.8f, nB) * 0.55f);   // 深色草叢
+                ground = Color.Lerp(ground, new Color(Mathf.Min(1f, ground.r * 1.12f), Mathf.Min(1f, ground.g * 1.1f), ground.b * 0.92f), Sm(0.55f, 0.9f, nD) * 0.4f);   // 亮色(曬黃)草叢
+            }
+            float tone = 0.86f + 0.28f * nC;
             return new Color(ground.r * tone, ground.g * tone, ground.b * tone, 1f - 0.96f * crack);
         }
 
