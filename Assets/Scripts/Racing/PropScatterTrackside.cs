@@ -40,7 +40,7 @@ namespace FrcSim
                 case LookKind.Desert: return new[] { 0.18f, 0.00f, 0.10f, 0.10f, 0.15f, 0.22f, 0.25f };
                 case LookKind.Volcano: return new[] { 0.14f, 0.00f, 0.10f, 0.08f, 0.18f, 0.22f, 0.28f };
                 case LookKind.Coast: return new[] { 0.22f, 0.12f, 0.10f, 0.10f, 0.17f, 0.24f, 0.05f };
-                default: return new[] { 0.24f, 0.18f, 0.08f, 0.08f, 0.14f, 0.24f, 0.04f };
+                default: return new[] { 0.20f, 0.32f, 0.08f, 0.06f, 0.14f, 0.20f, 0.04f };   // 草原系:樹籬比例提高(MK 路邊的連續彩色籬笆/方塊牆)
             }
         }
 
@@ -60,7 +60,7 @@ namespace FrcSim
             Color wood = look.Kind == LookKind.Snow ? new Color(0.78f, 0.82f, 0.92f) : (look.Kind == LookKind.Volcano ? new Color(0.24f, 0.2f, 0.22f) : (look.Kind == LookKind.Desert ? Color.Lerp(RacePalette.Trunk, Color.white, 0.3f) : RacePalette.Trunk));
             Color woodDark = Color.Lerp(wood, Color.black, 0.3f);
             Color[] bright = { new Color(0.93f, 0.26f, 0.26f), new Color(1f, 0.8f, 0.2f), new Color(0.22f, 0.56f, 1f), new Color(0.3f, 0.78f, 0.4f), new Color(0.95f, 0.5f, 0.15f) };
-            float prob = 0.5f * density;
+            float prob = (tr.Theme == 8 ? 0.5f : 0.72f) * density;   // 路邊造景密度(原 0.5):路邊不再空曠;黃昏山路三角形預算貼著上限,維持 0.5
             float sum = 0f; for (int i = 0; i < w.Length; i++) sum += w[i];
             for (float s = 5f + (float)rnd.NextDouble() * 8f; s < Len - 4f; s += 8f + (float)rnd.NextDouble() * 12f)
             {
