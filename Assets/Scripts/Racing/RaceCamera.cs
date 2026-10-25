@@ -66,6 +66,8 @@ namespace FrcSim
             float acc = (fovTarget - fovExtra) * 70f - fovVel * 9f;
             fovVel += acc * dt; fovExtra += fovVel * dt;
             boostPull = Mathf.Lerp(boostPull, boosting ? 0.8f : 0f, 1f - Mathf.Exp(-5f * dt));
+            if (ph == RacePhase.Racing)   // 速度感:高速時邊緣徑向模糊 + 速度線,加速時更強(畫面中央保持清楚)
+                PostFX.SetSpeedFx(0.012f + 0.05f * k * k + (boosting ? 0.045f : 0f), Mathf.Clamp01((k - 0.6f) * 1.6f) * 0.45f + (boosting ? 0.5f : 0f));
 
             float yawFinal = yaw + driftBlend * 12f + back * 180f;
             Vector3 fw = Quaternion.Euler(0f, yawFinal, 0f) * Vector3.forward;

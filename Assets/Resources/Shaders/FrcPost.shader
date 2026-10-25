@@ -16,7 +16,9 @@ Shader "Hidden/FrcSim/Post"
     float _VigStrength, _VigInner, _VigOuter, _VigRound, _Aspect;
     float4 _VigColor;
     float _Dither;
+    sampler2D _LutTex; float _LutAmount;
     float _AORadius, _AOIntensity, _AORange, _AOProj;
+    float _RadialBlur, _SpeedLines;
 
     struct v2f { float4 pos : SV_POSITION; float2 uv : TEXCOORD0; };
 
@@ -131,6 +133,27 @@ Shader "Hidden/FrcSim/Post"
 #if defined(_AO_ON)
         col *= AOFactor(uv, uv * _ScreenParams.xy);
 #endif
+        // ---- racing speed feel: radial motion blur toward screen centre (centre stays sharp) + speed streaks at the edges
+        if (_RadialBlur > 0.0001 || _SpeedLines > 0.0001)
+        {
+            float2 pc = uv - 0.5;
+            float edge = smoothstep(0.18, 0.75, length(pc * float2(_Aspect, 1.0)));
+            if (_RadialBlur > 0.0001)
+            {
+                float2 dv = -pc * (_RadialBlur * edge);
+                float3 acc = col;
+                [unroll] for (int bk = 1; bk <= 6; bk++) acc += ToLin(tex2D(_MainTex, uv + dv * (bk / 6.0)).rgb);
+                col = acc / 7.0;
+            }
+            if (_SpeedLines > 0.0001)
+            {
+                float ang = atan2(pc.y, pc.x * _Aspect);
+                float cell = floor(ang * 38.0);
+                float h1 = frac(sin(cell * 91.345 + floor(_Time.y * 14.0) * 17.13) * 43758.5453);
+                float line1 = step(0.80, h1) * smoothstep(0.5, 0.0, abs(frac(ang * 38.0) - 0.5)) ;
+                col += float3(1, 1, 1) * line1 * edge * _SpeedLines * 0.55;
+            }
+        }
         col = lerp(col, bl, _MenuBlur);                       // menu background blur
         col += bl * _BloomIntensity;
         col *= _Exposure;
@@ -144,6 +167,19 @@ Shader "Hidden/FrcSim/Post"
         float lum = dot(g, float3(0.2126, 0.7152, 0.0722));
         g = lerp(lum.xxx, g, _Saturation);
         g *= lerp(_ShadowTint.rgb, _HighlightTint.rgb, smoothstep(0.08, 0.85, lum));
+
+        if (_LutAmount > 0.001)
+        {
+            // 1024x32 條狀 LUT(x = 藍 * 32 + 紅,y = 綠;PNG 第 0 列 = 綠 0,所以 v 要翻轉)
+            float3 lc = saturate(g);
+            float bb = lc.b * 31.0;
+            float s0 = floor(bb), s1 = min(s0 + 1.0, 31.0), fb = bb - s0;
+            float vv = 1.0 - (lc.g * 31.0 + 0.5) / 32.0;
+            float ur = lc.r * 31.0 + 0.5;
+            float3 c0 = tex2D(_LutTex, float2((s0 * 32.0 + ur) / 1024.0, vv)).rgb;
+            float3 c1 = tex2D(_LutTex, float2((s1 * 32.0 + ur) / 1024.0, vv)).rgb;
+            g = lerp(g, lerp(c0, c1, fb), _LutAmount);
+        }
 
         float2 dd = uv - 0.5;
         dd.x *= lerp(1.0, _Aspect, _VigRound);

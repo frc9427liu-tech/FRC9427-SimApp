@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.Rendering;
 
 namespace FrcSim
@@ -50,6 +50,26 @@ namespace FrcSim
         public float Dither = 1f;
         public float MenuBlurMax = 0.55f;
 
+        // ---- 賽車場景調色(RaceLook.ApplyMood 設定、RaceSession.Env.Restore 還原):每主題的 LUT + 柔和泛光 + 暈映
+        [System.NonSerialized] public Texture2D Lut;
+        [System.NonSerialized] public float LutAmount;
+        struct Saved { public float thr, bloom, vig, sat, scurve; }
+        Saved saved; bool grading;
+
+        public void SetRaceGrade(Texture2D lut, float lutAmount, float threshold, float bloom, float vigStrength, float saturation)
+        {
+            if (!grading) { saved = new Saved { thr = Threshold, bloom = BloomIntensity, vig = VigStrength, sat = Saturation, scurve = SCurve }; grading = true; }
+            Lut = lut; LutAmount = lut != null ? lutAmount : 0f;
+            Threshold = threshold; BloomIntensity = bloom; VigStrength = vigStrength; Saturation = saturation;
+        }
+
+        public void ClearRaceGrade()
+        {
+            if (!grading) return;
+            grading = false; Lut = null; LutAmount = 0f;
+            Threshold = saved.thr; BloomIntensity = saved.bloom; VigStrength = saved.vig; Saturation = saved.sat; SCurve = saved.scurve;
+        }
+
         Camera cam;
         Material mat;
         float blurCur;
@@ -81,6 +101,13 @@ namespace FrcSim
 
         void Update() { blurCur = Mathf.MoveTowards(blurCur, MenuBlur, Time.unscaledDeltaTime * 3f); }
 
+        // 賽車速度感(徑向動態模糊 + 邊緣速度線):由 RaceCamera 每幀呼叫,0.25 秒沒續約就失效。
+        static float speedBlur, speedLines, speedFxStamp = -10f;
+        public static void SetSpeedFx(float blur, float lines)
+        {
+            speedBlur = Mathf.Clamp(blur, 0f, 0.15f); speedLines = Mathf.Clamp01(lines); speedFxStamp = Time.unscaledTime;
+        }
+
         // src: HDR RT the camera rendered into; dst: LDR RT shown on the screen quad.
         public void Process(RenderTexture src, RenderTexture dst)
         {
@@ -106,6 +133,11 @@ namespace FrcSim
             mat.SetFloat("_Aspect", (float)src.width / src.height);
             mat.SetFloat("_Dither", Dither);
             mat.SetFloat("_Scatter", Scatter);
+            bool speedFxLive = Time.unscaledTime - speedFxStamp < 0.25f && !blurMode;   // 賽車鏡頭每幀續約;離開賽車 / 開選單就自動歸零
+            mat.SetFloat("_RadialBlur", speedFxLive ? speedBlur : 0f);
+            mat.SetFloat("_SpeedLines", speedFxLive ? speedLines : 0f);
+            mat.SetTexture("_LutTex", Lut != null ? (Texture)Lut : Texture2D.whiteTexture);
+            mat.SetFloat("_LutAmount", Lut != null ? LutAmount : 0f);
 
             float knee = Threshold * Knee + 1e-4f;
             mat.SetFloat("_Threshold", Threshold);
